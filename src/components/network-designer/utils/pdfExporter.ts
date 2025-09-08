@@ -92,6 +92,7 @@ export async function exportNetworkToPDF(options: ExportOptions): Promise<void> 
     if (includeMetadata) {
       const metadata = generateNetworkMetadata(nodes, edges);
       addMetadataPages(pdf, metadata);
+      addConfigurationPage(pdf, nodes, edges);
     }
 
     // Save the PDF
@@ -279,6 +280,169 @@ function addMetadataPages(pdf: jsPDF, metadata: NetworkMetadata) {
   if (metadata.providers.length > 0) {
     addSection(pdf, 'Service Providers', metadata.providers, currentY);
   }
+}
+
+function addConfigurationPage(pdf: jsPDF, nodes: NetworkNode[], edges: NetworkEdge[]) {
+  pdf.addPage();
+  const pageWidth = pdf.internal.pageSize.getWidth();
+  let currentY = 20;
+  
+  // Page title
+  pdf.setFontSize(16);
+  pdf.setFont('helvetica', 'bold');
+  pdf.setTextColor(31, 41, 55);
+  pdf.text('Network Configuration Details', 20, currentY);
+  currentY += 15;
+  
+  // Node Configurations
+  if (nodes.length > 0) {
+    pdf.setFontSize(14);
+    pdf.setFont('helvetica', 'bold');
+    pdf.setTextColor(55, 65, 81);
+    pdf.text('Node Configurations', 20, currentY);
+    currentY += 10;
+    
+    nodes.forEach((node, index) => {
+      // Check if we need a new page
+      if (currentY > 200) {
+        pdf.addPage();
+        currentY = 20;
+      }
+      
+      // Node header
+      pdf.setFontSize(12);
+      pdf.setFont('helvetica', 'bold');
+      pdf.setTextColor(75, 85, 99);
+      pdf.text(`${index + 1}. ${node.name}`, 25, currentY);
+      currentY += 8;
+      
+      // Basic node info
+      pdf.setFontSize(10);
+      pdf.setFont('helvetica', 'normal');
+      pdf.setTextColor(107, 114, 128);
+      
+      const basicInfo = [
+        `Type: ${node.type}`,
+        `Function Type: ${node.functionType || 'N/A'}`,
+        `Status: ${node.status}`,
+        `Position: x=${node.x}, y=${node.y}`
+      ];
+      
+      basicInfo.forEach(info => {
+        pdf.text(`  • ${info}`, 30, currentY);
+        currentY += 5;
+      });
+      
+      // Configuration details
+      if (node.config && Object.keys(node.config).length > 0) {
+        pdf.setFont('helvetica', 'bold');
+        pdf.text('  Configuration:', 30, currentY);
+        currentY += 5;
+        
+        pdf.setFont('helvetica', 'normal');
+        Object.entries(node.config).forEach(([key, value]) => {
+          if (value !== undefined && value !== null && value !== '') {
+            const configText = `    ${key}: ${typeof value === 'boolean' ? (value ? 'Yes' : 'No') : value}`;
+            pdf.text(configText, 30, currentY);
+            currentY += 4;
+          }
+        });
+      }
+      
+      currentY += 8; // Space between nodes
+    });
+  }
+  
+  // Check if we need a new page for edges
+  if (currentY > 150 && edges.length > 0) {
+    pdf.addPage();
+    currentY = 20;
+  }
+  
+  // Edge Configurations
+  if (edges.length > 0) {
+    currentY += 10;
+    pdf.setFontSize(14);
+    pdf.setFont('helvetica', 'bold');
+    pdf.setTextColor(55, 65, 81);
+    pdf.text('Connection Configurations', 20, currentY);
+    currentY += 10;
+    
+    edges.forEach((edge, index) => {
+      // Check if we need a new page
+      if (currentY > 220) {
+        pdf.addPage();
+        currentY = 20;
+      }
+      
+      // Find source and target node names
+      const sourceNode = nodes.find(n => n.id === edge.source);
+      const targetNode = nodes.find(n => n.id === edge.target);
+      const connectionName = `${sourceNode?.name || 'Unknown'} → ${targetNode?.name || 'Unknown'}`;
+      
+      // Edge header
+      pdf.setFontSize(12);
+      pdf.setFont('helvetica', 'bold');
+      pdf.setTextColor(75, 85, 99);
+      pdf.text(`${index + 1}. ${connectionName}`, 25, currentY);
+      currentY += 8;
+      
+      // Basic edge info
+      pdf.setFontSize(10);
+      pdf.setFont('helvetica', 'normal');
+      pdf.setTextColor(107, 114, 128);
+      
+      const basicEdgeInfo = [
+        `Type: ${edge.type}`,
+        `Bandwidth: ${edge.bandwidth}`,
+        `Status: ${edge.status}`,
+        `VLAN: ${edge.vlan || 'None'}`
+      ];
+      
+      basicEdgeInfo.forEach(info => {
+        pdf.text(`  • ${info}`, 30, currentY);
+        currentY += 5;
+      });
+      
+      // Metrics
+      if (edge.metrics && Object.keys(edge.metrics).length > 0) {
+        pdf.setFont('helvetica', 'bold');
+        pdf.text('  Metrics:', 30, currentY);
+        currentY += 5;
+        
+        pdf.setFont('helvetica', 'normal');
+        Object.entries(edge.metrics).forEach(([key, value]) => {
+          if (value !== undefined && value !== null && value !== '') {
+            pdf.text(`    ${key}: ${value}`, 30, currentY);
+            currentY += 4;
+          }
+        });
+      }
+      
+      // Configuration details
+      if (edge.config && Object.keys(edge.config).length > 0) {
+        pdf.setFont('helvetica', 'bold');
+        pdf.text('  Configuration:', 30, currentY);
+        currentY += 5;
+        
+        pdf.setFont('helvetica', 'normal');
+        Object.entries(edge.config).forEach(([key, value]) => {
+          if (value !== undefined && value !== null && value !== '') {
+            const configText = `    ${key}: ${typeof value === 'boolean' ? (value ? 'Yes' : 'No') : value}`;
+            pdf.text(configText, 30, currentY);
+            currentY += 4;
+          }
+        });
+      }
+      
+      currentY += 8; // Space between edges
+    });
+  }
+  
+  // Add footer
+  pdf.setFontSize(8);
+  pdf.setTextColor(156, 163, 175);
+  pdf.text('Network Configuration Details - Complete technical specifications for all network elements', pageWidth / 2, pdf.internal.pageSize.getHeight() - 10, { align: 'center' });
 }
 
 function addSection(pdf: jsPDF, title: string, items: string[], startY: number) {
