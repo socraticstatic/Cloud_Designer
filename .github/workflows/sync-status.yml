@@ -1,0 +1,45 @@
+name: Sync Status Check
+
+on:
+  workflow_run:
+    workflows: ["Auto Sync and Deploy"]
+    types: [completed]
+  schedule:
+    # Check sync status daily
+    - cron: '0 9 * * *'
+
+jobs:
+  check-sync-status:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check deployment status
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const deploymentUrl = 'https://socraticstatic.github.io/Cloud_Designer/';
+            
+            try {
+              // Check if the deployment is accessible
+              const response = await fetch(deploymentUrl, { method: 'HEAD' });
+              
+              if (response.ok) {
+                console.log(`✅ Cloud Designer is live at: ${deploymentUrl}`);
+                console.log(`📊 Status Code: ${response.status}`);
+                console.log(`🕒 Last checked: ${new Date().toISOString()}`);
+              } else {
+                console.log(`⚠️  Deployment check failed with status: ${response.status}`);
+              }
+            } catch (error) {
+              console.log(`❌ Error checking deployment: ${error.message}`);
+            }
+            
+            // Log repository sync information
+            const { data: repo } = await github.rest.repos.get({
+              owner: 'socraticstatic',
+              repo: 'Cloud_Designer'
+            });
+            
+            console.log(`📁 Repository: ${repo.full_name}`);
+            console.log(`🌟 Stars: ${repo.stargazers_count}`);
+            console.log(`🍴 Forks: ${repo.forks_count}`);
+            console.log(`📝 Last updated: ${repo.updated_at}`);

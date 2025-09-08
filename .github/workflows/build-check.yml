@@ -1,0 +1,61 @@
+name: Build Check
+
+on:
+  push:
+    branches-ignore: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-check:
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        node-version: [18, 20]
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+          
+      - name: Install dependencies
+        run: npm ci
+        
+      - name: Type check
+        run: npx tsc --noEmit
+        
+      - name: Lint check
+        run: npm run lint
+        continue-on-error: true
+        
+      - name: Build project
+        run: npm run build
+        env:
+          NODE_ENV: production
+          
+      - name: Check build output
+        run: |
+          if [ -d "dist" ]; then
+            echo "✅ Build successful - dist folder created"
+            ls -la dist/
+            du -sh dist/
+          else
+            echo "❌ Build failed - no dist folder found"
+            exit 1
+          fi
+          
+      - name: Validate HTML
+        run: |
+          if [ -f "dist/index.html" ]; then
+            echo "✅ Index.html found"
+            head -20 dist/index.html
+          else
+            echo "❌ index.html not found in build output"
+            exit 1
+          fi

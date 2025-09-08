@@ -1,0 +1,9 @@
+{
+  "defaults": {
+    "timeout": 20000,
+    "wait": 1000
+  },
+  "urls": [
+    "https://socraticstatic.github.io/Cloud_Designer/"
+  ]
+}
