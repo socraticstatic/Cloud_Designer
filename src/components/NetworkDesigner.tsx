@@ -700,8 +700,7 @@ export function NetworkDesigner({
         
         {/* Node Configuration Panel - Only in network view */}
         {abstractionLevel === 'network' && selectedNodeObject && showNodeConfig && !isReadOnly && (
-         !(selectedNodeObject.config?.networkType === 'at&t core' || selectedNodeObject.name === 'AT&T Core') && 
-          <NodeConfigPanel
+         !(selectedNodeObject.config?.networkType === 'at&t core' || selectedNodeObject.name === 'AT&T Core') && (
             <NodeConfigPanel
               node={selectedNodeObject}
               isVisible={showNodeConfig}
@@ -710,18 +709,21 @@ export function NetworkDesigner({
               onDelete={deleteNode}
               containerRef={canvasRef}
             />
-          )}
+          )
         )}
         
         {/* Edge Configuration Panel - Only in network view */}
         {abstractionLevel === 'network' && selectedEdgeObject && showEdgeConfig && !isReadOnly && (
           <EdgeConfigPanel
+            edge={selectedEdgeObject}
             nodes={nodes}
             isVisible={showEdgeConfig}
             onClose={() => setShowEdgeConfig(false)}
             onUpdate={(updates) => updateEdge(selectedEdgeObject.id, updates)}
             onDelete={() => deleteEdge(selectedEdgeObject.id)}
             containerRef={canvasRef}
+          />
+        )}
         
         {/* Simulation Overlay */}
         <Suspense fallback={null}>
