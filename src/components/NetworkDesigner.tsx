@@ -700,7 +700,7 @@ export function NetworkDesigner({
         
         {/* Node Configuration Panel - Only in network view */}
         {abstractionLevel === 'network' && selectedNodeObject && showNodeConfig && !isReadOnly && (
-          <NodeConfigPanel
+         !(selectedNodeObject.config?.networkType === 'at&t core' || selectedNodeObject.name === 'AT&T Core') && (
             node={selectedNodeObject}
             isVisible={showNodeConfig}
             onClose={() => setShowNodeConfig(false)}
