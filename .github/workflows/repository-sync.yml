@@ -2,8 +2,8 @@ name: Repository Sync
 
 on:
   schedule:
-    # Sync every 6 hours
-    - cron: '0 */6 * * *'
+    # Check for changes every 5 minutes
+    - cron: '*/5 * * * *'
   workflow_dispatch:
     inputs:
       sync_force:
@@ -21,7 +21,24 @@ jobs:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
           
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          
+      - name: Install dependencies
+        run: npm ci
+        
+      - name: Get latest changes from bolt.new
+        run: |
+          # Pull any changes from bolt.new
+          git config --global user.name 'GitHub Actions'
+          git config --global user.email 'actions@github.com'
+          git pull origin main --rebase
+          
       - name: Check for changes and sync status
+        id: sync-check
         uses: actions/github-script@v7
         with:
           script: |
@@ -34,33 +51,40 @@ jobs:
             
             const latestCommit = commits[0];
             const commitAge = Date.now() - new Date(latestCommit.commit.author.date).getTime();
-            const hoursOld = Math.floor(commitAge / (1000 * 60 * 60));
+            const minutesOld = Math.floor(commitAge / (1000 * 60));
             
             console.log(`📋 Repository Sync Status Report`);
             console.log(`📊 Repository: socraticstatic/Cloud_Designer`);
-            console.log(`🕒 Latest commit: ${latestCommit.commit.message}`);
+            console.log(`🔍 Commit: ${latestCommit.sha.substring(0, 7)}`);
+            console.log(`📝 Message: ${latestCommit.commit.message.split('\n')[0]}`);
             console.log(`👤 Author: ${latestCommit.commit.author.name}`);
-            console.log(`⏰ Age: ${hoursOld} hours ago`);
+            console.log(`⏰ Age: ${minutesOld} minutes ago`);
             console.log(`🔗 Live site: https://socraticstatic.github.io/Cloud_Designer/`);
             
             // Check if GitHub Pages is enabled
+            let pagesStatus = '❓ Not checked';
             try {
               const { data: pages } = await github.rest.repos.getPages({
                 owner: 'socraticstatic',
                 repo: 'Cloud_Designer'
               });
-              
-              console.log(`✅ GitHub Pages Status: Active`);
+              pagesStatus = '✅ Active';
               console.log(`🌐 Pages URL: ${pages.html_url}`);
               console.log(`📝 Source: ${pages.source.branch}/${pages.source.path}`);
             } catch (error) {
-              console.log(`⚠️ GitHub Pages may not be enabled or configured`);
+              pagesStatus = '⚠️ Not configured';
+              console.log('ℹ️ GitHub Pages may not be enabled or configured');
             }
             
-            // Auto-trigger deployment if changes are recent and no deployment workflow ran
-            if (hoursOld < 1 && context.payload.inputs?.sync_force !== 'true') {
-              console.log(`🔄 Recent changes detected, checking if deployment is needed...`);
-              
+            // Check if we need to trigger a deployment
+            let needsDeployment = false;
+            let reason = '';
+            
+            if (context.payload.inputs?.sync_force === 'true') {
+              needsDeployment = true;
+              reason = 'Forced sync requested';
+            } else if (minutesOld < 10) {  // Changed from 1 hour to 10 minutes
+              // Check if there's a recent deployment
               const { data: deployments } = await github.rest.repos.listDeployments({
                 owner: 'socraticstatic',
                 repo: 'Cloud_Designer',
@@ -68,17 +92,70 @@ jobs:
                 per_page: 1
               });
               
-              if (deployments.length === 0 || 
-                  new Date(deployments[0].created_at).getTime() < new Date(latestCommit.commit.author.date).getTime()) {
-                console.log(`🚀 Triggering auto-deployment...`);
-                
-                await github.rest.actions.createWorkflowDispatch({
-                  owner: 'socraticstatic',
-                  repo: 'Cloud_Designer',
-                  workflow_id: 'deploy.yml',
-                  ref: 'main'
-                });
+              if (deployments.length === 0) {
+                needsDeployment = true;
+                reason = 'No existing deployment found';
               } else {
-                console.log(`✅ Deployment is up to date`);
+                const deployment = deployments[0];
+                const deploymentTime = new Date(deployment.created_at).getTime();
+                const commitTime = new Date(latestCommit.commit.author.date).getTime();
+                
+                if (deploymentTime < commitTime) {
+                  needsDeployment = true;
+                  reason = 'New commit detected after last deployment';
+                }
               }
             }
+            
+            // Set outputs for the next steps
+            core.setOutput('needs_deployment', needsDeployment);
+            core.setOutput('deployment_reason', reason);
+            
+            // Log the decision
+            if (needsDeployment) {
+              console.log(`🚀 Deployment needed: ${reason}`);
+            } else {
+              console.log('✅ Deployment is up to date');
+            }
+            
+            // Return the status for the job summary
+            return {
+              pages_status: pagesStatus,
+              last_commit: latestCommit.sha.substring(0, 7),
+              commit_message: latestCommit.commit.message.split('\n')[0],
+              commit_age: `${minutesOld} minutes ago`,
+              needs_deployment: needsDeployment,
+              deployment_reason: reason
+            };
+            
+      - name: Trigger deployment if needed
+        if: steps.sync-check.outputs.needs_deployment == 'true'
+        run: |
+          echo "🚀 Triggering deployment..."
+          gh workflow run deploy.yml --ref main
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          
+      - name: Update status check
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { data: commit } = await github.rest.repos.getCommit({
+              owner: 'socraticstatic',
+              repo: 'Cloud_Designer',
+              ref: context.sha
+            });
+            
+            const status = {
+              state: 'success',
+              context: 'bolt.new Sync',
+              description: 'Synced with bolt.new',
+              target_url: 'https://github.com/socraticstatic/Cloud_Designer/actions'
+            };
+            
+            await github.rest.repos.createCommitStatus({
+              owner: 'socraticstatic',
+              repo: 'Cloud_Designer',
+              sha: context.sha,
+              ...status
+            });
