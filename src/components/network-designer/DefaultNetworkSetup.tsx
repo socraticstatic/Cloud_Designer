@@ -40,9 +40,6 @@ export function DefaultNetworkSetup({ isOpen, onComplete }: DefaultNetworkSetupP
     <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-[200]">
       <div className="bg-white rounded-lg shadow-xl w-full max-w-md p-6">
         <div className="text-center mb-6">
-          <div className="mx-auto flex items-center justify-center w-16 h-16 bg-blue-100 rounded-full mb-4">
-            <Sparkles className="h-8 w-8 text-blue-600" />
-          </div>
           <h2 className="text-xl font-semibold text-gray-900 mb-2">Welcome to Network Designer</h2>
           <p className="text-gray-600 text-sm">
             Let's start by setting up your default network configuration
@@ -79,7 +76,7 @@ export function DefaultNetworkSetup({ isOpen, onComplete }: DefaultNetworkSetupP
         <form onSubmit={handleSubmit}>
           <div className="mb-4">
             <label htmlFor="cloudRouterName" className="block text-sm font-medium text-gray-700 mb-2">
-              Cloud Router Name *
+              First Cloud Router Name *
             </label>
             <input
               type="text"
