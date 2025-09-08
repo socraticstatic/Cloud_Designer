@@ -202,16 +202,6 @@ export const Node = memo(function Node({
           </div>
         )}
 
-        {/* Position Indicators */}
-        {isSelected && (
-          <div 
-            className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-white rounded-md shadow-sm border border-gray-200 px-2 py-1 text-xs font-mono whitespace-nowrap"
-            style={{ fontSize: `${Math.max(11, 11 / zoomLevel)}px` }}
-          >
-            {Math.round(position.x)}, {Math.round(position.y)}
-          </div>
-        )}
-
         {/* Connection Points */}
         {isCreatingEdge && (
           <>
