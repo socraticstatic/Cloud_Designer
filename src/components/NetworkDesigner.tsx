@@ -709,7 +709,7 @@ export function NetworkDesigner({
               onDelete={deleteNode}
               containerRef={canvasRef}
             />
-          )
+          )}
         )}
         
         {/* Edge Configuration Panel - Only in network view */}
