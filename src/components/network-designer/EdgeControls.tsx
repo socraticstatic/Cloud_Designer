@@ -30,6 +30,14 @@ export function EdgeControls({ edges, nodes, selectedEdge, isReadOnly = false, o
         
         if (!sourceNode || !targetNode) return null;
         
+        // Skip rendering gear for AT&T Core connections
+        if (sourceNode?.config?.networkType === 'at&t core' || 
+            targetNode?.config?.networkType === 'at&t core' ||
+            sourceNode?.name === 'AT&T Core' || 
+            targetNode?.name === 'AT&T Core') {
+          return null;
+        }
+        
         // Calculate midpoint for the control
         const sourceX = sourceNode.x + 32;
         const sourceY = sourceNode.y + 32;

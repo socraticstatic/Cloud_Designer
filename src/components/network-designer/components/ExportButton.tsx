@@ -74,7 +74,7 @@ export function ExportButton({ nodes, edges, canvasRef }: ExportButtonProps) {
 
       {/* Export Menu */}
       {showExportMenu && !isExporting && (
-        <div className="absolute bottom-full right-0 mb-2 w-72 bg-white rounded-lg shadow-xl border border-gray-200 z-50 overflow-hidden">
+        <div className="absolute top-full right-0 mt-2 w-72 bg-white rounded-lg shadow-xl border border-gray-200 z-50 overflow-hidden">
           <div className="p-3 border-b border-gray-100">
             <h3 className="text-sm font-medium text-gray-900">Export Network Design</h3>
             <p className="text-xs text-gray-500 mt-1 leading-relaxed">Choose your export format and options</p>

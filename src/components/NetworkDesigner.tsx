@@ -700,14 +700,16 @@ export function NetworkDesigner({
         
         {/* Node Configuration Panel - Only in network view */}
         {abstractionLevel === 'network' && selectedNodeObject && showNodeConfig && !isReadOnly && (
-          <NodeConfigPanel
-            node={selectedNodeObject}
-            isVisible={showNodeConfig}
-            onClose={() => setShowNodeConfig(false)}
-            onUpdate={(updates) => updateNode(selectedNodeObject.id, updates)}
-            onDelete={deleteNode}
-            containerRef={canvasRef}
-          />
+         !(selectedNodeObject.config?.networkType === 'at&t core' || selectedNodeObject.name === 'AT&T Core') && (
+            <NodeConfigPanel
+              node={selectedNodeObject}
+              isVisible={showNodeConfig}
+              onClose={() => setShowNodeConfig(false)}
+              onUpdate={(updates) => updateNode(selectedNodeObject.id, updates)}
+              onDelete={deleteNode}
+              containerRef={canvasRef}
+            />
+          )
         )}
         
         {/* Edge Configuration Panel - Only in network view */}
