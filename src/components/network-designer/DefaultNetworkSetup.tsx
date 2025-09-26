@@ -88,6 +88,12 @@ export function DefaultNetworkSetup({ isOpen, onComplete }: DefaultNetworkSetupP
     }
   };
 
+  const getMinDate = () => {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    return tomorrow.toISOString().split('T')[0];
+  };
+
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-[200]">
       <div className="bg-white rounded-lg shadow-xl w-full max-w-lg p-6">
@@ -316,22 +322,6 @@ export function DefaultNetworkSetup({ isOpen, onComplete }: DefaultNetworkSetupP
             </div>
           </>
         )}
-      </div>
-    </div>
-  );
-}
-
-function getMinDate() {
-  const tomorrow = new Date();
-  tomorrow.setDate(tomorrow.getDate() + 1);
-  return tomorrow.toISOString().split('T')[0];
-}
-            >
-              Create Network
-              <ArrowRight className="h-4 w-4 ml-2" />
-            </button>
-          </div>
-        </form>
       </div>
     </div>
   );
