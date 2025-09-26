@@ -116,7 +116,7 @@ export function DefaultNetworkSetup({ isOpen, onComplete }: DefaultNetworkSetupP
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-[200]">
       <div className="bg-white rounded-lg shadow-xl w-full max-w-lg p-6">
-        <div className="text-center mb-6">
+        <div className="text-center mb-4">
           <h2 className="text-xl font-semibold text-gray-900 mb-2">Welcome to Network Designer</h2>
           <p className="text-gray-600 text-sm">
             Choose how you'd like to create your network
@@ -124,46 +124,46 @@ export function DefaultNetworkSetup({ isOpen, onComplete }: DefaultNetworkSetupP
         </div>
 
         {/* Setup Mode Selection */}
-        <div className="grid grid-cols-2 gap-4 mb-6">
+        <div className="grid grid-cols-2 gap-3 mb-4">
           <button
             onClick={() => setSetupMode('manual')}
-            className={`p-4 border-2 rounded-xl text-left transition-all duration-200 ${
+            className={`p-3 border-2 rounded-lg text-left transition-all duration-200 ${
               setupMode === 'manual' 
                 ? 'border-blue-500 bg-blue-50' 
                 : 'border-gray-200 hover:border-gray-300'
             }`}
           >
-            <div className="flex items-center mb-2">
-              <div className="p-2 rounded-lg bg-blue-100 mr-3">
+            <div className="flex items-center mb-1">
+              <div className="p-1.5 rounded-lg bg-blue-100 mr-2">
                 <Sparkles className="h-5 w-5 text-blue-600" />
               </div>
               <h4 className="font-semibold text-gray-900">Manual Setup</h4>
             </div>
-            <p className="text-sm text-gray-600">Start with a basic AT&T Core and Cloud Router foundation</p>
+            <p className="text-xs text-gray-600">Start with AT&T Core and Cloud Router</p>
           </button>
 
           <button
             onClick={() => setSetupMode('ai')}
-            className={`p-4 border-2 rounded-xl text-left transition-all duration-200 ${
+            className={`p-3 border-2 rounded-lg text-left transition-all duration-200 ${
               setupMode === 'ai' 
                 ? 'border-purple-500 bg-purple-50' 
                 : 'border-gray-200 hover:border-gray-300'
             }`}
           >
-            <div className="flex items-center mb-2">
-              <div className="p-2 rounded-lg bg-purple-100 mr-3">
+            <div className="flex items-center mb-1">
+              <div className="p-1.5 rounded-lg bg-purple-100 mr-2">
                 <Brain className="h-5 w-5 text-purple-600" />
               </div>
               <h4 className="font-semibold text-gray-900">AI Import</h4>
             </div>
-            <p className="text-sm text-gray-600">Upload a network diagram and let AI recreate it</p>
+            <p className="text-xs text-gray-600">Upload diagram for AI recreation</p>
           </button>
         </div>
 
         {setupMode === 'manual' && (
           <>
             {/* Manual Setup - Network Preview */}
-            <div className="bg-gray-50 rounded-lg p-4 mb-6">
+            <div className="bg-gray-50 rounded-lg p-3 mb-4">
               <h3 className="text-sm font-medium text-gray-700 mb-3">Your starting network will include:</h3>
               <div className="flex items-center justify-center space-x-4">
                 <div className="flex flex-col items-center">
@@ -229,29 +229,28 @@ export function DefaultNetworkSetup({ isOpen, onComplete }: DefaultNetworkSetupP
         {setupMode === 'ai' && (
           <>
             {/* AI Import Setup */}
-            <div className="bg-gradient-to-br from-purple-50 to-indigo-50 rounded-lg p-4 mb-6 border border-purple-100">
+            <div className="bg-gradient-to-br from-purple-50 to-indigo-50 rounded-lg p-3 mb-4 border border-purple-100">
               <div className="flex items-center mb-3">
                 <Brain className="h-5 w-5 text-purple-600 mr-2" />
                 <h3 className="text-sm font-medium text-purple-900">AI Network Import</h3>
               </div>
-              <p className="text-sm text-purple-700 mb-4">
+              <p className="text-xs text-purple-700 mb-3">
                 Upload an image of your network diagram (PDF, PNG, JPG) and our AI will analyze it to recreate the topology automatically.
               </p>
               
-              <div className="bg-white/60 rounded-lg p-3 border border-purple-200">
+              <div className="bg-white/60 rounded-lg p-2 border border-purple-200">
                 <h4 className="text-xs font-medium text-purple-800 mb-2">Supported formats:</h4>
-                <ul className="text-xs text-purple-700 space-y-1">
-                  <li>• LucidChart exports (PDF, PNG)</li>
+                <ul className="text-xs text-purple-700 space-y-0.5">
+                  <li>• LucidChart exports</li>
                   <li>• Visio diagrams</li>
-                  <li>• Hand-drawn network sketches</li>
-                  <li>• Any network topology diagram</li>
+                  <li>• Network sketches</li>
                 </ul>
               </div>
             </div>
 
-            <div className="space-y-4">
+            <div className="space-y-3">
               {/* File Upload Area */}
-              <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-purple-400 transition-colors">
+              <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-purple-400 transition-colors">
                 <input
                   type="file"
                   accept="image/*,.pdf"
@@ -263,8 +262,8 @@ export function DefaultNetworkSetup({ isOpen, onComplete }: DefaultNetworkSetupP
                   htmlFor="networkDiagramUpload" 
                   className="cursor-pointer flex flex-col items-center"
                 >
-                  <div className="p-3 bg-purple-100 rounded-full mb-3">
-                    <FileImage className="h-6 w-6 text-purple-600" />
+                  <div className="p-2 bg-purple-100 rounded-full mb-2">
+                    <FileImage className="h-5 w-5 text-purple-600" />
                   </div>
                   <p className="text-sm font-medium text-gray-900 mb-1">
                     {selectedFile ? selectedFile.name : 'Click to upload network diagram'}
@@ -277,12 +276,12 @@ export function DefaultNetworkSetup({ isOpen, onComplete }: DefaultNetworkSetupP
 
               {/* AI Processing Preview */}
               {selectedFile && (
-                <div className="bg-gray-50 rounded-lg p-4">
+                <div className="bg-gray-50 rounded-lg p-3">
                   <h4 className="text-sm font-medium text-gray-700 mb-2 flex items-center">
                     <Zap className="h-4 w-4 text-purple-600 mr-1.5" />
                     AI will identify:
                   </h4>
-                  <div className="grid grid-cols-2 gap-3 text-xs text-gray-600">
+                  <div className="grid grid-cols-2 gap-2 text-xs text-gray-600">
                     <div className="flex items-center">
                       <span className="w-2 h-2 bg-purple-400 rounded-full mr-2"></span>
                       Network devices and functions
@@ -305,10 +304,10 @@ export function DefaultNetworkSetup({ isOpen, onComplete }: DefaultNetworkSetupP
 
               {/* AI Processing Complete - Name Input */}
               {aiProcessingComplete && (
-                <div className="bg-green-50 rounded-lg p-4 border border-green-200">
+                <div className="bg-green-50 rounded-lg p-3 border border-green-200">
                   <div className="flex items-center mb-3">
-                    <div className="p-2 bg-green-100 rounded-full mr-3">
-                      <Brain className="h-5 w-5 text-green-600" />
+                    <div className="p-1.5 bg-green-100 rounded-full mr-2">
+                      <Brain className="h-4 w-4 text-green-600" />
                     </div>
                     <div>
                       <h4 className="text-sm font-medium text-green-900">Network Analysis Complete!</h4>
@@ -316,7 +315,7 @@ export function DefaultNetworkSetup({ isOpen, onComplete }: DefaultNetworkSetupP
                     </div>
                   </div>
                   
-                  <div className="mb-4">
+                  <div className="mb-3">
                     <label htmlFor="aiCloudRouterName" className="block text-sm font-medium text-gray-700 mb-2">
                       Name your main cloud router *
                     </label>
@@ -361,7 +360,7 @@ export function DefaultNetworkSetup({ isOpen, onComplete }: DefaultNetworkSetupP
 
               {error && (
                 !aiProcessingComplete && (
-                <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                <div className="bg-red-50 border border-red-200 rounded-lg p-2">
                   <p className="text-sm text-red-600">{error}</p>
                 </div>
                 )
