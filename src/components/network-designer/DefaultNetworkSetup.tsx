@@ -14,6 +14,8 @@ export function DefaultNetworkSetup({ isOpen, onComplete }: DefaultNetworkSetupP
   const [setupMode, setSetupMode] = useState<'manual' | 'ai'>('manual');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [aiProcessingComplete, setAiProcessingComplete] = useState(false);
+  const [aiSuggestedName, setAiSuggestedName] = useState('');
 
   if (!isOpen) return null;
 
@@ -66,14 +68,15 @@ export function DefaultNetworkSetup({ isOpen, onComplete }: DefaultNetworkSetupP
       // Simulate AI-generated network name
       const aiGeneratedName = `AI Router ${Date.now().toString().slice(-4)}`;
       
+      setAiSuggestedName(aiGeneratedName);
+      setAiProcessingComplete(true);
+      
       window.addToast({
         type: 'success',
         title: 'Network Imported Successfully',
         message: 'AI has analyzed your diagram and created the network topology',
         duration: 5000
       });
-      
-      onComplete(aiGeneratedName);
       
     } catch (error) {
       setError('Failed to process image. Please try again or use manual setup.');
@@ -86,6 +89,22 @@ export function DefaultNetworkSetup({ isOpen, onComplete }: DefaultNetworkSetupP
     } finally {
       setIsProcessing(false);
     }
+  };
+
+  const handleCompleteAISetup = () => {
+    if (!cloudRouterName.trim()) {
+      setError('Cloud router name is required');
+      return;
+    }
+    
+    onComplete(cloudRouterName.trim());
+    
+    // Reset all states
+    setCloudRouterName('');
+    setError('');
+    setSelectedFile(null);
+    setAiProcessingComplete(false);
+    setAiSuggestedName('');
   };
 
   const getMinDate = () => {
@@ -284,13 +303,72 @@ export function DefaultNetworkSetup({ isOpen, onComplete }: DefaultNetworkSetupP
                 </div>
               )}
 
-              {error && (
-                <div className="bg-red-50 border border-red-200 rounded-lg p-3">
-                  <p className="text-sm text-red-600">{error}</p>
+              {/* AI Processing Complete - Name Input */}
+              {aiProcessingComplete && (
+                <div className="bg-green-50 rounded-lg p-4 border border-green-200">
+                  <div className="flex items-center mb-3">
+                    <div className="p-2 bg-green-100 rounded-full mr-3">
+                      <Brain className="h-5 w-5 text-green-600" />
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-medium text-green-900">Network Analysis Complete!</h4>
+                      <p className="text-xs text-green-700">AI has identified your network topology</p>
+                    </div>
+                  </div>
+                  
+                  <div className="mb-4">
+                    <label htmlFor="aiCloudRouterName" className="block text-sm font-medium text-gray-700 mb-2">
+                      Name your main cloud router *
+                    </label>
+                    <input
+                      type="text"
+                      id="aiCloudRouterName"
+                      value={cloudRouterName || aiSuggestedName}
+                      onChange={(e) => handleInputChange(e.target.value)}
+                      placeholder="e.g., Main Gateway Router, HQ Router"
+                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 ${
+                        error ? 'border-red-300' : 'border-gray-300'
+                      }`}
+                      autoFocus
+                    />
+                    <p className="mt-1 text-xs text-gray-500">
+                      AI suggested: "{aiSuggestedName}" - you can customize this name
+                    </p>
+                  </div>
+                  
+                  <div className="flex justify-between">
+                    <button
+                      onClick={() => {
+                        setAiProcessingComplete(false);
+                        setSelectedFile(null);
+                        setCloudRouterName('');
+                        setError('');
+                      }}
+                      className="px-4 py-2 text-gray-600 hover:text-gray-800 flex items-center"
+                    >
+                      ← Upload Different Image
+                    </button>
+                    <button
+                      onClick={handleCompleteAISetup}
+                      className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center transition-colors"
+                    >
+                      Create Network
+                      <ArrowRight className="h-4 w-4 ml-2" />
+                    </button>
+                  </div>
                 </div>
               )}
 
-              <div className="flex justify-between">
+              {error && (
+                !aiProcessingComplete && (
+                <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                  <p className="text-sm text-red-600">{error}</p>
+                </div>
+                )
+              )}
+
+              {!aiProcessingComplete && (
+                <div className="flex justify-between">
                 <button
                   onClick={() => setSetupMode('manual')}
                   className="px-4 py-2 text-gray-600 hover:text-gray-800 flex items-center"
@@ -318,7 +396,8 @@ export function DefaultNetworkSetup({ isOpen, onComplete }: DefaultNetworkSetupP
                     </>
                   )}
                 </button>
-              </div>
+                </div>
+              )}
             </div>
           </>
         )}
