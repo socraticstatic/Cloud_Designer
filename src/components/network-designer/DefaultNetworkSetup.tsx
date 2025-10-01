@@ -1,3 +1,4 @@
+import React from 'react';
 import { useState } from 'react';
 import { Router, Network, ArrowRight, Sparkles, Globe, Upload, Brain, FileImage, Zap, LayoutGrid as Layout, Cloud } from 'lucide-react';
 import { NetworkNode, NetworkEdge } from '../../types';
