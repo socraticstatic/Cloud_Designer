@@ -155,7 +155,7 @@ export function NetworkDesigner({
       x: 550,
       y: 350,
       name: cloudRouterName,
-      icon: getNodeIcon('function', 'Router'),
+      icon: getNodeIcon('function', 'Router', undefined, { routerType: 'cloud' }),
       status: 'inactive',
       config: {
         routerType: 'cloud',
@@ -751,6 +751,19 @@ export function NetworkDesigner({
         <DefaultNetworkSetup
           isOpen={showDefaultSetup}
           onComplete={handleDefaultNetworkSetup}
+          onApplyTemplate={(templateNodes, templateEdges) => {
+            setNodes(templateNodes);
+            setEdges(templateEdges);
+            saveToHistory(templateNodes, templateEdges);
+            setShowDefaultSetup(false);
+            
+            window.addToast({
+              type: 'success',
+              title: 'Template Applied',
+              message: 'Network template has been applied successfully',
+              duration: 3000
+            });
+          }}
         />
       </div>
 

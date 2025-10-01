@@ -1,17 +1,31 @@
 import { useState } from 'react';
-import { Router, Network, ArrowRight, Sparkles, Globe, Upload, Brain, FileImage, Zap } from 'lucide-react';
+import { Router, Network, ArrowRight, Sparkles, Globe, Upload, Brain, FileImage, Zap, Layout, Cloud } from 'lucide-react';
+import { NetworkNode, NetworkEdge } from '../../types';
 import { getNodeIcon } from '../../utils/nodeUtils';
-import { DEFAULT_NETWORK_CONFIG } from '../../constants';
 
 interface DefaultNetworkSetupProps {
   isOpen: boolean;
   onComplete: (cloudRouterName: string) => void;
+  onApplyTemplate?: (nodes: NetworkNode[], edges: NetworkEdge[]) => void;
 }
 
-export function DefaultNetworkSetup({ isOpen, onComplete }: DefaultNetworkSetupProps) {
+type SetupMode = 'selection' | 'user' | 'ai' | 'templates';
+
+interface Template {
+  id: string;
+  name: string;
+  description: string;
+  preview: {
+    icons: { icon: React.ElementType; color: string }[];
+  };
+  nodes: NetworkNode[];
+  edges: NetworkEdge[];
+}
+
+export function DefaultNetworkSetup({ isOpen, onComplete, onApplyTemplate }: DefaultNetworkSetupProps) {
+  const [setupMode, setSetupMode] = useState<SetupMode>('selection');
   const [cloudRouterName, setCloudRouterName] = useState('');
   const [error, setError] = useState('');
-  const [setupMode, setSetupMode] = useState<'manual' | 'ai'>('manual');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [aiProcessingComplete, setAiProcessingComplete] = useState(false);
@@ -19,7 +33,298 @@ export function DefaultNetworkSetup({ isOpen, onComplete }: DefaultNetworkSetupP
 
   if (!isOpen) return null;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // Built-in templates
+  const templates: Template[] = [
+    {
+      id: 'internet-to-cloud',
+      name: 'Internet to Cloud',
+      description: 'AT&T Core through Cloud Router to AWS',
+      preview: {
+        icons: [
+          { icon: Globe, color: 'text-orange-500' },
+          { icon: Cloud, color: 'text-purple-500' },
+          { icon: Cloud, color: 'text-blue-500' }
+        ]
+      },
+      nodes: [
+        {
+          id: 'att-core-template',
+          type: 'network',
+          x: 200,
+          y: 350,
+          name: 'AT&T Core',
+          icon: Globe,
+          status: 'inactive',
+          config: {
+            networkType: 'at&t core',
+            provider: 'AT&T'
+          }
+        },
+        {
+          id: 'cloud-router-template',
+          type: 'function',
+          functionType: 'Router',
+          x: 400,
+          y: 350,
+          name: 'Cloud Router',
+          icon: Cloud,
+          status: 'inactive',
+          config: {
+            routerType: 'cloud',
+            asn: 65000
+          }
+        },
+        {
+          id: 'aws-cloud-template',
+          type: 'destination',
+          x: 600,
+          y: 350,
+          name: 'AWS Cloud',
+          icon: Cloud,
+          status: 'inactive',
+          config: {
+            provider: 'AWS',
+            region: 'us-east-1'
+          }
+        }
+      ],
+      edges: [
+        {
+          id: 'att-to-router-template',
+          source: 'att-core-template',
+          target: 'cloud-router-template',
+          type: 'MPLS',
+          bandwidth: '10 Gbps',
+          status: 'inactive'
+        },
+        {
+          id: 'router-to-cloud-template',
+          source: 'cloud-router-template',
+          target: 'aws-cloud-template',
+          type: 'Direct Connect',
+          bandwidth: '10 Gbps',
+          status: 'inactive'
+        }
+      ]
+    },
+    {
+      id: 'multi-cloud',
+      name: 'Multi-Cloud',
+      description: 'AT&T Core to AWS and Azure clouds',
+      preview: {
+        icons: [
+          { icon: Globe, color: 'text-orange-500' },
+          { icon: Cloud, color: 'text-purple-500' },
+          { icon: Cloud, color: 'text-blue-500' }
+        ]
+      },
+      nodes: [
+        {
+          id: 'att-core-mc-template',
+          type: 'network',
+          x: 200,
+          y: 350,
+          name: 'AT&T Core',
+          icon: Globe,
+          status: 'inactive',
+          config: {
+            networkType: 'at&t core',
+            provider: 'AT&T'
+          }
+        },
+        {
+          id: 'cloud-router-mc-template',
+          type: 'function',
+          functionType: 'Router',
+          x: 350,
+          y: 350,
+          name: 'Cloud Router',
+          icon: Cloud,
+          status: 'inactive',
+          config: {
+            routerType: 'cloud',
+            asn: 65000
+          }
+        },
+        {
+          id: 'aws-cloud-mc-template',
+          type: 'destination',
+          x: 500,
+          y: 300,
+          name: 'AWS Cloud',
+          icon: Cloud,
+          status: 'inactive',
+          config: {
+            provider: 'AWS',
+            region: 'us-east-1'
+          }
+        },
+        {
+          id: 'azure-cloud-mc-template',
+          type: 'destination',
+          x: 500,
+          y: 400,
+          name: 'Azure Cloud',
+          icon: Cloud,
+          status: 'inactive',
+          config: {
+            provider: 'Azure',
+            region: 'eastus'
+          }
+        }
+      ],
+      edges: [
+        {
+          id: 'att-to-router-mc-template',
+          source: 'att-core-mc-template',
+          target: 'cloud-router-mc-template',
+          type: 'MPLS',
+          bandwidth: '10 Gbps',
+          status: 'inactive'
+        },
+        {
+          id: 'router-to-aws-mc-template',
+          source: 'cloud-router-mc-template',
+          target: 'aws-cloud-mc-template',
+          type: 'Direct Connect',
+          bandwidth: '10 Gbps',
+          status: 'inactive'
+        },
+        {
+          id: 'router-to-azure-mc-template',
+          source: 'cloud-router-mc-template',
+          target: 'azure-cloud-mc-template',
+          type: 'ExpressRoute',
+          bandwidth: '10 Gbps',
+          status: 'inactive'
+        }
+      ]
+    },
+    {
+      id: 'high-availability',
+      name: 'High Availability',
+      description: 'Redundant routers for business continuity',
+      preview: {
+        icons: [
+          { icon: Globe, color: 'text-orange-500' },
+          { icon: Cloud, color: 'text-purple-500' },
+          { icon: Cloud, color: 'text-blue-500' }
+        ]
+      },
+      nodes: [
+        {
+          id: 'att-core-ha-template',
+          type: 'network',
+          x: 200,
+          y: 350,
+          name: 'AT&T Core',
+          icon: Globe,
+          status: 'inactive',
+          config: {
+            networkType: 'at&t core',
+            provider: 'AT&T'
+          }
+        },
+        {
+          id: 'primary-router-ha-template',
+          type: 'function',
+          functionType: 'Router',
+          x: 350,
+          y: 300,
+          name: 'Primary Router',
+          icon: Cloud,
+          status: 'inactive',
+          config: {
+            routerType: 'cloud',
+            asn: 65000,
+            fastReroute: true,
+            bfd: true
+          }
+        },
+        {
+          id: 'secondary-router-ha-template',
+          type: 'function',
+          functionType: 'Router',
+          x: 350,
+          y: 400,
+          name: 'Secondary Router',
+          icon: Cloud,
+          status: 'inactive',
+          config: {
+            routerType: 'cloud',
+            asn: 65001,
+            fastReroute: true,
+            bfd: true
+          }
+        },
+        {
+          id: 'aws-cloud-ha-template',
+          type: 'destination',
+          x: 500,
+          y: 350,
+          name: 'AWS Cloud',
+          icon: Cloud,
+          status: 'inactive',
+          config: {
+            provider: 'AWS',
+            region: 'us-east-1'
+          }
+        }
+      ],
+      edges: [
+        {
+          id: 'att-to-primary-ha-template',
+          source: 'att-core-ha-template',
+          target: 'primary-router-ha-template',
+          type: 'MPLS',
+          bandwidth: '10 Gbps',
+          status: 'inactive',
+          config: {
+            resilience: 'ha',
+            bfd: true
+          }
+        },
+        {
+          id: 'att-to-secondary-ha-template',
+          source: 'att-core-ha-template',
+          target: 'secondary-router-ha-template',
+          type: 'MPLS',
+          bandwidth: '10 Gbps',
+          status: 'inactive',
+          config: {
+            resilience: 'ha',
+            bfd: true
+          }
+        },
+        {
+          id: 'primary-to-cloud-ha-template',
+          source: 'primary-router-ha-template',
+          target: 'aws-cloud-ha-template',
+          type: 'Direct Connect',
+          bandwidth: '10 Gbps',
+          status: 'inactive',
+          config: {
+            resilience: 'ha',
+            bfd: true
+          }
+        },
+        {
+          id: 'secondary-to-cloud-ha-template',
+          source: 'secondary-router-ha-template',
+          target: 'aws-cloud-ha-template',
+          type: 'Direct Connect',
+          bandwidth: '10 Gbps',
+          status: 'inactive',
+          config: {
+            resilience: 'ha',
+            bfd: true
+          }
+        }
+      ]
+    }
+  ];
+
+  const handleUserSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!cloudRouterName.trim()) {
@@ -28,10 +333,7 @@ export function DefaultNetworkSetup({ isOpen, onComplete }: DefaultNetworkSetupP
     }
     
     onComplete(cloudRouterName.trim());
-    
-    // Reset form
-    setCloudRouterName('');
-    setError('');
+    resetForm();
   };
 
   const handleInputChange = (value: string) => {
@@ -62,13 +364,11 @@ export function DefaultNetworkSetup({ isOpen, onComplete }: DefaultNetworkSetupP
       // Simulate AI processing delay
       await new Promise(resolve => setTimeout(resolve, 3000));
       
-      // For now, we'll create a sample network based on the uploaded image
-      // In a real implementation, this would send the image to an AI service
-      
       // Simulate AI-generated network name
       const aiGeneratedName = `AI Router ${Date.now().toString().slice(-4)}`;
       
       setAiSuggestedName(aiGeneratedName);
+      setCloudRouterName(aiGeneratedName);
       setAiProcessingComplete(true);
       
       window.addToast({
@@ -98,240 +398,328 @@ export function DefaultNetworkSetup({ isOpen, onComplete }: DefaultNetworkSetupP
     }
     
     onComplete(cloudRouterName.trim());
+    resetForm();
+  };
+
+  const handleTemplateSelect = (template: Template) => {
+    if (onApplyTemplate) {
+      onApplyTemplate(template.nodes, template.edges);
+    }
+    resetForm();
     
-    // Reset all states
+    window.addToast({
+      type: 'success',
+      title: 'Template Applied',
+      message: `${template.name} template has been applied to your network`,
+      duration: 3000
+    });
+  };
+
+  const resetForm = () => {
     setCloudRouterName('');
     setError('');
     setSelectedFile(null);
     setAiProcessingComplete(false);
     setAiSuggestedName('');
-  };
-
-  const getMinDate = () => {
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    return tomorrow.toISOString().split('T')[0];
+    setSetupMode('selection');
   };
 
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-[200]">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-lg p-6">
-        <div className="text-center mb-4">
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">Welcome to Network Designer</h2>
-          <p className="text-gray-600 text-sm">
-            Choose how you'd like to create your network
-          </p>
+      <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl mx-4 max-h-[90vh] overflow-hidden">
+        {/* Header */}
+        <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-6">
+          <div className="text-center">
+            <div className="inline-flex items-center justify-center w-16 h-16 bg-white/20 rounded-full mb-4">
+              <Sparkles className="h-8 w-8 text-white" />
+            </div>
+            <h1 className="text-2xl font-bold mb-2">Welcome to Cloud Designer</h1>
+            <p className="text-blue-100">Choose how you'd like to create your enterprise network</p>
+          </div>
         </div>
 
-        {/* Setup Mode Selection */}
-        <div className="grid grid-cols-2 gap-3 mb-4">
-          <button
-            onClick={() => setSetupMode('manual')}
-            className={`p-3 border-2 rounded-lg text-left transition-all duration-200 ${
-              setupMode === 'manual' 
-                ? 'border-blue-500 bg-blue-50' 
-                : 'border-gray-200 hover:border-gray-300'
-            }`}
-          >
-            <div className="flex items-center mb-1">
-              <div className="p-1.5 rounded-lg bg-blue-100 mr-2">
-                <Sparkles className="h-5 w-5 text-blue-600" />
-              </div>
-              <h4 className="font-semibold text-gray-900">Manual Setup</h4>
-            </div>
-            <p className="text-xs text-gray-600">Start with AT&T Core and Cloud Router</p>
-          </button>
-
-          <button
-            onClick={() => setSetupMode('ai')}
-            className={`p-3 border-2 rounded-lg text-left transition-all duration-200 ${
-              setupMode === 'ai' 
-                ? 'border-purple-500 bg-purple-50' 
-                : 'border-gray-200 hover:border-gray-300'
-            }`}
-          >
-            <div className="flex items-center mb-1">
-              <div className="p-1.5 rounded-lg bg-purple-100 mr-2">
-                <Brain className="h-5 w-5 text-purple-600" />
-              </div>
-              <h4 className="font-semibold text-gray-900">AI Import</h4>
-            </div>
-            <p className="text-xs text-gray-600">Upload diagram for AI recreation</p>
-          </button>
-        </div>
-
-        {setupMode === 'manual' && (
-          <>
-            {/* Manual Setup - Network Preview */}
-            <div className="bg-gray-50 rounded-lg p-3 mb-4">
-              <h3 className="text-sm font-medium text-gray-700 mb-3">Your starting network will include:</h3>
-              <div className="flex items-center justify-center space-x-4">
-                <div className="flex flex-col items-center">
-                  <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center mb-2">
-                    <Globe className="h-6 w-6 text-orange-600" />
+        <div className="p-8 overflow-y-auto max-h-[calc(90vh-120px)]">
+          {/* Initial Selection */}
+          {setupMode === 'selection' && (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              {/* User Setup */}
+              <button
+                onClick={() => setSetupMode('user')}
+                className="group p-8 border-2 border-gray-200 rounded-xl hover:border-blue-500 hover:shadow-lg transition-all duration-300"
+              >
+                <div className="text-center">
+                  <div className="mx-auto w-16 h-16 bg-gradient-to-br from-blue-100 to-blue-200 rounded-full flex items-center justify-center mb-4 group-hover:from-blue-200 group-hover:to-blue-300 transition-all">
+                    <Sparkles className="h-8 w-8 text-blue-600" />
                   </div>
-                  <span className="text-xs text-gray-600 text-center">AT&T Core</span>
-                </div>
-                
-                <div className="flex-1 h-px bg-gray-300 relative">
-                  <ArrowRight className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                </div>
-                
-                <div className="flex flex-col items-center">
-                  <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mb-2">
-                    {(() => {
-                      const RouterIcon = getNodeIcon('function', 'Router', undefined, { routerType: 'cloud' });
-                      return <RouterIcon className="h-6 w-6 text-blue-600" />;
-                    })()}
+                  <h3 className="text-xl font-semibold text-gray-900 mb-3">User Setup</h3>
+                  <p className="text-gray-600 text-sm leading-relaxed">
+                    Start with AT&T Core and customize your cloud router. Perfect for creating tailored network designs.
+                  </p>
+                  <div className="mt-4 flex justify-center space-x-2">
+                    <div className="w-3 h-3 bg-orange-400 rounded-full"></div>
+                    <div className="w-3 h-3 bg-purple-400 rounded-full"></div>
                   </div>
-                  <span className="text-xs text-gray-600 text-center">Cloud Router</span>
                 </div>
-              </div>
+              </button>
+
+              {/* AI Import */}
+              <button
+                onClick={() => setSetupMode('ai')}
+                className="group p-8 border-2 border-gray-200 rounded-xl hover:border-purple-500 hover:shadow-lg transition-all duration-300"
+              >
+                <div className="text-center">
+                  <div className="mx-auto w-16 h-16 bg-gradient-to-br from-purple-100 to-purple-200 rounded-full flex items-center justify-center mb-4 group-hover:from-purple-200 group-hover:to-purple-300 transition-all">
+                    <Brain className="h-8 w-8 text-purple-600" />
+                  </div>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-3">AI Import</h3>
+                  <p className="text-gray-600 text-sm leading-relaxed">
+                    Upload your network diagram and let AI recreate it automatically. Supports LucidChart, Visio, and more.
+                  </p>
+                  <div className="mt-4 inline-flex items-center text-xs text-purple-600 bg-purple-50 px-3 py-1 rounded-full">
+                    <Zap className="h-3 w-3 mr-1" />
+                    Powered by AI
+                  </div>
+                </div>
+              </button>
+
+              {/* Templates */}
+              <button
+                onClick={() => setSetupMode('templates')}
+                className="group p-8 border-2 border-gray-200 rounded-xl hover:border-green-500 hover:shadow-lg transition-all duration-300"
+              >
+                <div className="text-center">
+                  <div className="mx-auto w-16 h-16 bg-gradient-to-br from-green-100 to-green-200 rounded-full flex items-center justify-center mb-4 group-hover:from-green-200 group-hover:to-green-300 transition-all">
+                    <Layout className="h-8 w-8 text-green-600" />
+                  </div>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-3">Quick Templates</h3>
+                  <p className="text-gray-600 text-sm leading-relaxed">
+                    Choose from pre-built enterprise patterns. Get started instantly with proven architectures.
+                  </p>
+                  <div className="mt-4 flex justify-center space-x-1">
+                    <div className="w-2 h-2 bg-green-400 rounded-full"></div>
+                    <div className="w-2 h-2 bg-green-400 rounded-full"></div>
+                    <div className="w-2 h-2 bg-green-400 rounded-full"></div>
+                  </div>
+                </div>
+              </button>
             </div>
-            
-            <form onSubmit={handleSubmit}>
-              <div className="mb-4">
-                <label htmlFor="cloudRouterName" className="block text-sm font-medium text-gray-700 mb-2">
-                  First Cloud Router Name *
-                </label>
-                <input
-                  type="text"
-                  id="cloudRouterName"
-                  value={cloudRouterName}
-                  onChange={(e) => handleInputChange(e.target.value)}
-                  placeholder="e.g., Main Gateway Router, HQ Router"
-                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                    error ? 'border-red-300' : 'border-gray-300'
-                  }`}
-                  autoFocus
-                />
-                {error && (
-                  <p className="mt-1 text-sm text-red-600">{error}</p>
-                )}
-                <p className="mt-1 text-xs text-gray-500">
-                  Give your cloud router a descriptive name that identifies its role in your network
-                </p>
+          )}
+
+          {/* User Setup Flow */}
+          {setupMode === 'user' && (
+            <div className="max-w-lg mx-auto">
+              <div className="text-center mb-8">
+                <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-100 rounded-full mb-4">
+                  <Sparkles className="h-6 w-6 text-blue-600" />
+                </div>
+                <h2 className="text-2xl font-semibold text-gray-900 mb-2">Custom Network Setup</h2>
+                <p className="text-gray-600">Create your personalized network starting with AT&T Core</p>
+              </div>
+
+              {/* Network Preview */}
+              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 mb-8 border border-blue-200">
+                <h3 className="text-sm font-medium text-gray-700 mb-4 text-center">Your network foundation:</h3>
+                <div className="flex items-center justify-center space-x-6">
+                  <div className="text-center">
+                    <div className="w-14 h-14 bg-orange-100 rounded-xl flex items-center justify-center mb-2">
+                      <Globe className="h-7 w-7 text-orange-600" />
+                    </div>
+                    <span className="text-xs font-medium text-gray-600">AT&T Core</span>
+                  </div>
+                  
+                  <div className="flex-1 h-0.5 bg-gradient-to-r from-orange-300 to-purple-300 relative">
+                    <ArrowRight className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 h-4 w-4 text-gray-500 bg-white rounded-full p-0.5" />
+                  </div>
+                  
+                  <div className="text-center">
+                    <div className="w-14 h-14 bg-purple-100 rounded-xl flex items-center justify-center mb-2">
+                      <Cloud className="h-7 w-7 text-purple-600" />
+                    </div>
+                    <span className="text-xs font-medium text-gray-600">Your Router</span>
+                  </div>
+                </div>
               </div>
               
-              <div className="flex justify-end">
-                <button
-                  type="submit"
-                  className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center transition-colors"
-                >
-                  Create Network
-                  <ArrowRight className="h-4 w-4 ml-2" />
-                </button>
-              </div>
-            </form>
-          </>
-        )}
-
-        {setupMode === 'ai' && (
-          <>
-            {/* AI Import Setup */}
-            <div className="bg-gradient-to-br from-purple-50 to-indigo-50 rounded-lg p-3 mb-4 border border-purple-100">
-              <div className="flex items-center mb-3">
-                <Brain className="h-5 w-5 text-purple-600 mr-2" />
-                <h3 className="text-sm font-medium text-purple-900">AI Network Import</h3>
-              </div>
-              <p className="text-xs text-purple-700 mb-3">
-                Upload an image of your network diagram (PDF, PNG, JPG) and our AI will analyze it to recreate the topology automatically.
-              </p>
-              
-              <div className="bg-white/60 rounded-lg p-2 border border-purple-200">
-                <h4 className="text-xs font-medium text-purple-800 mb-2">Supported formats:</h4>
-                <ul className="text-xs text-purple-700 space-y-0.5">
-                  <li>• LucidChart exports</li>
-                  <li>• Visio diagrams</li>
-                  <li>• Network sketches</li>
-                </ul>
-              </div>
-            </div>
-
-            <div className="space-y-3">
-              {/* File Upload Area */}
-              <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-purple-400 transition-colors">
-                <input
-                  type="file"
-                  accept="image/*,.pdf"
-                  onChange={handleFileSelect}
-                  className="hidden"
-                  id="networkDiagramUpload"
-                />
-                <label 
-                  htmlFor="networkDiagramUpload" 
-                  className="cursor-pointer flex flex-col items-center"
-                >
-                  <div className="p-2 bg-purple-100 rounded-full mb-2">
-                    <FileImage className="h-5 w-5 text-purple-600" />
-                  </div>
-                  <p className="text-sm font-medium text-gray-900 mb-1">
-                    {selectedFile ? selectedFile.name : 'Click to upload network diagram'}
+              <form onSubmit={handleUserSubmit} className="space-y-6">
+                <div>
+                  <label htmlFor="cloudRouterName" className="block text-sm font-medium text-gray-700 mb-2">
+                    Name Your Cloud Router *
+                  </label>
+                  <input
+                    type="text"
+                    id="cloudRouterName"
+                    value={cloudRouterName}
+                    onChange={(e) => handleInputChange(e.target.value)}
+                    placeholder="e.g., Main Gateway Router, Enterprise Hub"
+                    className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-base ${
+                      error ? 'border-red-300' : 'border-gray-300'
+                    }`}
+                    autoFocus
+                  />
+                  {error && (
+                    <p className="mt-2 text-sm text-red-600">{error}</p>
+                  )}
+                  <p className="mt-2 text-xs text-gray-500">
+                    Choose a meaningful name that reflects your router's role in your network architecture
                   </p>
-                  <p className="text-xs text-gray-500">
-                    {selectedFile ? 'Click to select a different file' : 'PDF, PNG, JPG up to 10MB'}
-                  </p>
-                </label>
-              </div>
-
-              {/* AI Processing Preview */}
-              {selectedFile && (
-                <div className="bg-gray-50 rounded-lg p-3">
-                  <h4 className="text-sm font-medium text-gray-700 mb-2 flex items-center">
-                    <Zap className="h-4 w-4 text-purple-600 mr-1.5" />
-                    AI will identify:
-                  </h4>
-                  <div className="grid grid-cols-2 gap-2 text-xs text-gray-600">
-                    <div className="flex items-center">
-                      <span className="w-2 h-2 bg-purple-400 rounded-full mr-2"></span>
-                      Network devices and functions
-                    </div>
-                    <div className="flex items-center">
-                      <span className="w-2 h-2 bg-purple-400 rounded-full mr-2"></span>
-                      Connection types and bandwidths
-                    </div>
-                    <div className="flex items-center">
-                      <span className="w-2 h-2 bg-purple-400 rounded-full mr-2"></span>
-                      Cloud providers and regions
-                    </div>
-                    <div className="flex items-center">
-                      <span className="w-2 h-2 bg-purple-400 rounded-full mr-2"></span>
-                      Network topology relationships
-                    </div>
-                  </div>
                 </div>
+                
+                <div className="flex justify-between pt-4">
+                  <button
+                    type="button"
+                    onClick={() => setSetupMode('selection')}
+                    className="px-6 py-3 text-gray-600 hover:text-gray-800 transition-colors"
+                  >
+                    ← Back to Options
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-8 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center transition-colors shadow-sm"
+                  >
+                    Create Network
+                    <ArrowRight className="h-4 w-4 ml-2" />
+                  </button>
+                </div>
+              </form>
+            </div>
+          )}
+
+          {/* AI Import Flow */}
+          {setupMode === 'ai' && (
+            <div className="max-w-2xl mx-auto">
+              <div className="text-center mb-8">
+                <div className="inline-flex items-center justify-center w-12 h-12 bg-purple-100 rounded-full mb-4">
+                  <Brain className="h-6 w-6 text-purple-600" />
+                </div>
+                <h2 className="text-2xl font-semibold text-gray-900 mb-2">AI Network Import</h2>
+                <p className="text-gray-600">Upload your network diagram and watch AI recreate it</p>
+              </div>
+
+              {!aiProcessingComplete && (
+                <>
+                  <div className="bg-gradient-to-br from-purple-50 to-indigo-50 rounded-xl p-6 mb-6 border border-purple-200">
+                    <div className="flex items-start">
+                      <Brain className="h-6 w-6 text-purple-600 mr-3 mt-1 flex-shrink-0" />
+                      <div>
+                        <h3 className="font-medium text-purple-900 mb-2">How AI Import Works</h3>
+                        <div className="grid grid-cols-2 gap-4 text-sm text-purple-700">
+                          <div className="flex items-center">
+                            <span className="w-2 h-2 bg-purple-400 rounded-full mr-2"></span>
+                            Identifies network devices
+                          </div>
+                          <div className="flex items-center">
+                            <span className="w-2 h-2 bg-purple-400 rounded-full mr-2"></span>
+                            Maps connection types
+                          </div>
+                          <div className="flex items-center">
+                            <span className="w-2 h-2 bg-purple-400 rounded-full mr-2"></span>
+                            Detects cloud providers
+                          </div>
+                          <div className="flex items-center">
+                            <span className="w-2 h-2 bg-purple-400 rounded-full mr-2"></span>
+                            Recreates topology
+                          </div>
+                        </div>
+                        <p className="text-xs text-purple-600 mt-2">
+                          Supports: LucidChart PDFs, Visio exports, network sketches (PNG, JPG, PDF)
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* File Upload */}
+                  <div className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center hover:border-purple-400 transition-colors mb-6">
+                    <input
+                      type="file"
+                      accept="image/*,.pdf"
+                      onChange={handleFileSelect}
+                      className="hidden"
+                      id="networkDiagramUpload"
+                    />
+                    <label htmlFor="networkDiagramUpload" className="cursor-pointer">
+                      <div className="mx-auto w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mb-4">
+                        <FileImage className="h-8 w-8 text-purple-600" />
+                      </div>
+                      <p className="text-lg font-medium text-gray-900 mb-2">
+                        {selectedFile ? selectedFile.name : 'Upload Network Diagram'}
+                      </p>
+                      <p className="text-sm text-gray-500">
+                        {selectedFile ? 'Click to select a different file' : 'PDF, PNG, JPG up to 10MB'}
+                      </p>
+                    </label>
+                  </div>
+
+                  {error && (
+                    <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+                      <p className="text-sm text-red-600">{error}</p>
+                    </div>
+                  )}
+
+                  <div className="flex justify-between">
+                    <button
+                      onClick={() => setSetupMode('selection')}
+                      className="px-6 py-3 text-gray-600 hover:text-gray-800 transition-colors"
+                    >
+                      ← Back to Options
+                    </button>
+                    <button
+                      onClick={handleAIImport}
+                      disabled={!selectedFile || isProcessing}
+                      className={`px-8 py-3 rounded-lg flex items-center transition-colors shadow-sm ${
+                        !selectedFile || isProcessing
+                          ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                          : 'bg-purple-600 text-white hover:bg-purple-700'
+                      }`}
+                    >
+                      {isProcessing ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                          Analyzing Diagram...
+                        </>
+                      ) : (
+                        <>
+                          <Upload className="h-4 w-4 mr-2" />
+                          Import with AI
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </>
               )}
 
-              {/* AI Processing Complete - Name Input */}
+              {/* AI Processing Complete */}
               {aiProcessingComplete && (
-                <div className="bg-green-50 rounded-lg p-3 border border-green-200">
-                  <div className="flex items-center mb-3">
-                    <div className="p-1.5 bg-green-100 rounded-full mr-2">
-                      <Brain className="h-4 w-4 text-green-600" />
+                <div className="bg-green-50 rounded-xl p-6 border border-green-200">
+                  <div className="flex items-center mb-4">
+                    <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mr-4">
+                      <Brain className="h-6 w-6 text-green-600" />
                     </div>
                     <div>
-                      <h4 className="text-sm font-medium text-green-900">Network Analysis Complete!</h4>
-                      <p className="text-xs text-green-700">AI has identified your network topology</p>
+                      <h3 className="text-lg font-semibold text-green-900">Analysis Complete!</h3>
+                      <p className="text-sm text-green-700">AI has successfully analyzed your network diagram</p>
                     </div>
                   </div>
                   
-                  <div className="mb-3">
+                  <div className="mb-6">
                     <label htmlFor="aiCloudRouterName" className="block text-sm font-medium text-gray-700 mb-2">
-                      Name your main cloud router *
+                      Name Your Main Cloud Router *
                     </label>
                     <input
                       type="text"
                       id="aiCloudRouterName"
-                      value={cloudRouterName || aiSuggestedName}
+                      value={cloudRouterName}
                       onChange={(e) => handleInputChange(e.target.value)}
                       placeholder="e.g., Main Gateway Router, HQ Router"
-                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 ${
+                      className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 text-base ${
                         error ? 'border-red-300' : 'border-gray-300'
                       }`}
                       autoFocus
                     />
-                    <p className="mt-1 text-xs text-gray-500">
-                      AI suggested: "{aiSuggestedName}" - you can customize this name
+                    {error && (
+                      <p className="mt-2 text-sm text-red-600">{error}</p>
+                    )}
+                    <p className="mt-2 text-xs text-gray-500">
+                      AI suggested: <span className="font-medium">"{aiSuggestedName}"</span> - you can customize this name
                     </p>
                   </div>
                   
@@ -343,13 +731,13 @@ export function DefaultNetworkSetup({ isOpen, onComplete }: DefaultNetworkSetupP
                         setCloudRouterName('');
                         setError('');
                       }}
-                      className="px-4 py-2 text-gray-600 hover:text-gray-800 flex items-center"
+                      className="px-6 py-3 text-gray-600 hover:text-gray-800 transition-colors"
                     >
                       ← Upload Different Image
                     </button>
                     <button
                       onClick={handleCompleteAISetup}
-                      className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center transition-colors"
+                      className="px-8 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center transition-colors shadow-sm"
                     >
                       Create Network
                       <ArrowRight className="h-4 w-4 ml-2" />
@@ -357,49 +745,71 @@ export function DefaultNetworkSetup({ isOpen, onComplete }: DefaultNetworkSetupP
                   </div>
                 </div>
               )}
-
-              {error && (
-                !aiProcessingComplete && (
-                <div className="bg-red-50 border border-red-200 rounded-lg p-2">
-                  <p className="text-sm text-red-600">{error}</p>
-                </div>
-                )
-              )}
-
-              {!aiProcessingComplete && (
-                <div className="flex justify-between">
-                <button
-                  onClick={() => setSetupMode('manual')}
-                  className="px-4 py-2 text-gray-600 hover:text-gray-800 flex items-center"
-                >
-                  ← Back to Manual
-                </button>
-                <button
-                  onClick={handleAIImport}
-                  disabled={!selectedFile || isProcessing}
-                  className={`px-6 py-2 rounded-lg flex items-center transition-colors ${
-                    !selectedFile || isProcessing
-                      ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                      : 'bg-purple-600 text-white hover:bg-purple-700'
-                  }`}
-                >
-                  {isProcessing ? (
-                    <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                      Analyzing...
-                    </>
-                  ) : (
-                    <>
-                      <Upload className="h-4 w-4 mr-2" />
-                      Import with AI
-                    </>
-                  )}
-                </button>
-                </div>
-              )}
             </div>
-          </>
-        )}
+          )}
+
+          {/* Templates Selection */}
+          {setupMode === 'templates' && (
+            <div className="max-w-4xl mx-auto">
+              <div className="text-center mb-8">
+                <div className="inline-flex items-center justify-center w-12 h-12 bg-green-100 rounded-full mb-4">
+                  <Layout className="h-6 w-6 text-green-600" />
+                </div>
+                <h2 className="text-2xl font-semibold text-gray-900 mb-2">Choose a Template</h2>
+                <p className="text-gray-600">Start with a proven enterprise network pattern</p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                {templates.map((template) => (
+                  <button
+                    key={template.id}
+                    onClick={() => handleTemplateSelect(template)}
+                    className="group p-6 border-2 border-gray-200 rounded-xl hover:border-green-500 hover:shadow-lg transition-all duration-300 text-left"
+                  >
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-lg font-semibold text-gray-900">{template.name}</h3>
+                      {template.id === 'high-availability' && (
+                        <span className="px-2 py-1 text-xs font-medium bg-blue-100 text-blue-600 rounded-full">
+                          Recommended
+                        </span>
+                      )}
+                    </div>
+                    
+                    {/* Template Preview */}
+                    <div className="flex items-center justify-center space-x-3 my-6">
+                      {template.preview.icons.map((iconData, index) => (
+                        <React.Fragment key={index}>
+                          <iconData.icon className={`h-8 w-8 ${iconData.color}`} />
+                          {index < template.preview.icons.length - 1 && (
+                            <div className="w-6 h-0.5 bg-gray-300"></div>
+                          )}
+                        </React.Fragment>
+                      ))}
+                    </div>
+                    
+                    <p className="text-sm text-gray-600 mb-4">{template.description}</p>
+                    
+                    <div className="bg-gray-50 rounded-lg p-3">
+                      <div className="flex justify-between text-xs text-gray-500">
+                        <span>{template.nodes.length} nodes</span>
+                        <span>{template.edges.length} connections</span>
+                      </div>
+                    </div>
+                  </button>
+                ))}
+              </div>
+
+              <div className="text-center">
+                <button
+                  onClick={() => setSetupMode('selection')}
+                  className="px-6 py-3 text-gray-600 hover:text-gray-800 transition-colors"
+                >
+                  ← Back to Options
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
