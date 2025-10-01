@@ -587,41 +587,41 @@ export function DefaultNetworkSetup({ isOpen, onComplete, onApplyTemplate }: Def
 
           {/* AI Import Flow */}
           {setupMode === 'ai' && (
-            <div className="max-w-2xl mx-auto">
-              <div className="text-center mb-8">
+            <div className="max-w-xl mx-auto">
+              <div className="text-center mb-4">
                 <div className="inline-flex items-center justify-center w-12 h-12 bg-purple-100 rounded-full mb-4">
                   <Brain className="h-6 w-6 text-purple-600" />
                 </div>
-                <h2 className="text-2xl font-semibold text-gray-900 mb-2">AI Network Import</h2>
-                <p className="text-gray-600">Upload your network diagram and watch AI recreate it</p>
+                <h2 className="text-xl font-semibold text-gray-900 mb-1">AI Network Import</h2>
+                <p className="text-sm text-gray-600">Upload your network diagram and watch AI recreate it</p>
               </div>
 
               {!aiProcessingComplete && (
                 <>
-                  <div className="bg-gradient-to-br from-purple-50 to-indigo-50 rounded-xl p-6 mb-6 border border-purple-200">
+                  <div className="bg-gradient-to-br from-purple-50 to-indigo-50 rounded-lg p-4 mb-4 border border-purple-200">
                     <div className="flex items-start">
-                      <Brain className="h-6 w-6 text-purple-600 mr-3 mt-1 flex-shrink-0" />
+                      <Brain className="h-5 w-5 text-purple-600 mr-2 mt-0.5 flex-shrink-0" />
                       <div>
-                        <h3 className="font-medium text-purple-900 mb-2">How AI Import Works</h3>
-                        <div className="grid grid-cols-2 gap-4 text-sm text-purple-700">
+                        <h3 className="text-sm font-medium text-purple-900 mb-2">How AI Import Works</h3>
+                        <div className="grid grid-cols-2 gap-2 text-xs text-purple-700">
                           <div className="flex items-center">
-                            <span className="w-2 h-2 bg-purple-400 rounded-full mr-2"></span>
+                            <span className="w-1.5 h-1.5 bg-purple-400 rounded-full mr-1.5"></span>
                             Identifies network devices
                           </div>
                           <div className="flex items-center">
-                            <span className="w-2 h-2 bg-purple-400 rounded-full mr-2"></span>
+                            <span className="w-1.5 h-1.5 bg-purple-400 rounded-full mr-1.5"></span>
                             Maps connection types
                           </div>
                           <div className="flex items-center">
-                            <span className="w-2 h-2 bg-purple-400 rounded-full mr-2"></span>
+                            <span className="w-1.5 h-1.5 bg-purple-400 rounded-full mr-1.5"></span>
                             Detects cloud providers
                           </div>
                           <div className="flex items-center">
-                            <span className="w-2 h-2 bg-purple-400 rounded-full mr-2"></span>
+                            <span className="w-1.5 h-1.5 bg-purple-400 rounded-full mr-1.5"></span>
                             Recreates topology
                           </div>
                         </div>
-                        <p className="text-xs text-purple-600 mt-2">
+                        <p className="text-xs text-purple-600 mt-1">
                           Supports: LucidChart PDFs, Visio exports, network sketches (PNG, JPG, PDF)
                         </p>
                       </div>
@@ -629,7 +629,7 @@ export function DefaultNetworkSetup({ isOpen, onComplete, onApplyTemplate }: Def
                   </div>
 
                   {/* File Upload */}
-                  <div className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center hover:border-purple-400 transition-colors mb-6">
+                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-purple-400 transition-colors mb-4">
                     <input
                       type="file"
                       accept="image/*,.pdf"
@@ -638,10 +638,10 @@ export function DefaultNetworkSetup({ isOpen, onComplete, onApplyTemplate }: Def
                       id="networkDiagramUpload"
                     />
                     <label htmlFor="networkDiagramUpload" className="cursor-pointer">
-                      <div className="mx-auto w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mb-4">
-                        <FileImage className="h-8 w-8 text-purple-600" />
+                      <div className="mx-auto w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mb-3">
+                        <FileImage className="h-6 w-6 text-purple-600" />
                       </div>
-                      <p className="text-lg font-medium text-gray-900 mb-2">
+                      <p className="text-base font-medium text-gray-900 mb-1">
                         {selectedFile ? selectedFile.name : 'Upload Network Diagram'}
                       </p>
                       <p className="text-sm text-gray-500">
@@ -651,15 +651,15 @@ export function DefaultNetworkSetup({ isOpen, onComplete, onApplyTemplate }: Def
                   </div>
 
                   {error && (
-                    <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+                    <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-4">
                       <p className="text-sm text-red-600">{error}</p>
                     </div>
                   )}
 
-                  <div className="flex justify-between">
+                  <div className="flex justify-between pt-2">
                     <button
                       onClick={() => setSetupMode('selection')}
-                      className="px-6 py-3 text-gray-600 hover:text-gray-800 transition-colors"
+                      className="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors"
                     >
                       ← Back to Options
                     </button>
@@ -690,18 +690,18 @@ export function DefaultNetworkSetup({ isOpen, onComplete, onApplyTemplate }: Def
 
               {/* AI Processing Complete */}
               {aiProcessingComplete && (
-                <div className="bg-green-50 rounded-xl p-6 border border-green-200">
+                <div className="bg-green-50 rounded-lg p-4 border border-green-200">
                   <div className="flex items-center mb-4">
-                    <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mr-4">
-                      <Brain className="h-6 w-6 text-green-600" />
+                    <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center mr-3">
+                      <Brain className="h-5 w-5 text-green-600" />
                     </div>
                     <div>
-                      <h3 className="text-lg font-semibold text-green-900">Analysis Complete!</h3>
+                      <h3 className="text-base font-semibold text-green-900">Analysis Complete!</h3>
                       <p className="text-sm text-green-700">AI has successfully analyzed your network diagram</p>
                     </div>
                   </div>
                   
-                  <div className="mb-6">
+                  <div className="mb-4">
                     <label htmlFor="aiCloudRouterName" className="block text-sm font-medium text-gray-700 mb-2">
                       Name Your Main Cloud Router *
                     </label>
@@ -711,7 +711,7 @@ export function DefaultNetworkSetup({ isOpen, onComplete, onApplyTemplate }: Def
                       value={cloudRouterName}
                       onChange={(e) => handleInputChange(e.target.value)}
                       placeholder="e.g., Main Gateway Router, HQ Router"
-                      className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 text-base ${
+                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 ${
                         error ? 'border-red-300' : 'border-gray-300'
                       }`}
                       autoFocus
@@ -724,7 +724,7 @@ export function DefaultNetworkSetup({ isOpen, onComplete, onApplyTemplate }: Def
                     </p>
                   </div>
                   
-                  <div className="flex justify-between">
+                  <div className="flex justify-between pt-2">
                     <button
                       onClick={() => {
                         setAiProcessingComplete(false);
@@ -732,7 +732,7 @@ export function DefaultNetworkSetup({ isOpen, onComplete, onApplyTemplate }: Def
                         setCloudRouterName('');
                         setError('');
                       }}
-                      className="px-6 py-3 text-gray-600 hover:text-gray-800 transition-colors"
+                      className="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors"
                     >
                       ← Upload Different Image
                     </button>
@@ -752,23 +752,23 @@ export function DefaultNetworkSetup({ isOpen, onComplete, onApplyTemplate }: Def
           {/* Templates Selection */}
           {setupMode === 'templates' && (
             <div className="max-w-4xl mx-auto">
-              <div className="text-center mb-8">
+              <div className="text-center mb-4">
                 <div className="inline-flex items-center justify-center w-12 h-12 bg-green-100 rounded-full mb-4">
                   <Layout className="h-6 w-6 text-green-600" />
                 </div>
-                <h2 className="text-2xl font-semibold text-gray-900 mb-2">Choose a Template</h2>
-                <p className="text-gray-600">Start with a proven enterprise network pattern</p>
+                <h2 className="text-xl font-semibold text-gray-900 mb-1">Choose a Template</h2>
+                <p className="text-sm text-gray-600">Start with a proven enterprise network pattern</p>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                 {templates.map((template) => (
                   <button
                     key={template.id}
                     onClick={() => handleTemplateSelect(template)}
-                    className="group p-6 border-2 border-gray-200 rounded-xl hover:border-green-500 hover:shadow-lg transition-all duration-300 text-left"
+                    className="group p-4 border-2 border-gray-200 rounded-lg hover:border-green-500 hover:shadow-md transition-all duration-200 text-left"
                   >
-                    <div className="flex items-center justify-between mb-4">
-                      <h3 className="text-lg font-semibold text-gray-900">{template.name}</h3>
+                    <div className="flex items-center justify-between mb-3">
+                      <h3 className="text-base font-semibold text-gray-900">{template.name}</h3>
                       {template.id === 'high-availability' && (
                         <span className="px-2 py-1 text-xs font-medium bg-blue-100 text-blue-600 rounded-full">
                           Recommended
@@ -777,20 +777,20 @@ export function DefaultNetworkSetup({ isOpen, onComplete, onApplyTemplate }: Def
                     </div>
                     
                     {/* Template Preview */}
-                    <div className="flex items-center justify-center space-x-3 my-6">
+                    <div className="flex items-center justify-center space-x-2 my-3">
                       {template.preview.icons.map((iconData, index) => (
                         <React.Fragment key={index}>
-                          <iconData.icon className={`h-8 w-8 ${iconData.color}`} />
+                          <iconData.icon className={`h-6 w-6 ${iconData.color}`} />
                           {index < template.preview.icons.length - 1 && (
-                            <div className="w-6 h-0.5 bg-gray-300"></div>
+                            <div className="w-4 h-0.5 bg-gray-300"></div>
                           )}
                         </React.Fragment>
                       ))}
                     </div>
                     
-                    <p className="text-sm text-gray-600 mb-4">{template.description}</p>
+                    <p className="text-xs text-gray-600 mb-3">{template.description}</p>
                     
-                    <div className="bg-gray-50 rounded-lg p-3">
+                    <div className="bg-gray-50 rounded p-2">
                       <div className="flex justify-between text-xs text-gray-500">
                         <span>{template.nodes.length} nodes</span>
                         <span>{template.edges.length} connections</span>
@@ -803,7 +803,7 @@ export function DefaultNetworkSetup({ isOpen, onComplete, onApplyTemplate }: Def
               <div className="text-center">
                 <button
                   onClick={() => setSetupMode('selection')}
-                  className="px-6 py-3 text-gray-600 hover:text-gray-800 transition-colors"
+                  className="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors"
                 >
                   ← Back to Options
                 </button>
