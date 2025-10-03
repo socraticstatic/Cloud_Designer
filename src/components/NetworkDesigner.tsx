@@ -703,25 +703,13 @@ export function NetworkDesigner({
     <div className="flex flex-col bg-gray-50 rounded-xl border-2 border-gray-200 relative">
       {/* Main Content Area */}
       <div className="relative h-[800px]" style={{ zIndex: 1 }}>
-        {/* History Drawer Button - Upper left */}
-        {!isReadOnly && abstractionLevel === 'network' && (
-          <button
-            onClick={() => setShowHistoryDrawer(true)}
-            className="absolute top-4 left-4 p-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 hover:border-gray-400 transition-colors shadow-sm z-50"
-            title="View Topology History"
-          >
-            <svg className="h-5 w-5 text-gray-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-          </button>
-        )}
-
-        {/* Abstraction Level Selector - Highest z-index */}
+        {/* Abstraction Level Selector with History - Highest z-index */}
         {!isReadOnly && (
           <div style={{ zIndex: 100 }}>
             <AbstractionLevelSelector
               currentLevel={abstractionLevel}
               onLevelChange={setAbstractionLevel}
+              onHistoryClick={() => setShowHistoryDrawer(true)}
             />
           </div>
         )}
