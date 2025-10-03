@@ -242,7 +242,7 @@ export const Node = memo(function Node({
         )}
 
         {/* Tooltip */}
-        {showTooltip && !isEditingName && !isCreatingEdge && (
+        {showTooltip && !isEditingName && !isCreatingEdge && node.name !== 'AT&T Core' && (
           <div
             className="absolute -top-12 left-1/2 transform -translate-x-1/2 px-3 py-1.5 bg-gray-900 text-white text-xs rounded-lg whitespace-nowrap pointer-events-none z-50 shadow-lg"
             style={{ fontSize: `${Math.max(11, 11 / zoomLevel)}px` }}
