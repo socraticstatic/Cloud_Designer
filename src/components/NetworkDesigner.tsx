@@ -30,6 +30,7 @@ const NetworkParameters = lazy(() => import('./network-designer/NetworkParameter
 const TemplatesManager = lazy(() => import('./network-designer/panels/TemplatesManager').then(module => ({ default: module.TemplatesManager })));
 const SaveTemplateModal = lazy(() => import('./network-designer/SaveTemplateModal').then(module => ({ default: module.SaveTemplateModal })));
 const NetworkSimulation = lazy(() => import('./network-designer/simulation/NetworkSimulation').then(module => ({ default: module.NetworkSimulation })));
+const CrossConnectsPanel = lazy(() => import('./network-designer/panels/CrossConnectsPanel').then(module => ({ default: module.CrossConnectsPanel })));
 
 // Lazy load simulation functions
 const simulationModule = lazy(() => import('./network-designer/simulation/runSimulation'));
@@ -206,7 +207,7 @@ export function NetworkDesigner({
   };
   
   // UI state
-  const [viewMode, setViewMode] = useState<'assistant' | 'optimize' | 'advanced'>('assistant');
+  const [viewMode, setViewMode] = useState<'outcomes' | 'ai-recommendations' | 'simulation' | 'cross-connects'>('outcomes');
   const [isRunningScenario, setIsRunningScenario] = useState(false);
   const [showDefaultSetup, setShowDefaultSetup] = useState(false);
   
@@ -774,16 +775,16 @@ export function NetworkDesigner({
           setViewMode={setViewMode}
         >
           <Suspense fallback={<ComponentLoader />}>
-            {viewMode === 'assistant' && (
-              <DesignAssistant 
+            {viewMode === 'outcomes' && (
+              <DesignAssistant
                 nodes={nodes}
                 edges={edges}
                 onApply={handleApplyOutcomePattern}
               />
             )}
-            
-            {viewMode === 'optimize' && (
-              <AIRecommendationEngine 
+
+            {viewMode === 'ai-recommendations' && (
+              <AIRecommendationEngine
                 nodes={nodes}
                 edges={edges}
                 onApplyRecommendation={(newNodes, newEdges) => {
@@ -793,10 +794,18 @@ export function NetworkDesigner({
                 }}
               />
             )}
-            
-            {viewMode === 'advanced' && (
-              <NetworkParameters
-                onParameterChange={handleParameterChange}
+
+            {viewMode === 'simulation' && (
+              <NetworkSimulation
+                nodes={nodes}
+                edges={edges}
+              />
+            )}
+
+            {viewMode === 'cross-connects' && (
+              <CrossConnectsPanel
+                crossConnects={crossConnects}
+                onShowInTopology={(id) => onSelectCrossConnect?.(id)}
               />
             )}
           </Suspense>

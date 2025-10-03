@@ -1,6 +1,6 @@
-import { Sparkles, BarChart3, Settings } from 'lucide-react';
+import { Target, Sparkles, Activity, Cable } from 'lucide-react';
 
-type ViewMode = 'assistant' | 'optimize' | 'advanced';
+type ViewMode = 'outcomes' | 'ai-recommendations' | 'simulation' | 'cross-connects';
 
 interface ViewModeTabsProps {
   viewMode: ViewMode;
@@ -11,26 +11,33 @@ export function ViewModeTabs({ viewMode, onChange }: ViewModeTabsProps) {
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200">
       <div className="flex">
-        <button 
-          onClick={() => onChange('assistant')}
-          className={`flex-1 py-3 px-4 text-sm font-medium ${viewMode === 'assistant' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
+        <button
+          onClick={() => onChange('outcomes')}
+          className={`flex-1 py-3 px-4 text-sm font-medium ${viewMode === 'outcomes' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
+        >
+          <Target className="h-4 w-4 inline-block mr-2" />
+          Business Outcomes
+        </button>
+        <button
+          onClick={() => onChange('ai-recommendations')}
+          className={`flex-1 py-3 px-4 text-sm font-medium ${viewMode === 'ai-recommendations' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
         >
           <Sparkles className="h-4 w-4 inline-block mr-2" />
-          Design Assistant
+          AI Recommendations
         </button>
-        <button 
-          onClick={() => onChange('optimize')}
-          className={`flex-1 py-3 px-4 text-sm font-medium ${viewMode === 'optimize' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
+        <button
+          onClick={() => onChange('simulation')}
+          className={`flex-1 py-3 px-4 text-sm font-medium ${viewMode === 'simulation' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
         >
-          <BarChart3 className="h-4 w-4 inline-block mr-2" />
-          Network Analysis
+          <Activity className="h-4 w-4 inline-block mr-2" />
+          Network Simulation
         </button>
-        <button 
-          onClick={() => onChange('advanced')}
-          className={`flex-1 py-3 px-4 text-sm font-medium ${viewMode === 'advanced' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
+        <button
+          onClick={() => onChange('cross-connects')}
+          className={`flex-1 py-3 px-4 text-sm font-medium ${viewMode === 'cross-connects' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
         >
-          <Settings className="h-4 w-4 inline-block mr-2" />
-          Advanced Settings
+          <Cable className="h-4 w-4 inline-block mr-2" />
+          Cross-Connects
         </button>
       </div>
     </div>
