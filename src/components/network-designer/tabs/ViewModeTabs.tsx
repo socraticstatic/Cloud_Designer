@@ -1,6 +1,6 @@
-import { Target, Sparkles, Activity, Cable } from 'lucide-react';
+import { Target, Sparkles, Cable } from 'lucide-react';
 
-type ViewMode = 'outcomes' | 'ai-recommendations' | 'simulation' | 'cross-connects';
+type ViewMode = 'outcomes' | 'ai-recommendations' | 'cross-connects';
 
 interface ViewModeTabsProps {
   viewMode: ViewMode;
@@ -24,13 +24,6 @@ export function ViewModeTabs({ viewMode, onChange }: ViewModeTabsProps) {
         >
           <Sparkles className="h-4 w-4 inline-block mr-2" />
           AI Recommendations
-        </button>
-        <button
-          onClick={() => onChange('simulation')}
-          className={`flex-1 py-3 px-4 text-sm font-medium ${viewMode === 'simulation' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
-        >
-          <Activity className="h-4 w-4 inline-block mr-2" />
-          Network Simulation
         </button>
         <button
           onClick={() => onChange('cross-connects')}

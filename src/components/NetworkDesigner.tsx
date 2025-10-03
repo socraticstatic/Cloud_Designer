@@ -207,7 +207,7 @@ export function NetworkDesigner({
   };
   
   // UI state
-  const [viewMode, setViewMode] = useState<'outcomes' | 'ai-recommendations' | 'simulation' | 'cross-connects'>('outcomes');
+  const [viewMode, setViewMode] = useState<'outcomes' | 'ai-recommendations' | 'cross-connects'>('outcomes');
   const [isRunningScenario, setIsRunningScenario] = useState(false);
   const [showDefaultSetup, setShowDefaultSetup] = useState(false);
   
@@ -792,13 +792,6 @@ export function NetworkDesigner({
                   setEdges(newEdges);
                   saveToHistory(newNodes, newEdges);
                 }}
-              />
-            )}
-
-            {viewMode === 'simulation' && (
-              <NetworkSimulation
-                nodes={nodes}
-                edges={edges}
               />
             )}
 
