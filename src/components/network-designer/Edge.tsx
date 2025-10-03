@@ -31,12 +31,16 @@ export const Edge = memo(function Edge({
   const midX = (sourceX + targetX) / 2;
   const midY = (sourceY + targetY) / 2;
 
-  // Calculate bandwidth utilization color
-  const getBandwidthColor = () => {
-    const utilization = edge.metrics?.bandwidthUtilization || 0;
-    if (utilization > 90) return '#ef4444'; // red-500
-    if (utilization > 70) return '#f59e0b'; // amber-500
-    return '#10b981'; // green-500
+  const getEdgeColor = () => {
+    if (isSelected) return '#3b82f6';
+    if (edge.status === 'active') return '#6b7280';
+    return '#d1d5db';
+  };
+
+  const getArrowColor = () => {
+    if (isSelected) return '#3b82f6';
+    if (edge.status === 'active') return '#6b7280';
+    return '#d1d5db';
   };
 
   return (
@@ -44,17 +48,17 @@ export const Edge = memo(function Edge({
       {/* Only render the SVG line - no controls */}
       <path
         d={`M ${sourceX} ${sourceY} L ${targetX} ${targetY}`}
-        stroke={isSelected ? '#3b82f6' : edge.status === 'active' ? getBandwidthColor() : '#d1d5db'}
+        stroke={getEdgeColor()}
         strokeWidth={isSelected ? 3 : 2}
         fill="none"
         strokeDasharray={edge.type === 'AVPN' || edge.type === 'VPN' ? '5,5' : undefined}
         style={{ pointerEvents: 'none' }}
       />
-      
+
       {/* Arrow at the end */}
       <polygon
         points={`${targetX - 15},${targetY - 5} ${targetX - 5},${targetY} ${targetX - 15},${targetY + 5}`}
-        fill={isSelected ? '#3b82f6' : edge.status === 'active' ? getBandwidthColor() : '#9ca3af'}
+        fill={getArrowColor()}
         transform={`rotate(${Math.atan2(targetY - sourceY, targetX - sourceX) * 180 / Math.PI}, ${targetX}, ${targetY})`}
         style={{ pointerEvents: 'none' }}
       />
