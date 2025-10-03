@@ -35,6 +35,8 @@ export const Node = memo(function Node({
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const [isEditingName, setIsEditingName] = useState(false);
   const [nodeName, setNodeName] = useState(node.name);
+  const [hasDragged, setHasDragged] = useState(false);
+  const dragStartPos = useRef({ x: 0, y: 0 });
 
   // Track node position
   const [position, setPosition] = useState({ x: node.x, y: node.y });
@@ -55,6 +57,14 @@ export const Node = memo(function Node({
           // Calculate position accounting for zoom level
           const x = (e.clientX - rect.left) / zoomLevel - dragOffset.x;
           const y = (e.clientY - rect.top) / zoomLevel - dragOffset.y;
+
+          // Check if we've moved more than 5 pixels (threshold to detect drag)
+          const deltaX = Math.abs(e.clientX - dragStartPos.current.x);
+          const deltaY = Math.abs(e.clientY - dragStartPos.current.y);
+          if (deltaX > 5 || deltaY > 5) {
+            setHasDragged(true);
+          }
+
           onDrag(x, y);
         }
       }
@@ -63,6 +73,10 @@ export const Node = memo(function Node({
     const handleMouseUp = () => {
       setIsDragging(false);
       onDragEnd();
+
+      // Reset hasDragged after a short delay to allow click handler to check it
+      setTimeout(() => setHasDragged(false), 50);
+
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
     };
@@ -123,9 +137,9 @@ export const Node = memo(function Node({
           transform: `translate(${position.x}px, ${position.y}px)`,
           zIndex: Z_INDEX.NODES
         }}
-        onClick={(e) => {
+        onDoubleClick={(e) => {
           e.stopPropagation();
-          if (!isDragging && !isReadOnly) {
+          if (!isReadOnly) {
             onClick();
           }
         }}
@@ -133,6 +147,11 @@ export const Node = memo(function Node({
           if (!isCreatingEdge && nodeRef.current && !isReadOnly) {
             e.stopPropagation();
             const rect = nodeRef.current.getBoundingClientRect();
+
+            // Store initial mouse position for drag detection
+            dragStartPos.current = { x: e.clientX, y: e.clientY };
+            setHasDragged(false);
+
             setDragOffset({
               x: (e.clientX - rect.left) / zoomLevel,
               y: (e.clientY - rect.top) / zoomLevel
