@@ -1,6 +1,6 @@
 import React from 'react';
-import { useState } from 'react';
-import { Router, Network, ArrowRight, Sparkles, Globe, Upload, Brain, FileImage, Zap, LayoutGrid as Layout, Cloud } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Router, Network, ArrowRight, Sparkles, Globe, Upload, Brain, FileImage, Zap, LayoutGrid as Layout, Cloud, FolderOpen, Clock, Trash2 } from 'lucide-react';
 import { NetworkNode, NetworkEdge } from '../../types';
 import { getNodeIcon } from '../../utils/nodeUtils';
 
@@ -10,7 +10,7 @@ interface DefaultNetworkSetupProps {
   onApplyTemplate?: (nodes: NetworkNode[], edges: NetworkEdge[]) => void;
 }
 
-type SetupMode = 'selection' | 'user' | 'ai' | 'templates';
+type SetupMode = 'selection' | 'user' | 'ai' | 'templates' | 'saved';
 
 interface Template {
   id: string;
@@ -23,6 +23,16 @@ interface Template {
   edges: NetworkEdge[];
 }
 
+interface SavedTopology {
+  id: string;
+  name: string;
+  description: string;
+  nodes: NetworkNode[];
+  edges: NetworkEdge[];
+  savedAt: number;
+  lastModified?: number;
+}
+
 export function DefaultNetworkSetup({ isOpen, onComplete, onApplyTemplate }: DefaultNetworkSetupProps) {
   const [setupMode, setSetupMode] = useState<SetupMode>('selection');
   const [cloudRouterName, setCloudRouterName] = useState('');
@@ -31,6 +41,208 @@ export function DefaultNetworkSetup({ isOpen, onComplete, onApplyTemplate }: Def
   const [isProcessing, setIsProcessing] = useState(false);
   const [aiProcessingComplete, setAiProcessingComplete] = useState(false);
   const [aiSuggestedName, setAiSuggestedName] = useState('');
+  const [savedTopologies, setSavedTopologies] = useState<SavedTopology[]>([]);
+
+  useEffect(() => {
+    const saved = localStorage.getItem('savedTopologies');
+    if (saved) {
+      try {
+        setSavedTopologies(JSON.parse(saved));
+      } catch (e) {
+        console.error('Failed to load saved topologies:', e);
+      }
+    } else {
+      const mockTopologies: SavedTopology[] = [
+        {
+          id: 'mock-1',
+          name: 'Production Environment',
+          description: 'Main production network with redundant connections to AWS and Azure',
+          savedAt: Date.now() - 7200000,
+          lastModified: Date.now() - 3600000,
+          nodes: [
+            {
+              id: 'prod-att-core',
+              type: 'network',
+              x: 200,
+              y: 350,
+              name: 'AT&T Core',
+              icon: Globe,
+              status: 'active',
+              config: { networkType: 'at&t core', provider: 'AT&T' }
+            },
+            {
+              id: 'prod-router',
+              type: 'function',
+              functionType: 'Router',
+              x: 400,
+              y: 350,
+              name: 'Production Router',
+              icon: Cloud,
+              status: 'active',
+              config: { routerType: 'cloud', asn: 65100 }
+            },
+            {
+              id: 'prod-aws',
+              type: 'destination',
+              x: 600,
+              y: 300,
+              name: 'AWS US-East',
+              icon: Cloud,
+              status: 'active',
+              config: { provider: 'AWS', region: 'us-east-1' }
+            }
+          ],
+          edges: [
+            {
+              id: 'prod-edge-1',
+              source: 'prod-att-core',
+              target: 'prod-router',
+              type: 'MPLS',
+              bandwidth: '10 Gbps',
+              status: 'active'
+            },
+            {
+              id: 'prod-edge-2',
+              source: 'prod-router',
+              target: 'prod-aws',
+              type: 'Direct Connect',
+              bandwidth: '10 Gbps',
+              status: 'active'
+            }
+          ]
+        },
+        {
+          id: 'mock-2',
+          name: 'Development Network',
+          description: 'Testing environment for new configurations and architectures',
+          savedAt: Date.now() - 172800000,
+          nodes: [
+            {
+              id: 'dev-att-core',
+              type: 'network',
+              x: 250,
+              y: 350,
+              name: 'AT&T Core',
+              icon: Globe,
+              status: 'inactive',
+              config: { networkType: 'at&t core', provider: 'AT&T' }
+            },
+            {
+              id: 'dev-router',
+              type: 'function',
+              functionType: 'Router',
+              x: 450,
+              y: 350,
+              name: 'Dev Router',
+              icon: Cloud,
+              status: 'inactive',
+              config: { routerType: 'virtual', asn: 65200 }
+            }
+          ],
+          edges: [
+            {
+              id: 'dev-edge-1',
+              source: 'dev-att-core',
+              target: 'dev-router',
+              type: 'MPLS',
+              bandwidth: '1 Gbps',
+              status: 'inactive'
+            }
+          ]
+        },
+        {
+          id: 'mock-3',
+          name: 'DR Site Architecture',
+          description: 'Disaster recovery configuration with cross-region failover',
+          savedAt: Date.now() - 604800000,
+          lastModified: Date.now() - 259200000,
+          nodes: [
+            {
+              id: 'dr-att-core',
+              type: 'network',
+              x: 200,
+              y: 350,
+              name: 'AT&T Core',
+              icon: Globe,
+              status: 'active',
+              config: { networkType: 'at&t core', provider: 'AT&T' }
+            },
+            {
+              id: 'dr-primary',
+              type: 'function',
+              functionType: 'Router',
+              x: 350,
+              y: 300,
+              name: 'Primary Router',
+              icon: Cloud,
+              status: 'active',
+              config: { routerType: 'cloud', asn: 65300, fastReroute: true }
+            },
+            {
+              id: 'dr-secondary',
+              type: 'function',
+              functionType: 'Router',
+              x: 350,
+              y: 400,
+              name: 'Backup Router',
+              icon: Cloud,
+              status: 'active',
+              config: { routerType: 'cloud', asn: 65301, fastReroute: true }
+            },
+            {
+              id: 'dr-aws',
+              type: 'destination',
+              x: 500,
+              y: 350,
+              name: 'AWS West',
+              icon: Cloud,
+              status: 'active',
+              config: { provider: 'AWS', region: 'us-west-2' }
+            }
+          ],
+          edges: [
+            {
+              id: 'dr-edge-1',
+              source: 'dr-att-core',
+              target: 'dr-primary',
+              type: 'MPLS',
+              bandwidth: '10 Gbps',
+              status: 'active',
+              config: { resilience: 'ha' }
+            },
+            {
+              id: 'dr-edge-2',
+              source: 'dr-att-core',
+              target: 'dr-secondary',
+              type: 'MPLS',
+              bandwidth: '10 Gbps',
+              status: 'active',
+              config: { resilience: 'ha' }
+            },
+            {
+              id: 'dr-edge-3',
+              source: 'dr-primary',
+              target: 'dr-aws',
+              type: 'Direct Connect',
+              bandwidth: '10 Gbps',
+              status: 'active'
+            },
+            {
+              id: 'dr-edge-4',
+              source: 'dr-secondary',
+              target: 'dr-aws',
+              type: 'Direct Connect',
+              bandwidth: '10 Gbps',
+              status: 'active'
+            }
+          ]
+        }
+      ];
+
+      localStorage.setItem('savedTopologies', JSON.stringify(mockTopologies));
+      setSavedTopologies(mockTopologies);
+    }
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -407,13 +619,58 @@ export function DefaultNetworkSetup({ isOpen, onComplete, onApplyTemplate }: Def
       onApplyTemplate(template.nodes, template.edges);
     }
     resetForm();
-    
+
     window.addToast({
       type: 'success',
       title: 'Template Applied',
       message: `${template.name} template has been applied to your network`,
       duration: 3000
     });
+  };
+
+  const handleLoadTopology = (topology: SavedTopology) => {
+    if (onApplyTemplate) {
+      onApplyTemplate(topology.nodes, topology.edges);
+    }
+    resetForm();
+
+    window.addToast({
+      type: 'success',
+      title: 'Topology Loaded',
+      message: `${topology.name} has been loaded successfully`,
+      duration: 3000
+    });
+  };
+
+  const handleDeleteTopology = (topologyId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+
+    const updatedTopologies = savedTopologies.filter(t => t.id !== topologyId);
+    setSavedTopologies(updatedTopologies);
+    localStorage.setItem('savedTopologies', JSON.stringify(updatedTopologies));
+
+    window.addToast({
+      type: 'info',
+      title: 'Topology Deleted',
+      message: 'Saved topology has been removed',
+      duration: 2000
+    });
+  };
+
+  const formatDate = (timestamp: number) => {
+    const date = new Date(timestamp);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMins < 1) return 'Just now';
+    if (diffMins < 60) return `${diffMins}m ago`;
+    if (diffHours < 24) return `${diffHours}h ago`;
+    if (diffDays < 7) return `${diffDays}d ago`;
+
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   };
 
   const resetForm = () => {
@@ -429,7 +686,7 @@ export function DefaultNetworkSetup({ isOpen, onComplete, onApplyTemplate }: Def
     <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-[200]">
       <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl mx-4 max-h-[90vh] overflow-hidden">
         {/* Header */}
-        <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-6">
+        <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-6">
           <div className="text-center">
             <div className="inline-flex items-center justify-center w-16 h-16 bg-white/20 rounded-full mb-4">
               <Sparkles className="h-8 w-8 text-white" />
@@ -442,7 +699,7 @@ export function DefaultNetworkSetup({ isOpen, onComplete, onApplyTemplate }: Def
         <div className="p-8 overflow-y-auto max-h-[calc(90vh-120px)]">
           {/* Initial Selection */}
           {setupMode === 'selection' && (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               {/* User Setup */}
               <button
                 onClick={() => setSetupMode('user')}
@@ -503,6 +760,41 @@ export function DefaultNetworkSetup({ isOpen, onComplete, onApplyTemplate }: Def
                   </div>
                 </div>
               </button>
+
+              {/* Open Saved */}
+              <button
+                onClick={() => setSetupMode('saved')}
+                disabled={savedTopologies.length === 0}
+                className={`group p-8 border-2 rounded-xl transition-all duration-300 ${
+                  savedTopologies.length === 0
+                    ? 'border-gray-200 opacity-50 cursor-not-allowed'
+                    : 'border-gray-200 hover:border-amber-500 hover:shadow-lg'
+                }`}
+              >
+                <div className="text-center">
+                  <div className={`mx-auto w-16 h-16 bg-gradient-to-br rounded-full flex items-center justify-center mb-4 transition-all ${
+                    savedTopologies.length === 0
+                      ? 'from-gray-100 to-gray-200'
+                      : 'from-amber-100 to-amber-200 group-hover:from-amber-200 group-hover:to-amber-300'
+                  }`}>
+                    <FolderOpen className={`h-8 w-8 ${savedTopologies.length === 0 ? 'text-gray-400' : 'text-amber-600'}`} />
+                  </div>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-3">Open Saved</h3>
+                  <p className="text-gray-600 text-sm leading-relaxed">
+                    Continue working on your previously saved network topologies.
+                  </p>
+                  {savedTopologies.length > 0 ? (
+                    <div className="mt-4 inline-flex items-center text-xs text-amber-600 bg-amber-50 px-3 py-1 rounded-full">
+                      <Clock className="h-3 w-3 mr-1" />
+                      {savedTopologies.length} saved
+                    </div>
+                  ) : (
+                    <div className="mt-4 text-xs text-gray-400">
+                      No saved topologies yet
+                    </div>
+                  )}
+                </div>
+              </button>
             </div>
           )}
 
@@ -518,7 +810,7 @@ export function DefaultNetworkSetup({ isOpen, onComplete, onApplyTemplate }: Def
               </div>
 
               {/* Network Preview */}
-              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 mb-8 border border-blue-200">
+              <div className="bg-gradient-to-r from-blue-50 to-blue-100 rounded-xl p-6 mb-8 border border-blue-200">
                 <h3 className="text-sm font-medium text-gray-700 mb-4 text-center">Your network foundation:</h3>
                 <div className="flex items-center justify-center space-x-6">
                   <div className="text-center">
@@ -598,7 +890,7 @@ export function DefaultNetworkSetup({ isOpen, onComplete, onApplyTemplate }: Def
 
               {!aiProcessingComplete && (
                 <>
-                  <div className="bg-gradient-to-br from-purple-50 to-indigo-50 rounded-lg p-4 mb-4 border border-purple-200">
+                  <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg p-4 mb-4 border border-purple-200">
                     <div className="flex items-start">
                       <Brain className="h-5 w-5 text-purple-600 mr-2 mt-0.5 flex-shrink-0" />
                       <div>
@@ -808,6 +1100,100 @@ export function DefaultNetworkSetup({ isOpen, onComplete, onApplyTemplate }: Def
                   ← Back to Options
                 </button>
               </div>
+            </div>
+          )}
+
+          {/* Saved Topologies */}
+          {setupMode === 'saved' && (
+            <div className="max-w-5xl mx-auto">
+              <div className="text-center mb-6">
+                <div className="inline-flex items-center justify-center w-12 h-12 bg-amber-100 rounded-full mb-4">
+                  <FolderOpen className="h-6 w-6 text-amber-600" />
+                </div>
+                <h2 className="text-xl font-semibold text-gray-900 mb-1">Your Saved Topologies</h2>
+                <p className="text-sm text-gray-600">Select a topology to continue working on it</p>
+              </div>
+
+              {savedTopologies.length === 0 ? (
+                <div className="text-center py-16">
+                  <div className="inline-flex items-center justify-center w-20 h-20 bg-gray-100 rounded-full mb-4">
+                    <FolderOpen className="h-10 w-10 text-gray-400" />
+                  </div>
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">No Saved Topologies</h3>
+                  <p className="text-gray-600 mb-6">You haven't saved any network topologies yet.</p>
+                  <button
+                    onClick={() => setSetupMode('selection')}
+                    className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                  >
+                    Create Your First Network
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+                    {savedTopologies
+                      .sort((a, b) => (b.lastModified || b.savedAt) - (a.lastModified || a.savedAt))
+                      .map((topology) => (
+                        <button
+                          key={topology.id}
+                          onClick={() => handleLoadTopology(topology)}
+                          className="group relative p-6 border-2 border-gray-200 rounded-xl hover:border-amber-500 hover:shadow-lg transition-all duration-200 text-left"
+                        >
+                          <div className="flex items-start justify-between mb-3">
+                            <div className="flex-1">
+                              <h3 className="text-base font-semibold text-gray-900 mb-1 group-hover:text-amber-600 transition-colors">
+                                {topology.name}
+                              </h3>
+                              <p className="text-xs text-gray-500 flex items-center">
+                                <Clock className="h-3 w-3 mr-1" />
+                                {formatDate(topology.lastModified || topology.savedAt)}
+                              </p>
+                            </div>
+                            <button
+                              onClick={(e) => handleDeleteTopology(topology.id, e)}
+                              className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
+                              title="Delete topology"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          </div>
+
+                          {topology.description && (
+                            <p className="text-sm text-gray-600 mb-4 line-clamp-2">
+                              {topology.description}
+                            </p>
+                          )}
+
+                          <div className="flex items-center space-x-4 text-xs text-gray-500 pt-3 border-t border-gray-100">
+                            <div className="flex items-center">
+                              <div className="w-2 h-2 bg-blue-400 rounded-full mr-1.5"></div>
+                              {topology.nodes.length} nodes
+                            </div>
+                            <div className="flex items-center">
+                              <div className="w-2 h-2 bg-green-400 rounded-full mr-1.5"></div>
+                              {topology.edges.length} connections
+                            </div>
+                          </div>
+
+                          <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <div className="bg-amber-100 text-amber-700 text-xs font-medium px-2 py-1 rounded">
+                              Open
+                            </div>
+                          </div>
+                        </button>
+                      ))}
+                  </div>
+
+                  <div className="text-center">
+                    <button
+                      onClick={() => setSetupMode('selection')}
+                      className="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors"
+                    >
+                      ← Back to Options
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
           )}
         </div>
