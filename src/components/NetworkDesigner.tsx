@@ -9,6 +9,7 @@ import { NodeConfigPanel } from './network-designer/NodeConfigPanel';
 import { EdgeConfigPanel } from './network-designer/EdgeConfigPanel';
 import { AbstractionLevelSelector } from './network-designer/AbstractionLevelSelector';
 import { BottomPanel } from './network-designer/panels/BottomPanel';
+import { HistoryDrawer } from './network-designer/HistoryDrawer';
 import { 
   useNetworkHistory, 
   useNetworkManager, 
@@ -130,7 +131,58 @@ export function NetworkDesigner({
     openTemplatesDrawer,
     closeTemplatesDrawer
   } = useTemplatesManager();
-  
+
+  // History drawer state
+  const [showHistoryDrawer, setShowHistoryDrawer] = useState(false);
+  const [topologyHistory, setTopologyHistory] = useState<Array<{
+    id: string;
+    timestamp: number;
+    nodes: NetworkNode[];
+    edges: NetworkEdge[];
+    preview: string;
+  }>>([]);
+
+  // Save topology to history whenever nodes or edges change significantly
+  useEffect(() => {
+    if (nodes.length > 0 || edges.length > 0) {
+      const timer = setTimeout(() => {
+        saveTopologyToHistory();
+      }, 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [nodes, edges]);
+
+  const saveTopologyToHistory = () => {
+    if (nodes.length === 0 && edges.length === 0) return;
+
+    const preview = `${nodes.length} nodes, ${edges.length} connections`;
+    const newHistoryItem = {
+      id: `history-${Date.now()}`,
+      timestamp: Date.now(),
+      nodes: JSON.parse(JSON.stringify(nodes)),
+      edges: JSON.parse(JSON.stringify(edges)),
+      preview
+    };
+
+    setTopologyHistory(prev => {
+      const isDuplicate = prev.some(item =>
+        JSON.stringify(item.nodes) === JSON.stringify(nodes) &&
+        JSON.stringify(item.edges) === JSON.stringify(edges)
+      );
+
+      if (isDuplicate) return prev;
+
+      const newHistory = [newHistoryItem, ...prev];
+      return newHistory.slice(0, 3);
+    });
+  };
+
+  const handleRestoreTopology = (restoredNodes: NetworkNode[], restoredEdges: NetworkEdge[]) => {
+    setNodes(restoredNodes);
+    setEdges(restoredEdges);
+    saveToHistory(restoredNodes, restoredEdges);
+  };
+
   // Edge creation
   const {
     isCreatingEdge,
@@ -651,6 +703,19 @@ export function NetworkDesigner({
     <div className="flex flex-col bg-gray-50 rounded-xl border-2 border-gray-200 relative">
       {/* Main Content Area */}
       <div className="relative h-[800px]" style={{ zIndex: 1 }}>
+        {/* History Drawer Button - Upper left */}
+        {!isReadOnly && abstractionLevel === 'network' && (
+          <button
+            onClick={() => setShowHistoryDrawer(true)}
+            className="absolute top-4 left-4 p-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 hover:border-gray-400 transition-colors shadow-sm z-50"
+            title="View Topology History"
+          >
+            <svg className="h-5 w-5 text-gray-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </button>
+        )}
+
         {/* Abstraction Level Selector - Highest z-index */}
         {!isReadOnly && (
           <div style={{ zIndex: 100 }}>
@@ -815,6 +880,14 @@ export function NetworkDesigner({
           onDeleteCustomTemplate={handleDeleteCustomTemplate}
         />
       </Suspense>
+
+      {/* History Drawer */}
+      <HistoryDrawer
+        isOpen={showHistoryDrawer}
+        onClose={() => setShowHistoryDrawer(false)}
+        history={topologyHistory}
+        onRestoreTopology={handleRestoreTopology}
+      />
     </div>
     </OutcomesProvider>
   );
