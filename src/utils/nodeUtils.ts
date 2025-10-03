@@ -1,10 +1,10 @@
-import { Server, Cloud, Router, Network, Shield, Activity, PanelRight, Menu, Database, Globe, Lock, Feather as Ethernet, Wifi } from 'lucide-react';
+import { Server, Cloud, Router, Network, Shield, Activity, PanelRight, Menu, Database, Globe, Lock, Feather as Ethernet, Wifi, Share2 } from 'lucide-react';
 import { NetworkNode } from '../types';
 
 export const getFunctionIcon = (functionType: string, config?: any) => {
   switch (functionType) {
-    case 'Cloud Router': return Router;
-    case 'Router': return config?.routerType === 'cloud' ? Cloud : Router;
+    case 'Cloud Router': return Share2;
+    case 'Router': return config?.routerType === 'cloud' ? Share2 : Router;
     case 'SDWAN': return PanelRight;
     case 'Firewall': return Shield;
     case 'VNF': return Activity;
