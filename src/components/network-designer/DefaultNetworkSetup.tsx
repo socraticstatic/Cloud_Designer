@@ -760,7 +760,7 @@ export function DefaultNetworkSetup({ isOpen, onComplete, onApplyTemplate }: Def
                   <div className="mx-auto w-16 h-16 bg-gradient-to-br from-green-100 to-green-200 rounded-full flex items-center justify-center mb-4 group-hover:from-green-200 group-hover:to-green-300 transition-all">
                     <Layout className="h-8 w-8 text-green-600" />
                   </div>
-                  <h3 className="text-xl font-semibold text-gray-900 mb-3 text-center">Quick Templates</h3>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-3 text-center">Templates</h3>
                   <p className="text-gray-600 text-sm leading-relaxed text-center flex-1">
                     Choose from pre-built enterprise patterns. Get started instantly with proven architectures.
                   </p>
