@@ -1,10 +1,9 @@
 import { useState, useEffect } from 'react';
-import { BrainCircuit as Circuit, Eye, EyeOff } from 'lucide-react';
+import { BrainCircuit as Circuit } from 'lucide-react';
 import type { NetworkNode, NetworkEdge } from '../../types';
-import { ZoomControls } from '../ZoomControls';
-import { PhysicalRackView } from './PhysicalRackView';
 import { Breadcrumb } from './components/Breadcrumb';
 import { RightDetailPanel } from './components/RightDetailPanel';
+import { CleanLogicalView } from './views/CleanLogicalView';
 import {
   Port,
   Circuit as CircuitType,
@@ -29,7 +28,6 @@ export function CircuitView({
   const [selectedDevice, setSelectedDevice] = useState<string | null>(selectedNode);
   const [selectedPort, setSelectedPort] = useState<string | null>(null);
   const [selectedCircuit, setSelectedCircuit] = useState<string | null>(null);
-  const [showPorts, setShowPorts] = useState(false);
   
   // Update selected device when selectedNode prop changes
   useEffect(() => {
@@ -205,29 +203,14 @@ export function CircuitView({
 
   return (
     <div className="relative w-full h-full bg-gray-50">
-      {/* Top bar with breadcrumb and controls */}
-      <div className="absolute top-0 left-0 right-0 bg-white border-b border-gray-200 px-6 py-4 z-40 flex items-center justify-between">
+      {/* Top bar with breadcrumb */}
+      <div className="absolute top-0 left-0 right-0 bg-white border-b border-gray-200 px-6 py-4 z-40">
         <Breadcrumb
           selectedDevice={selectedDevice}
           selectedPort={selectedPort}
           selectedCircuit={selectedCircuit}
           onNavigate={handleNavigate}
         />
-
-        <div className="flex items-center space-x-2">
-          <button
-            onClick={() => setShowPorts(!showPorts)}
-            className={`flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
-              showPorts
-                ? 'bg-blue-100 text-blue-700 hover:bg-blue-200'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-            }`}
-            type="button"
-          >
-            {showPorts ? <Eye className="h-4 w-4 mr-1.5" /> : <EyeOff className="h-4 w-4 mr-1.5" />}
-            {showPorts ? 'Hide Ports' : 'Show Ports'}
-          </button>
-        </div>
       </div>
 
       {/* Main content area */}
@@ -250,20 +233,13 @@ export function CircuitView({
             </div>
           </div>
         ) : (
-          <div className="p-8">
-            <div className="max-w-5xl mx-auto">
-              <PhysicalRackView
-                nodes={nodes}
-                selectedDeviceId={selectedDevice}
-                onSelectDevice={handleDeviceSelect}
-                devicePorts={devicePorts}
-                selectedPort={selectedPort}
-                onSelectPort={handlePortSelect}
-                circuits={circuits}
-                showPorts={showPorts}
-              />
-            </div>
-          </div>
+          <CleanLogicalView
+            nodes={nodes}
+            circuits={circuits}
+            devicePorts={devicePorts}
+            selectedDevice={selectedDevice}
+            onSelectDevice={handleDeviceSelect}
+          />
         )}
       </div>
 
