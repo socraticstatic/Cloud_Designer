@@ -178,9 +178,14 @@ export function NetworkDesigner({
   };
 
   const handleRestoreTopology = (restoredNodes: NetworkNode[], restoredEdges: NetworkEdge[]) => {
-    setNodes(restoredNodes);
+    const nodesWithIcons = restoredNodes.map(node => ({
+      ...node,
+      icon: getNodeIcon(node.type, node.functionType, node.cloudProvider, node.config)
+    }));
+
+    setNodes(nodesWithIcons);
     setEdges(restoredEdges);
-    saveToHistory(restoredNodes, restoredEdges);
+    saveToHistory(nodesWithIcons, restoredEdges);
   };
 
   // Edge creation
