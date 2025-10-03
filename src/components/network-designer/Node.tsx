@@ -130,9 +130,9 @@ export const Node = memo(function Node({
           absolute w-16 h-16 flex items-center justify-center
           rounded-lg transition-all duration-200
           ${background}
-          ${isReadOnly ? 'cursor-default' : isCreatingEdge ? 'cursor-pointer' : 'cursor-move'}
-          ${isDragging ? 'cursor-grabbing shadow-lg scale-105' : 'cursor-grab shadow-sm hover:shadow-md'}
-          border-2 ${isSelected ? 'border-blue-500' : 'border-gray-200'}
+          ${isReadOnly ? 'cursor-default' : isCreatingEdge ? 'cursor-crosshair' : isDragging ? 'cursor-grabbing' : 'cursor-grab'}
+          ${isDragging ? 'shadow-lg scale-105' : 'shadow-sm hover:shadow-md'}
+          border-2 ${isSelected ? 'border-blue-500' : isCreatingEdge ? 'border-blue-400 border-dashed' : 'border-gray-200'}
         `}
         style={{
           transform: `translate(${position.x}px, ${position.y}px)`,
@@ -140,9 +140,15 @@ export const Node = memo(function Node({
         }}
         onMouseEnter={() => !isReadOnly && !isDragging && setShowTooltip(true)}
         onMouseLeave={() => setShowTooltip(false)}
+        onClick={(e) => {
+          if (isCreatingEdge && !isReadOnly) {
+            e.stopPropagation();
+            onClick();
+          }
+        }}
         onDoubleClick={(e) => {
           e.stopPropagation();
-          if (!isReadOnly) {
+          if (!isReadOnly && !isCreatingEdge) {
             onClick();
             setShowTooltip(false);
           }
