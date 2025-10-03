@@ -11,13 +11,13 @@ interface BottomPanelProps {
 
 export function BottomPanel({ viewMode, setViewMode, children }: BottomPanelProps) {
   return (
-    <div className="min-h-[300px] bg-white border-t border-gray-200 p-4">
-      <ViewModeTabs 
-        viewMode={viewMode} 
-        onChange={setViewMode} 
+    <div className="min-h-[300px] bg-white border-t border-gray-200">
+      <ViewModeTabs
+        viewMode={viewMode}
+        onChange={setViewMode}
       />
-      
-      <div className="mt-4">
+
+      <div className="p-4">
         {children}
       </div>
     </div>

@@ -140,21 +140,21 @@ export function ReactiveAIPanel({ nodes, edges, onApplyRecommendation }: Reactiv
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
-      case 'critical': return 'border-red-500 bg-red-50';
-      case 'high': return 'border-orange-500 bg-orange-50';
-      case 'medium': return 'border-yellow-500 bg-yellow-50';
-      case 'low': return 'border-blue-500 bg-blue-50';
-      default: return 'border-gray-500 bg-gray-50';
+      case 'critical': return 'border-red-200 bg-white';
+      case 'high': return 'border-orange-200 bg-white';
+      case 'medium': return 'border-blue-200 bg-white';
+      case 'low': return 'border-gray-200 bg-white';
+      default: return 'border-gray-200 bg-white';
     }
   };
 
   const getPriorityBadgeColor = (priority: string) => {
     switch (priority) {
-      case 'critical': return 'bg-red-500 text-white';
-      case 'high': return 'bg-orange-500 text-white';
-      case 'medium': return 'bg-yellow-500 text-white';
-      case 'low': return 'bg-blue-500 text-white';
-      default: return 'bg-gray-500 text-white';
+      case 'critical': return 'bg-red-100 text-red-700 border border-red-300';
+      case 'high': return 'bg-orange-100 text-orange-700 border border-orange-300';
+      case 'medium': return 'bg-blue-100 text-blue-700 border border-blue-300';
+      case 'low': return 'bg-gray-100 text-gray-700 border border-gray-300';
+      default: return 'bg-gray-100 text-gray-700 border border-gray-300';
     }
   };
 
@@ -182,14 +182,9 @@ export function ReactiveAIPanel({ nodes, edges, onApplyRecommendation }: Reactiv
   if (isAnalyzing) {
     return (
       <div className="flex flex-col items-center justify-center h-96">
-        <div className="relative">
-          <div className="w-24 h-24 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center mb-6 animate-pulse">
-            <Sparkles className="h-12 w-12 text-white" />
-          </div>
-          <Loader className="absolute top-0 left-0 w-24 h-24 text-blue-600 animate-spin" style={{ strokeWidth: 1 }} />
-        </div>
-        <h3 className="text-xl font-semibold text-gray-900 mb-2">Analyzing Your Requirements</h3>
-        <p className="text-gray-600">AI is generating personalized recommendations...</p>
+        <Loader className="h-12 w-12 text-blue-600 animate-spin mb-4" />
+        <h3 className="text-lg font-semibold text-gray-900 mb-2">Analyzing Requirements</h3>
+        <p className="text-sm text-gray-600">Generating recommendations...</p>
       </div>
     );
   }
@@ -207,60 +202,48 @@ export function ReactiveAIPanel({ nodes, edges, onApplyRecommendation }: Reactiv
   }
 
   return (
-    <div className="space-y-6">
-      <div className="bg-gradient-to-r from-blue-50 via-purple-50 to-pink-50 rounded-xl p-6 border-2 border-blue-200">
-        <div className="flex items-center justify-between mb-4">
+    <div className="space-y-4">
+      <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
+        <div className="flex items-center justify-between">
           <div className="flex items-center">
-            <div className="p-3 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl mr-4 shadow-lg">
-              <Sparkles className="h-6 w-6 text-white" />
-            </div>
+            <Sparkles className="h-5 w-5 text-blue-600 mr-3" />
             <div>
-              <h2 className="text-xl font-bold text-gray-900">AI-Generated Recommendations</h2>
-              <p className="text-gray-600">Based on your business outcomes</p>
+              <h2 className="text-base font-semibold text-gray-900">AI Recommendations</h2>
+              <p className="text-sm text-gray-600">Based on your outcomes</p>
             </div>
           </div>
           <div className="text-right">
-            <div className="text-2xl font-bold text-blue-600">{recommendations.length}</div>
-            <div className="text-sm text-gray-600">Suggestions</div>
-          </div>
-        </div>
-
-        <div className="bg-white/60 backdrop-blur rounded-lg p-4">
-          <div className="flex items-start space-x-3">
-            <AlertCircle className="h-5 w-5 text-blue-600 mt-0.5" />
-            <div className="text-sm text-gray-700">
-              <span className="font-semibold">Outcome-Driven Design:</span> These recommendations are specifically tailored to achieve
-              your {outcomes.latency}ms latency, {outcomes.bandwidth}Mbps bandwidth, and {outcomes.availability}% availability targets.
-            </div>
+            <div className="text-xl font-semibold text-blue-600">{recommendations.length}</div>
+            <div className="text-xs text-gray-500">Found</div>
           </div>
         </div>
       </div>
 
-      <div className="grid gap-4">
+      <div className="grid gap-3">
         {recommendations.map((rec) => (
           <div
             key={rec.id}
-            className={`border-2 rounded-xl p-5 transition-all hover:shadow-lg ${getPriorityColor(rec.priority)}`}
+            className={`border rounded-lg p-4 transition-all hover:shadow-md ${getPriorityColor(rec.priority)}`}
           >
-            <div className="flex items-start justify-between mb-3">
-              <div className="flex items-start space-x-3">
-                <div className={`p-2 rounded-lg ${rec.color === 'yellow' ? 'bg-yellow-500' : rec.color === 'green' ? 'bg-green-500' : rec.color === 'red' ? 'bg-red-500' : rec.color === 'purple' ? 'bg-purple-500' : 'bg-blue-500'}`}>
-                  <rec.icon className="h-5 w-5 text-white" />
+            <div className="flex items-start justify-between mb-2">
+              <div className="flex items-start space-x-3 flex-1">
+                <div className="p-1.5 rounded bg-gray-100">
+                  <rec.icon className="h-4 w-4 text-gray-600" />
                 </div>
                 <div className="flex-1">
-                  <h3 className="text-lg font-semibold text-gray-900">{rec.title}</h3>
-                  <p className="text-gray-700 mt-1">{rec.description}</p>
+                  <h3 className="text-sm font-semibold text-gray-900">{rec.title}</h3>
+                  <p className="text-sm text-gray-600 mt-1">{rec.description}</p>
                 </div>
               </div>
-              <span className={`px-3 py-1 rounded-full text-xs font-semibold uppercase ${getPriorityBadgeColor(rec.priority)}`}>
+              <span className={`px-2 py-0.5 rounded text-xs font-medium ${getPriorityBadgeColor(rec.priority)}`}>
                 {rec.priority}
               </span>
             </div>
 
-            <div className="flex items-start space-x-2 mt-3 pt-3 border-t border-gray-300">
-              <Target className="h-4 w-4 text-gray-600 mt-0.5" />
-              <p className="text-sm text-gray-600">
-                <span className="font-medium">Reason:</span> {rec.reason}
+            <div className="flex items-start space-x-2 mt-2 pt-2 border-t border-gray-200">
+              <Target className="h-3.5 w-3.5 text-gray-500 mt-0.5" />
+              <p className="text-xs text-gray-600">
+                {rec.reason}
               </p>
             </div>
 
@@ -268,10 +251,10 @@ export function ReactiveAIPanel({ nodes, edges, onApplyRecommendation }: Reactiv
               onClick={() => {
                 console.log('Apply recommendation:', rec.id);
               }}
-              className="mt-4 w-full px-4 py-2 bg-white border-2 border-gray-300 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-all flex items-center justify-center font-medium text-gray-700 hover:text-blue-700"
+              className="mt-3 w-full px-3 py-1.5 bg-white border border-gray-300 rounded hover:border-blue-500 hover:bg-blue-50 transition-colors flex items-center justify-center text-sm font-medium text-gray-700 hover:text-blue-700"
             >
-              Apply Recommendation
-              <ArrowRight className="h-4 w-4 ml-2" />
+              Apply
+              <ArrowRight className="h-3.5 w-3.5 ml-1.5" />
             </button>
           </div>
         ))}
@@ -279,10 +262,10 @@ export function ReactiveAIPanel({ nodes, edges, onApplyRecommendation }: Reactiv
 
       <button
         onClick={analyzeAndRecommend}
-        className="w-full px-4 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:from-blue-700 hover:to-purple-700 flex items-center justify-center font-semibold shadow-lg"
+        className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center justify-center text-sm font-medium transition-colors"
       >
-        <Sparkles className="h-5 w-5 mr-2" />
-        Re-analyze with Current Network
+        <Sparkles className="h-4 w-4 mr-2" />
+        Re-analyze
       </button>
     </div>
   );
