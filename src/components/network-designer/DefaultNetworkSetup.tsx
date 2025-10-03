@@ -839,9 +839,9 @@ export function DefaultNetworkSetup({ isOpen, onComplete, onApplyTemplate }: Def
                   
                   <div className="text-center">
                     <div className="w-14 h-14 bg-purple-100 rounded-xl flex items-center justify-center mb-2">
-                      <Cloud className="h-7 w-7 text-purple-600" />
+                      <Router className="h-7 w-7 text-purple-600" />
                     </div>
-                    <span className="text-xs font-medium text-gray-600">Your Router</span>
+                    <span className="text-xs font-medium text-gray-600">Cloud Router</span>
                   </div>
                 </div>
               </div>
