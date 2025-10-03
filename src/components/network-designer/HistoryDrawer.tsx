@@ -76,7 +76,7 @@ export function HistoryDrawer({ isOpen, onClose, history, onRestoreTopology }: H
           ) : (
             <div className="space-y-3">
               <p className="text-xs text-gray-500 uppercase font-medium">
-                Last 3 Topologies
+                {history.length === 1 ? 'Saved Topology' : `Last ${history.length} Topologies`}
               </p>
               {history.map((item, index) => {
                 const stats = getTopologyStats(item.nodes, item.edges);
