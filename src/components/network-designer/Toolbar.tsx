@@ -99,15 +99,15 @@ export function Toolbar({
       className="absolute bottom-6 left-1/2 transform -translate-x-1/2 bg-white rounded-lg shadow-sm border border-gray-200 p-2 flex items-center space-x-1 min-w-max" 
       style={{ zIndex: 100 }}
     >
-      {/* Templates Button - Added before Function */}
+      {/* Choose Button - Added before Function */}
       <button
         onClick={onOpenTemplates}
         className="px-3 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg flex items-center space-x-2 transition-colors"
-        title="Open Templates"
+        title="Choose Template"
         type="button"
       >
         <Layout className="h-5 w-5" />
-        <span className="text-sm">Templates</span>
+        <span className="text-sm">Choose</span>
       </button>
       
       {/* Small separator line */}

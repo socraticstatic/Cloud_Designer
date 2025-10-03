@@ -709,7 +709,7 @@ export function DefaultNetworkSetup({ isOpen, onComplete, onApplyTemplate }: Def
           {/* Initial Selection */}
           {setupMode === 'selection' && (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {/* User Setup */}
+              {/* Create */}
               <button
                 onClick={() => setSetupMode('user')}
                 className="group p-8 border-2 border-gray-200 rounded-xl hover:border-blue-500 hover:shadow-lg transition-all duration-300 flex flex-col"
@@ -718,7 +718,7 @@ export function DefaultNetworkSetup({ isOpen, onComplete, onApplyTemplate }: Def
                   <div className="mx-auto w-16 h-16 bg-gradient-to-br from-blue-100 to-blue-200 rounded-full flex items-center justify-center mb-4 group-hover:from-blue-200 group-hover:to-blue-300 transition-all">
                     <Sparkles className="h-8 w-8 text-blue-600" />
                   </div>
-                  <h3 className="text-xl font-semibold text-gray-900 mb-3 text-center">User Setup</h3>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-3 text-center">Create</h3>
                   <p className="text-gray-600 text-sm leading-relaxed text-center flex-1">
                     Start with AT&T Core and customize your cloud router. Perfect for creating tailored network designs.
                   </p>
@@ -729,7 +729,7 @@ export function DefaultNetworkSetup({ isOpen, onComplete, onApplyTemplate }: Def
                 </div>
               </button>
 
-              {/* AI Import */}
+              {/* Import */}
               <button
                 onClick={() => setSetupMode('ai')}
                 className="group p-8 border-2 border-gray-200 rounded-xl hover:border-purple-500 hover:shadow-lg transition-all duration-300 flex flex-col"
@@ -738,7 +738,7 @@ export function DefaultNetworkSetup({ isOpen, onComplete, onApplyTemplate }: Def
                   <div className="mx-auto w-16 h-16 bg-gradient-to-br from-purple-100 to-purple-200 rounded-full flex items-center justify-center mb-4 group-hover:from-purple-200 group-hover:to-purple-300 transition-all">
                     <Brain className="h-8 w-8 text-purple-600" />
                   </div>
-                  <h3 className="text-xl font-semibold text-gray-900 mb-3 text-center">AI Import</h3>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-3 text-center">Import</h3>
                   <p className="text-gray-600 text-sm leading-relaxed text-center flex-1">
                     Upload your network diagram and let AI recreate it automatically. Supports LucidChart, Visio, and more.
                   </p>
@@ -772,7 +772,7 @@ export function DefaultNetworkSetup({ isOpen, onComplete, onApplyTemplate }: Def
                 </div>
               </button>
 
-              {/* Open Saved */}
+              {/* Open */}
               <button
                 onClick={() => setSetupMode('saved')}
                 disabled={savedTopologies.length === 0}
@@ -790,7 +790,7 @@ export function DefaultNetworkSetup({ isOpen, onComplete, onApplyTemplate }: Def
                   }`}>
                     <FolderOpen className={`h-8 w-8 ${savedTopologies.length === 0 ? 'text-gray-400' : 'text-amber-600'}`} />
                   </div>
-                  <h3 className="text-xl font-semibold text-gray-900 mb-3 text-center">Open Saved</h3>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-3 text-center">Open</h3>
                   <p className="text-gray-600 text-sm leading-relaxed text-center flex-1">
                     Continue working on your previously saved network topologies.
                   </p>
@@ -811,7 +811,7 @@ export function DefaultNetworkSetup({ isOpen, onComplete, onApplyTemplate }: Def
             </div>
           )}
 
-          {/* User Setup Flow */}
+          {/* Create Flow */}
           {setupMode === 'user' && (
             <div className="max-w-lg mx-auto">
               <div className="text-center mb-8">
@@ -890,7 +890,7 @@ export function DefaultNetworkSetup({ isOpen, onComplete, onApplyTemplate }: Def
             </div>
           )}
 
-          {/* AI Import Flow */}
+          {/* Import Flow */}
           {setupMode === 'ai' && (
             <div className="max-w-xl mx-auto">
               <div className="text-center mb-4">
@@ -907,7 +907,7 @@ export function DefaultNetworkSetup({ isOpen, onComplete, onApplyTemplate }: Def
                     <div className="flex items-start">
                       <Brain className="h-5 w-5 text-purple-600 mr-2 mt-0.5 flex-shrink-0" />
                       <div>
-                        <h3 className="text-sm font-medium text-purple-900 mb-2">How AI Import Works</h3>
+                        <h3 className="text-sm font-medium text-purple-900 mb-2">How Import Works</h3>
                         <div className="grid grid-cols-2 gap-2 text-xs text-purple-700">
                           <div className="flex items-center">
                             <span className="w-1.5 h-1.5 bg-purple-400 rounded-full mr-1.5"></span>
