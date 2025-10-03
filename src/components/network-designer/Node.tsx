@@ -37,6 +37,7 @@ export const Node = memo(function Node({
   const [nodeName, setNodeName] = useState(node.name);
   const [hasDragged, setHasDragged] = useState(false);
   const dragStartPos = useRef({ x: 0, y: 0 });
+  const [showTooltip, setShowTooltip] = useState(false);
 
   // Track node position
   const [position, setPosition] = useState({ x: node.x, y: node.y });
@@ -137,15 +138,19 @@ export const Node = memo(function Node({
           transform: `translate(${position.x}px, ${position.y}px)`,
           zIndex: Z_INDEX.NODES
         }}
+        onMouseEnter={() => !isReadOnly && !isDragging && setShowTooltip(true)}
+        onMouseLeave={() => setShowTooltip(false)}
         onDoubleClick={(e) => {
           e.stopPropagation();
           if (!isReadOnly) {
             onClick();
+            setShowTooltip(false);
           }
         }}
         onMouseDown={(e) => {
           if (!isCreatingEdge && nodeRef.current && !isReadOnly) {
             e.stopPropagation();
+            setShowTooltip(false);
             const rect = nodeRef.current.getBoundingClientRect();
 
             // Store initial mouse position for drag detection
@@ -228,6 +233,19 @@ export const Node = memo(function Node({
             <div className="absolute top-1/2 -translate-y-1/2 -left-2 w-4 h-4 rounded-full bg-blue-100 border-2 border-blue-500" />
             <div className="absolute top-1/2 -translate-y-1/2 -right-2 w-4 h-4 rounded-full bg-blue-100 border-2 border-blue-500" />
           </>
+        )}
+
+        {/* Tooltip */}
+        {showTooltip && !isEditingName && !isCreatingEdge && (
+          <div
+            className="absolute -top-12 left-1/2 transform -translate-x-1/2 px-3 py-1.5 bg-gray-900 text-white text-xs rounded-lg whitespace-nowrap pointer-events-none z-50 shadow-lg"
+            style={{ fontSize: `${Math.max(11, 11 / zoomLevel)}px` }}
+          >
+            Double-click to configure
+            <div className="absolute top-full left-1/2 transform -translate-x-1/2 -mt-px">
+              <div className="border-4 border-transparent border-t-gray-900"></div>
+            </div>
+          </div>
         )}
       </div>
 
