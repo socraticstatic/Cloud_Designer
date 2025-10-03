@@ -630,7 +630,16 @@ export function DefaultNetworkSetup({ isOpen, onComplete, onApplyTemplate }: Def
 
   const handleLoadTopology = (topology: SavedTopology) => {
     if (onApplyTemplate) {
-      onApplyTemplate(topology.nodes, topology.edges);
+      const nodesWithIcons = topology.nodes.map(node => ({
+        ...node,
+        icon: getNodeIcon(
+          node.type,
+          node.functionType,
+          node.config?.networkType,
+          node.config
+        )
+      }));
+      onApplyTemplate(nodesWithIcons, topology.edges);
     }
     resetForm();
 
