@@ -712,37 +712,39 @@ export function DefaultNetworkSetup({ isOpen, onComplete, onApplyTemplate }: Def
               {/* User Setup */}
               <button
                 onClick={() => setSetupMode('user')}
-                className="group p-8 border-2 border-gray-200 rounded-xl hover:border-blue-500 hover:shadow-lg transition-all duration-300"
+                className="group p-8 border-2 border-gray-200 rounded-xl hover:border-blue-500 hover:shadow-lg transition-all duration-300 flex flex-col"
               >
-                <div className="text-center">
+                <div className="flex-1 flex flex-col">
                   <div className="mx-auto w-16 h-16 bg-gradient-to-br from-blue-100 to-blue-200 rounded-full flex items-center justify-center mb-4 group-hover:from-blue-200 group-hover:to-blue-300 transition-all">
                     <Sparkles className="h-8 w-8 text-blue-600" />
                   </div>
-                  <h3 className="text-xl font-semibold text-gray-900 mb-3">User Setup</h3>
-                  <p className="text-gray-600 text-sm leading-relaxed">
+                  <h3 className="text-xl font-semibold text-gray-900 mb-3 text-center">User Setup</h3>
+                  <p className="text-gray-600 text-sm leading-relaxed text-center flex-1">
                     Start with AT&T Core and customize your cloud router. Perfect for creating tailored network designs.
                   </p>
-                  <div className="mt-4 flex justify-center space-x-2">
-                    <div className="w-3 h-3 bg-orange-400 rounded-full"></div>
-                    <div className="w-3 h-3 bg-purple-400 rounded-full"></div>
-                  </div>
+                </div>
+                <div className="mt-4 flex justify-center space-x-2">
+                  <div className="w-3 h-3 bg-orange-400 rounded-full"></div>
+                  <div className="w-3 h-3 bg-purple-400 rounded-full"></div>
                 </div>
               </button>
 
               {/* AI Import */}
               <button
                 onClick={() => setSetupMode('ai')}
-                className="group p-8 border-2 border-gray-200 rounded-xl hover:border-purple-500 hover:shadow-lg transition-all duration-300"
+                className="group p-8 border-2 border-gray-200 rounded-xl hover:border-purple-500 hover:shadow-lg transition-all duration-300 flex flex-col"
               >
-                <div className="text-center">
+                <div className="flex-1 flex flex-col">
                   <div className="mx-auto w-16 h-16 bg-gradient-to-br from-purple-100 to-purple-200 rounded-full flex items-center justify-center mb-4 group-hover:from-purple-200 group-hover:to-purple-300 transition-all">
                     <Brain className="h-8 w-8 text-purple-600" />
                   </div>
-                  <h3 className="text-xl font-semibold text-gray-900 mb-3">AI Import</h3>
-                  <p className="text-gray-600 text-sm leading-relaxed">
+                  <h3 className="text-xl font-semibold text-gray-900 mb-3 text-center">AI Import</h3>
+                  <p className="text-gray-600 text-sm leading-relaxed text-center flex-1">
                     Upload your network diagram and let AI recreate it automatically. Supports LucidChart, Visio, and more.
                   </p>
-                  <div className="mt-4 inline-flex items-center text-xs text-purple-600 bg-purple-50 px-3 py-1 rounded-full">
+                </div>
+                <div className="mt-4 flex justify-center">
+                  <div className="inline-flex items-center text-xs text-purple-600 bg-purple-50 px-3 py-1 rounded-full">
                     <Zap className="h-3 w-3 mr-1" />
                     Powered by AI
                   </div>
@@ -752,21 +754,21 @@ export function DefaultNetworkSetup({ isOpen, onComplete, onApplyTemplate }: Def
               {/* Templates */}
               <button
                 onClick={() => setSetupMode('templates')}
-                className="group p-8 border-2 border-gray-200 rounded-xl hover:border-green-500 hover:shadow-lg transition-all duration-300"
+                className="group p-8 border-2 border-gray-200 rounded-xl hover:border-green-500 hover:shadow-lg transition-all duration-300 flex flex-col"
               >
-                <div className="text-center">
+                <div className="flex-1 flex flex-col">
                   <div className="mx-auto w-16 h-16 bg-gradient-to-br from-green-100 to-green-200 rounded-full flex items-center justify-center mb-4 group-hover:from-green-200 group-hover:to-green-300 transition-all">
                     <Layout className="h-8 w-8 text-green-600" />
                   </div>
-                  <h3 className="text-xl font-semibold text-gray-900 mb-3">Quick Templates</h3>
-                  <p className="text-gray-600 text-sm leading-relaxed">
+                  <h3 className="text-xl font-semibold text-gray-900 mb-3 text-center">Quick Templates</h3>
+                  <p className="text-gray-600 text-sm leading-relaxed text-center flex-1">
                     Choose from pre-built enterprise patterns. Get started instantly with proven architectures.
                   </p>
-                  <div className="mt-4 flex justify-center space-x-1">
-                    <div className="w-2 h-2 bg-green-400 rounded-full"></div>
-                    <div className="w-2 h-2 bg-green-400 rounded-full"></div>
-                    <div className="w-2 h-2 bg-green-400 rounded-full"></div>
-                  </div>
+                </div>
+                <div className="mt-4 flex justify-center space-x-1">
+                  <div className="w-2 h-2 bg-green-400 rounded-full"></div>
+                  <div className="w-2 h-2 bg-green-400 rounded-full"></div>
+                  <div className="w-2 h-2 bg-green-400 rounded-full"></div>
                 </div>
               </button>
 
@@ -774,13 +776,13 @@ export function DefaultNetworkSetup({ isOpen, onComplete, onApplyTemplate }: Def
               <button
                 onClick={() => setSetupMode('saved')}
                 disabled={savedTopologies.length === 0}
-                className={`group p-8 border-2 rounded-xl transition-all duration-300 ${
+                className={`group p-8 border-2 rounded-xl transition-all duration-300 flex flex-col ${
                   savedTopologies.length === 0
                     ? 'border-gray-200 opacity-50 cursor-not-allowed'
                     : 'border-gray-200 hover:border-amber-500 hover:shadow-lg'
                 }`}
               >
-                <div className="text-center">
+                <div className="flex-1 flex flex-col">
                   <div className={`mx-auto w-16 h-16 bg-gradient-to-br rounded-full flex items-center justify-center mb-4 transition-all ${
                     savedTopologies.length === 0
                       ? 'from-gray-100 to-gray-200'
@@ -788,17 +790,19 @@ export function DefaultNetworkSetup({ isOpen, onComplete, onApplyTemplate }: Def
                   }`}>
                     <FolderOpen className={`h-8 w-8 ${savedTopologies.length === 0 ? 'text-gray-400' : 'text-amber-600'}`} />
                   </div>
-                  <h3 className="text-xl font-semibold text-gray-900 mb-3">Open Saved</h3>
-                  <p className="text-gray-600 text-sm leading-relaxed">
+                  <h3 className="text-xl font-semibold text-gray-900 mb-3 text-center">Open Saved</h3>
+                  <p className="text-gray-600 text-sm leading-relaxed text-center flex-1">
                     Continue working on your previously saved network topologies.
                   </p>
+                </div>
+                <div className="mt-4 flex justify-center">
                   {savedTopologies.length > 0 ? (
-                    <div className="mt-4 inline-flex items-center text-xs text-amber-600 bg-amber-50 px-3 py-1 rounded-full">
+                    <div className="inline-flex items-center text-xs text-amber-600 bg-amber-50 px-3 py-1 rounded-full">
                       <Clock className="h-3 w-3 mr-1" />
                       {savedTopologies.length} saved
                     </div>
                   ) : (
-                    <div className="mt-4 text-xs text-gray-400">
+                    <div className="text-xs text-gray-400">
                       No saved topologies yet
                     </div>
                   )}
