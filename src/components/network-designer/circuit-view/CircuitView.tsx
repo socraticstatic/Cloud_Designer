@@ -1,18 +1,13 @@
-import { useState, useRef, useEffect } from 'react';
-import { BrainCircuit as Circuit } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { BrainCircuit as Circuit, Eye, EyeOff } from 'lucide-react';
 import type { NetworkNode, NetworkEdge } from '../../types';
-import { CircuitDetails } from './CircuitDetails';
 import { ZoomControls } from '../ZoomControls';
 import { PhysicalRackView } from './PhysicalRackView';
-import { LogicalView } from './views/LogicalView';
-import { PhysicalView } from './views/PhysicalView';
-import { EmptyView } from './views/EmptyView';
-import { ViewModeSelector } from './components/ViewModeSelector';
-import { useDraggablePanel } from './hooks/useDraggablePanel';
-import { 
+import { Breadcrumb } from './components/Breadcrumb';
+import { RightDetailPanel } from './components/RightDetailPanel';
+import {
   Port,
   Circuit as CircuitType,
-  ViewMode,
   DevicePortsMap
 } from './CircuitTypes';
 
@@ -34,13 +29,7 @@ export function CircuitView({
   const [selectedDevice, setSelectedDevice] = useState<string | null>(selectedNode);
   const [selectedPort, setSelectedPort] = useState<string | null>(null);
   const [selectedCircuit, setSelectedCircuit] = useState<string | null>(null);
-  const [zoomLevel, setZoomLevel] = useState(1);
-  const [viewMode, setViewMode] = useState<ViewMode>({ mode: 'logical' });
-  
-  const containerRef = useRef<HTMLDivElement>(null);
-  
-  // Use the draggable panel hook
-  const { panelPositions, startDragging, isDragging } = useDraggablePanel(containerRef);
+  const [showPorts, setShowPorts] = useState(false);
   
   // Update selected device when selectedNode prop changes
   useEffect(() => {
@@ -183,61 +172,76 @@ export function CircuitView({
   const handleDeviceSelect = (deviceId: string) => {
     const node = nodes.find(n => n.id === deviceId);
     if (!node) return;
-    
+
     setSelectedDevice(deviceId);
     onNodeSelect(node);
     setSelectedPort(null);
     setSelectedCircuit(null);
-    
-    if (viewMode.mode === 'rack') {
-      setViewMode({ mode: 'rack', deviceId });
+  };
+
+  const handlePortSelect = (portId: string | null) => {
+    setSelectedPort(portId);
+    setSelectedCircuit(null);
+  };
+
+  const handleNavigate = (level: 'rack' | 'device' | 'port') => {
+    if (level === 'rack') {
+      setSelectedDevice(null);
+      setSelectedPort(null);
+      setSelectedCircuit(null);
+      onNodeSelect(null);
+    } else if (level === 'device') {
+      setSelectedPort(null);
+      setSelectedCircuit(null);
     }
   };
-  
-  // Zoom controls
-  const handleZoomIn = () => {
-    setZoomLevel(Math.min(zoomLevel + 0.2, 2));
-  };
-  
-  const handleZoomOut = () => {
-    setZoomLevel(Math.max(zoomLevel - 0.2, 0.6));
-  };
-  
-  const handleZoomReset = () => {
-    setZoomLevel(1);
-  };
-  
-  // Switch between logical, physical and rack view modes
-  const handleViewModeChange = (mode: 'logical' | 'physical' | 'rack') => {
-    setViewMode({ mode, deviceId: selectedDevice || undefined });
+
+  const handleCloseDetail = () => {
+    setSelectedDevice(null);
+    setSelectedPort(null);
+    setSelectedCircuit(null);
+    onNodeSelect(null);
   };
 
   return (
-    <div className="relative w-full h-full bg-gray-50" ref={containerRef}>
-      {/* Zoom controls */}
-      <div className="absolute top-4 right-4 z-[60]">
-        <ZoomControls
-          onZoomIn={handleZoomIn}
-          onZoomOut={handleZoomOut}
-          onReset={handleZoomReset}
+    <div className="relative w-full h-full bg-gray-50">
+      {/* Top bar with breadcrumb and controls */}
+      <div className="absolute top-0 left-0 right-0 bg-white border-b border-gray-200 px-6 py-4 z-40 flex items-center justify-between">
+        <Breadcrumb
+          selectedDevice={selectedDevice}
+          selectedPort={selectedPort}
+          selectedCircuit={selectedCircuit}
+          onNavigate={handleNavigate}
         />
+
+        <div className="flex items-center space-x-2">
+          <button
+            onClick={() => setShowPorts(!showPorts)}
+            className={`flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+              showPorts
+                ? 'bg-blue-100 text-blue-700 hover:bg-blue-200'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            }`}
+            type="button"
+          >
+            {showPorts ? <Eye className="h-4 w-4 mr-1.5" /> : <EyeOff className="h-4 w-4 mr-1.5" />}
+            {showPorts ? 'Hide Ports' : 'Show Ports'}
+          </button>
+        </div>
       </div>
-      
-      {/* Main content container */}
-      <div className="absolute inset-0 overflow-auto">
+
+      {/* Main content area */}
+      <div className="absolute inset-0 top-16 overflow-auto" style={{ right: selectedDevice || selectedPort || selectedCircuit ? '384px' : '0' }}>
         {nodes.length === 0 ? (
-          <div className="absolute inset-0 flex items-center justify-center z-20">
+          <div className="absolute inset-0 flex items-center justify-center">
             <div className="bg-white rounded-xl shadow-lg p-8 max-w-md text-center">
               <Circuit className="h-16 w-16 text-gray-300 mx-auto mb-4" />
               <h3 className="text-xl font-semibold text-gray-900 mb-2">No Network to Visualize</h3>
               <p className="text-gray-600 mb-6">
-                Create your network in the Topo View first, then switch to Infra View to see detailed circuit information.
+                Create your network in the Topo View first, then switch to Infra View to see detailed hardware information.
               </p>
               <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onZoomOut();
-                }}
+                onClick={onZoomOut}
                 className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                 type="button"
               >
@@ -246,94 +250,35 @@ export function CircuitView({
             </div>
           </div>
         ) : (
-          <div className="relative w-full h-full" style={{ minHeight: "700px" }}>
-            {/* Content layers with proper z-index */}
-            <div className="relative w-full h-full" style={{ zIndex: 10 }}>
-              {viewMode.mode === 'logical' && (
-                <LogicalView
-                  nodes={nodes}
-                  selectedDevice={selectedNodeData}
-                  devicePorts={devicePorts}
-                  circuits={circuits}
-                  zoomLevel={zoomLevel}
-                  selectedPort={selectedPort}
-                  selectedCircuit={selectedCircuit}
-                  panelPositions={panelPositions}
-                  onSelectDevice={handleDeviceSelect}
-                  onSelectPort={setSelectedPort}
-                  onSelectCircuit={setSelectedCircuit}
-                  onStartDragging={startDragging}
-                  getConnectedNodes={getConnectedNodes}
-                  isDragging={isDragging}
-                />
-              )}
-              
-              {viewMode.mode === 'physical' && selectedNodeData && (
-                <PhysicalView
-                  selectedNode={selectedNodeData}
-                  devicePorts={devicePorts}
-                  circuits={circuits}
-                  nodes={nodes}
-                  selectedPort={selectedPort}
-                  selectedCircuit={selectedCircuit}
-                  panelPositions={panelPositions}
-                  onSelectPort={setSelectedPort}
-                  onSelectCircuit={setSelectedCircuit}
-                  onSelectDevice={handleDeviceSelect}
-                  onStartDragging={startDragging}
-                  isDragging={isDragging}
-                />
-              )}
-              
-              {viewMode.mode === 'physical' && !selectedNodeData && (
-                <EmptyView 
-                  nodes={nodes}
-                  onSelectDevice={handleDeviceSelect}
-                  onZoomOut={onZoomOut}
-                />
-              )}
-              
-              {viewMode.mode === 'rack' && (
-                <div className="relative p-8">
-                  <div className="max-w-5xl mx-auto">
-                    <PhysicalRackView 
-                      nodes={nodes}
-                      selectedDeviceId={viewMode.deviceId || null}
-                      onSelectDevice={handleDeviceSelect}
-                      devicePorts={devicePorts}
-                      selectedPort={selectedPort}
-                      onSelectPort={setSelectedPort}
-                      circuits={circuits}
-                    />
-                  </div>
-                </div>
-              )}
+          <div className="p-8">
+            <div className="max-w-5xl mx-auto">
+              <PhysicalRackView
+                nodes={nodes}
+                selectedDeviceId={selectedDevice}
+                onSelectDevice={handleDeviceSelect}
+                devicePorts={devicePorts}
+                selectedPort={selectedPort}
+                onSelectPort={handlePortSelect}
+                circuits={circuits}
+                showPorts={showPorts}
+              />
             </div>
           </div>
         )}
       </div>
-      
-      {/* View mode selector */}
-      <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 z-[70]">
-        <ViewModeSelector
-          currentMode={viewMode}
-          onModeChange={handleViewModeChange}
-        />
-      </div>
-      
-      {/* Details Panel */}
-      {(selectedPortData || selectedCircuitData) && (
-        <div className="absolute bottom-20 left-0 right-0 bg-white border-t border-gray-200 p-4 shadow-lg z-[50]">
-          <CircuitDetails 
-            port={selectedPortData}
-            circuit={selectedCircuitData}
-            onClose={() => {
-              setSelectedPort(null);
-              setSelectedCircuit(null);
-            }}
-          />
-        </div>
-      )}
+
+      {/* Right detail panel */}
+      <RightDetailPanel
+        selectedDevice={selectedNodeData}
+        selectedPort={selectedPortData}
+        selectedCircuit={selectedCircuitData}
+        devicePorts={devicePorts}
+        circuits={circuits}
+        nodes={nodes}
+        onClose={handleCloseDetail}
+        onSelectDevice={handleDeviceSelect}
+        onSelectPort={handlePortSelect}
+      />
     </div>
   );
 }

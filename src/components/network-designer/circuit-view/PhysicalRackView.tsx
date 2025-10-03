@@ -37,6 +37,7 @@ interface PhysicalRackViewProps {
   selectedPort: string | null;
   onSelectPort: (portId: string | null) => void;
   circuits: Circuit[];
+  showPorts?: boolean;
 }
 
 // Helper functions moved outside component to ensure they're always in scope
@@ -63,14 +64,15 @@ function getDeviceIcon(node: NetworkNode) {
   return Server;
 }
 
-export function PhysicalRackView({ 
-  nodes, 
-  selectedDeviceId, 
+export function PhysicalRackView({
+  nodes,
+  selectedDeviceId,
   onSelectDevice,
   devicePorts,
   selectedPort,
   onSelectPort,
-  circuits
+  circuits,
+  showPorts = false
 }: PhysicalRackViewProps) {
   const [rackView, setRackView] = useState<'front' | 'back'>('front');
   const [highlightedDevice, setHighlightedDevice] = useState<string | null>(null);
@@ -140,33 +142,35 @@ export function PhysicalRackView({
           <Layers className="h-5 w-5 mr-2" />
           Data Center Rack View
         </h2>
-        
-        <div className="flex space-x-4 items-center">
-          <div className="bg-gray-700 rounded-lg flex">
-            <button
-              onClick={() => setRackView('front')}
-              className={`px-3 py-1.5 text-sm font-medium rounded-lg ${
-                rackView === 'front' 
-                  ? 'bg-blue-600 text-white' 
-                  : 'text-gray-300 hover:text-white'
-              }`}
-              type="button"
-            >
-              Front View
-            </button>
-            <button
-              onClick={() => setRackView('back')}
-              className={`px-3 py-1.5 text-sm font-medium rounded-lg ${
-                rackView === 'back' 
-                  ? 'bg-blue-600 text-white' 
-                  : 'text-gray-300 hover:text-white'
-              }`}
-              type="button"
-            >
-              Back View
-            </button>
+
+        {showPorts && (
+          <div className="flex space-x-4 items-center">
+            <div className="bg-gray-700 rounded-lg flex">
+              <button
+                onClick={() => setRackView('front')}
+                className={`px-3 py-1.5 text-sm font-medium rounded-lg ${
+                  rackView === 'front'
+                    ? 'bg-blue-600 text-white'
+                    : 'text-gray-300 hover:text-white'
+                }`}
+                type="button"
+              >
+                Front View
+              </button>
+              <button
+                onClick={() => setRackView('back')}
+                className={`px-3 py-1.5 text-sm font-medium rounded-lg ${
+                  rackView === 'back'
+                    ? 'bg-blue-600 text-white'
+                    : 'text-gray-300 hover:text-white'
+                }`}
+                type="button"
+              >
+                Back View
+              </button>
+            </div>
           </div>
-        </div>
+        )}
       </div>
       
       <div className="p-6 bg-gradient-to-b from-gray-100 to-gray-200">
@@ -336,7 +340,7 @@ export function PhysicalRackView({
                         )}
                         
                         {/* Rear view with ports */}
-                        {rackView === 'back' && (
+                        {rackView === 'back' && showPorts && (
                           <div className="w-full grid grid-cols-8 gap-1">
                             {visiblePorts.map((port) => (
                               <button
@@ -436,7 +440,7 @@ export function PhysicalRackView({
       </div>
       
       {/* Selected port details */}
-      {selectedPort && (
+      {selectedPort && showPorts && (
         <div className="p-4 border-t border-gray-200 bg-blue-50">
           <h3 className="text-base font-medium text-gray-900 flex items-center mb-3">
             <Cable className="h-5 w-5 mr-2 text-blue-600" />
