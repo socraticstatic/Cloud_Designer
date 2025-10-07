@@ -609,8 +609,108 @@ export function DefaultNetworkSetup({ isOpen, onComplete, onApplyTemplate }: Def
       setError('Cloud router name is required');
       return;
     }
-    
-    onComplete(cloudRouterName.trim());
+
+    if (onApplyTemplate) {
+      const timestamp = Date.now();
+
+      const attCore: NetworkNode = {
+        id: `node-${timestamp}-att-core`,
+        type: 'network',
+        x: 250,
+        y: 350,
+        name: 'AT&T Core',
+        icon: getNodeIcon('network', undefined, 'at&t core'),
+        status: 'inactive',
+        config: {
+          networkType: 'at&t core',
+          provider: 'AT&T'
+        }
+      };
+
+      const cloudRouter: NetworkNode = {
+        id: `node-${timestamp}-cloud-router`,
+        type: 'function',
+        functionType: 'Router',
+        x: 450,
+        y: 350,
+        name: cloudRouterName.trim(),
+        icon: getNodeIcon('function', 'Router', undefined, { routerType: 'cloud' }),
+        status: 'inactive',
+        config: {
+          routerType: 'cloud',
+          provider: 'Cloud Provider'
+        }
+      };
+
+      const datacenter: NetworkNode = {
+        id: `node-${timestamp}-datacenter`,
+        type: 'datacenter',
+        x: 650,
+        y: 300,
+        name: 'Datacenter',
+        icon: getNodeIcon('datacenter'),
+        status: 'inactive',
+        config: {
+          location: 'US-East',
+          tier: 'Tier 3'
+        }
+      };
+
+      const cloudProvider: NetworkNode = {
+        id: `node-${timestamp}-cloud`,
+        type: 'destination',
+        x: 650,
+        y: 400,
+        name: 'AWS',
+        icon: getNodeIcon('destination'),
+        status: 'inactive',
+        config: {
+          provider: 'AWS',
+          region: 'us-east-1'
+        }
+      };
+
+      const edges: NetworkEdge[] = [
+        {
+          id: `edge-${timestamp}-1`,
+          source: attCore.id,
+          target: cloudRouter.id,
+          type: 'MPLS',
+          bandwidth: '10 Gbps',
+          status: 'inactive',
+          config: {
+            resilience: 'standard'
+          }
+        },
+        {
+          id: `edge-${timestamp}-2`,
+          source: cloudRouter.id,
+          target: datacenter.id,
+          type: 'Ethernet',
+          bandwidth: '10 Gbps',
+          status: 'inactive',
+          config: {
+            resilience: 'standard'
+          }
+        },
+        {
+          id: `edge-${timestamp}-3`,
+          source: cloudRouter.id,
+          target: cloudProvider.id,
+          type: 'Direct Connect',
+          bandwidth: '10 Gbps',
+          status: 'inactive',
+          config: {
+            resilience: 'standard'
+          }
+        }
+      ];
+
+      onApplyTemplate([attCore, cloudRouter, datacenter, cloudProvider], edges);
+    } else {
+      onComplete(cloudRouterName.trim());
+    }
+
     resetForm();
   };
 
