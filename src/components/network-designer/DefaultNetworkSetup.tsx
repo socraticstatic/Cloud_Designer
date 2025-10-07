@@ -805,7 +805,7 @@ export function DefaultNetworkSetup({ isOpen, onComplete, onApplyTemplate }: Def
           </div>
         </div>
 
-        <div className="p-8 overflow-y-auto max-h-[calc(80vh-120px)]">
+        <div className="p-6 overflow-y-auto max-h-[calc(80vh-120px)]">
           {/* Initial Selection */}
           {setupMode === 'selection' && (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -914,16 +914,16 @@ export function DefaultNetworkSetup({ isOpen, onComplete, onApplyTemplate }: Def
           {/* Create Flow */}
           {setupMode === 'user' && (
             <div className="max-w-lg mx-auto">
-              <div className="text-center mb-8">
-                <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-100 rounded-full mb-4">
+              <div className="text-center mb-6">
+                <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-100 rounded-full mb-3">
                   <Sparkles className="h-6 w-6 text-blue-600" />
                 </div>
-                <h2 className="text-2xl font-semibold text-gray-900 mb-2">Custom Network Setup</h2>
-                <p className="text-gray-600">Create your personalized network starting with AT&T Core</p>
+                <h2 className="text-xl font-semibold text-gray-900 mb-1">Custom Network Setup</h2>
+                <p className="text-sm text-gray-600">Create your personalized network starting with AT&T Core</p>
               </div>
 
               {/* Network Preview */}
-              <div className="bg-gradient-to-r from-blue-50 to-blue-100 rounded-xl p-6 mb-8 border border-blue-200">
+              <div className="bg-gradient-to-r from-blue-50 to-blue-100 rounded-xl p-4 mb-6 border border-blue-200">
                 <h3 className="text-sm font-medium text-gray-700 mb-4 text-center">Your network foundation:</h3>
                 <div className="flex items-center justify-center space-x-6">
                   <div className="text-center">
@@ -945,8 +945,8 @@ export function DefaultNetworkSetup({ isOpen, onComplete, onApplyTemplate }: Def
                   </div>
                 </div>
               </div>
-              
-              <form onSubmit={handleUserSubmit} className="space-y-6">
+
+              <form onSubmit={handleUserSubmit} className="space-y-4">
                 <div>
                   <label htmlFor="cloudRouterName" className="block text-sm font-medium text-gray-700 mb-2">
                     Name Your Cloud Router *
@@ -957,20 +957,20 @@ export function DefaultNetworkSetup({ isOpen, onComplete, onApplyTemplate }: Def
                     value={cloudRouterName}
                     onChange={(e) => handleInputChange(e.target.value)}
                     placeholder="e.g., Main Gateway Router, Enterprise Hub"
-                    className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-base ${
+                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm ${
                       error ? 'border-red-300' : 'border-gray-300'
                     }`}
                     autoFocus
                   />
                   {error && (
-                    <p className="mt-2 text-sm text-red-600">{error}</p>
+                    <p className="mt-1 text-xs text-red-600">{error}</p>
                   )}
-                  <p className="mt-2 text-xs text-gray-500">
+                  <p className="mt-1 text-xs text-gray-500">
                     Choose a meaningful name that reflects your router's role in your network architecture
                   </p>
                 </div>
-                
-                <div className="flex justify-between pt-4">
+
+                <div className="flex justify-between pt-2">
                   <button
                     type="button"
                     onClick={() => setSetupMode('selection')}
