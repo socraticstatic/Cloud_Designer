@@ -793,9 +793,9 @@ export function DefaultNetworkSetup({ isOpen, onComplete, onApplyTemplate }: Def
 
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-[200]">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-5xl mx-4 max-h-[80vh] overflow-hidden">
+      <div className="bg-white rounded-xl shadow-2xl w-full max-w-5xl mx-4 max-h-[80vh] overflow-hidden flex flex-col">
         {/* Header */}
-        <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-6">
+        <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-6 flex-shrink-0">
           <div className="text-center">
             <div className="inline-flex items-center justify-center w-16 h-16 bg-white/20 rounded-full mb-4">
               <Sparkles className="h-8 w-8 text-white" />
@@ -805,7 +805,7 @@ export function DefaultNetworkSetup({ isOpen, onComplete, onApplyTemplate }: Def
           </div>
         </div>
 
-        <div className="p-6 overflow-y-auto max-h-[calc(80vh-120px)]">
+        <div className="p-6 overflow-y-auto flex-1 min-h-0">
           {/* Initial Selection */}
           {setupMode === 'selection' && (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
