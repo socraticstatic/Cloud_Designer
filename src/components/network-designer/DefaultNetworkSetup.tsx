@@ -795,13 +795,13 @@ export function DefaultNetworkSetup({ isOpen, onComplete, onApplyTemplate }: Def
     <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-[200]">
       <div className="bg-white rounded-xl shadow-2xl w-full max-w-5xl mx-4 max-h-[80vh] overflow-hidden flex flex-col">
         {/* Header */}
-        <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-6 flex-shrink-0">
+        <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-4 flex-shrink-0">
           <div className="text-center">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-white/20 rounded-full mb-4">
-              <Sparkles className="h-8 w-8 text-white" />
+            <div className="inline-flex items-center justify-center w-12 h-12 bg-white/20 rounded-full mb-2">
+              <Sparkles className="h-6 w-6 text-white" />
             </div>
-            <h1 className="text-2xl font-bold mb-2">Welcome to Cloud Designer</h1>
-            <p className="text-blue-100">Choose how you'd like to create your enterprise network</p>
+            <h1 className="text-xl font-bold mb-1">Welcome to Cloud Designer</h1>
+            <p className="text-sm text-blue-100">Choose how you'd like to create your enterprise network</p>
           </div>
         </div>
 
