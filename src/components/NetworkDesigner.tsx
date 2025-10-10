@@ -8,8 +8,7 @@ import { StatusBar } from './network-designer/StatusBar';
 import { NodeConfigPanel } from './network-designer/NodeConfigPanel';
 import { EdgeConfigPanel } from './network-designer/EdgeConfigPanel';
 import { AbstractionLevelSelector } from './network-designer/AbstractionLevelSelector';
-import { SidePanel } from './network-designer/panels/SidePanel';
-import { PanelToggle } from './network-designer/panels/PanelToggle';
+import { BottomPanel } from './network-designer/panels/BottomPanel';
 import { HistoryDrawer } from './network-designer/HistoryDrawer';
 import { 
   useNetworkHistory, 
@@ -65,7 +64,6 @@ interface NetworkDesignerProps {
 }
 
 type AbstractionLevel = 'global' | 'network' | 'circuit';
-type PanelMode = 'assistant' | 'optimize' | 'advanced' | 'sustainability' | 'cross-connects' | null;
 
 interface CustomTemplate {
   id: string;
@@ -270,7 +268,7 @@ export function NetworkDesigner({
   };
   
   // UI state
-  const [panelMode, setPanelMode] = useState<PanelMode>(null);
+  const [viewMode, setViewMode] = useState<'outcomes' | 'ai-recommendations' | 'sustainability' | 'cross-connects'>('outcomes');
   const [isRunningScenario, setIsRunningScenario] = useState(false);
   const [showDefaultSetup, setShowDefaultSetup] = useState(false);
   
@@ -651,15 +649,6 @@ export function NetworkDesigner({
     handleNodeSelection(nodes.find(n => n.id === nodeId) || null);
     setAbstractionLevel('network');
   };
-
-  // Handle panel toggle
-  const handlePanelToggle = (mode: PanelMode) => {
-    if (panelMode === mode) {
-      setPanelMode(null);
-    } else {
-      setPanelMode(mode);
-    }
-  };
   
   // Helper to render the current abstraction level view
   const renderAbstractionLevelView = () => {
@@ -842,27 +831,18 @@ export function NetworkDesigner({
         />
       </div>
 
-      {/* Panel Toggle Buttons - Only in network view */}
+      {/* Bottom Panel - Only in network view */}
       {abstractionLevel === 'network' && !isReadOnly && (
-        <PanelToggle
-          onToggle={handlePanelToggle}
-          activeMode={panelMode}
-        />
-      )}
-
-      {/* Side Panel - Only in network view */}
-      {abstractionLevel === 'network' && !isReadOnly && panelMode && (
-        <SidePanel
-          mode={panelMode}
-          onClose={() => setPanelMode(null)}
-          onModeChange={(mode) => setPanelMode(mode)}
+        <BottomPanel
+          viewMode={viewMode}
+          setViewMode={setViewMode}
         >
           <Suspense fallback={<ComponentLoader />}>
-            {panelMode === 'assistant' && (
+            {viewMode === 'outcomes' && (
               <EnhancedBusinessOutcomes />
             )}
 
-            {panelMode === 'optimize' && (
+            {viewMode === 'ai-recommendations' && (
               <ReactiveAIPanel
                 nodes={nodes}
                 edges={edges}
@@ -874,24 +854,18 @@ export function NetworkDesigner({
               />
             )}
 
-            {panelMode === 'advanced' && (
-              <NetworkParameters
-                onParameterChange={handleParameterChange}
-              />
-            )}
-
-            {panelMode === 'sustainability' && (
+            {viewMode === 'sustainability' && (
               <SustainabilityImpact />
             )}
 
-            {panelMode === 'cross-connects' && (
+            {viewMode === 'cross-connects' && (
               <CrossConnectsPanel
                 crossConnects={crossConnects}
                 onShowInTopology={(id) => onSelectCrossConnect?.(id)}
               />
             )}
           </Suspense>
-        </SidePanel>
+        </BottomPanel>
       )}
       
       {/* Templates Manager */}

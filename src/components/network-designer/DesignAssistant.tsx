@@ -7,7 +7,6 @@ interface DesignAssistantProps {
   nodes: NetworkNode[];
   edges: NetworkEdge[];
   onApply: (newNodes: NetworkNode[], newEdges: NetworkEdge[]) => void;
-  onComplete?: () => void;
 }
 
 type DesignStage = 'purpose' | 'requirements' | 'patterns' | 'review';
@@ -23,7 +22,7 @@ interface DesignContext {
   selectedPattern: string | null;
 }
 
-export function DesignAssistant({ nodes, edges, onApply, onComplete }: DesignAssistantProps) {
+export function DesignAssistant({ nodes, edges, onApply }: DesignAssistantProps) {
   const [currentStage, setCurrentStage] = useState<DesignStage>('purpose');
   const [designContext, setDesignContext] = useState<DesignContext>({
     purpose: null,
@@ -311,7 +310,6 @@ export function DesignAssistant({ nodes, edges, onApply, onComplete }: DesignAss
                     // Apply the pattern based on context
                     // For now, we'll show the outcome selector
                     setCurrentStage('review');
-                    if (onComplete) onComplete();
                   }}
                   className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center"
                 >

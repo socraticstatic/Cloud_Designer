@@ -11,11 +11,7 @@ import { NetworkParameters } from './NetworkParameters';
 import { AbstractionLevelSelector } from './AbstractionLevelSelector';
 import { GlobalView } from './global-view/GlobalView';
 import { CircuitView } from './circuit-view/CircuitView';
-import { SidePanel } from './panels/SidePanel';
-import { PanelToggle } from './panels/PanelToggle';
-import { SustainabilityImpact } from './panels/SustainabilityImpact';
-import { CrossConnectsPanel } from './panels/CrossConnectsPanel';
-import { OutcomesProvider } from './context/OutcomesContext';
+import { BottomPanel } from './panels/BottomPanel';
 import { TemplatesManager } from './panels/TemplatesManager';
 import { SaveTemplateModal } from './SaveTemplateModal';
 import { NetworkSimulation } from './simulation/NetworkSimulation';
@@ -50,7 +46,6 @@ interface NetworkDesignerProps {
 }
 
 type AbstractionLevel = 'global' | 'network' | 'circuit';
-type PanelMode = 'assistant' | 'optimize' | 'advanced' | 'sustainability' | 'cross-connects' | null;
 
 interface CustomTemplate {
   id: string;
@@ -125,9 +120,8 @@ export function NetworkDesigner({ onComplete, onCancel }: NetworkDesignerProps) 
   });
   
   // UI state
-  const [panelMode, setPanelMode] = useState<PanelMode>('assistant');
+  const [viewMode, setViewMode] = useState<'assistant' | 'optimize' | 'advanced'>('assistant');
   const [isRunningScenario, setIsRunningScenario] = useState(false);
-  const [hasSeenWelcome, setHasSeenWelcome] = useState(false);
   
   // Simulation data
   const [simulationData, setSimulationData] = useState({
@@ -381,32 +375,6 @@ export function NetworkDesigner({ onComplete, onCancel }: NetworkDesignerProps) 
     handleNodeSelection(nodes.find(n => n.id === nodeId) || null);
     setAbstractionLevel('network');
   };
-
-  // Handle panel toggle
-  const handlePanelToggle = (mode: PanelMode) => {
-    if (panelMode === mode) {
-      setPanelMode(null);
-      setHasSeenWelcome(true);
-    } else {
-      setPanelMode(mode);
-    }
-  };
-
-  // Handle panel close
-  const handlePanelClose = () => {
-    setPanelMode(null);
-    setHasSeenWelcome(true);
-  };
-
-  // Handle cross-connects panel (placeholder data)
-  const handleShowInTopology = (crossConnectId: string) => {
-    window.addToast({
-      type: 'info',
-      title: 'Show in Topology',
-      message: `Cross-connect ${crossConnectId} integration coming soon`,
-      duration: 3000
-    });
-  };
   
   // Helper to render the current abstraction level view
   const renderAbstractionLevelView = () => {
@@ -459,8 +427,7 @@ export function NetworkDesigner({ onComplete, onCancel }: NetworkDesignerProps) 
   };
 
   return (
-    <OutcomesProvider>
-      <div className="flex flex-col bg-gray-50 rounded-xl border-2 border-gray-200 relative">
+    <div className="flex flex-col bg-gray-50 rounded-xl border-2 border-gray-200 relative">
       {/* Main Content Area */}
       <div className="relative h-[800px]" style={{ zIndex: 1 }}>
         {/* Abstraction Level Selector - Highest z-index */}
@@ -555,32 +522,22 @@ export function NetworkDesigner({ onComplete, onCancel }: NetworkDesignerProps) 
         />
       </div>
 
-      {/* Panel Toggle Buttons - Only in network view and after welcome */}
-      {abstractionLevel === 'network' && hasSeenWelcome && (
-        <PanelToggle
-          onToggle={handlePanelToggle}
-          activeMode={panelMode}
-        />
-      )}
-
-      {/* Side Panel - Only in network view */}
-      {abstractionLevel === 'network' && panelMode && (
-        <SidePanel
-          mode={panelMode}
-          onClose={handlePanelClose}
-          onModeChange={(mode) => setPanelMode(mode)}
+      {/* Bottom Panel - Only in network view */}
+      {abstractionLevel === 'network' && (
+        <BottomPanel
+          viewMode={viewMode}
+          setViewMode={setViewMode}
         >
-          {panelMode === 'assistant' && (
-            <DesignAssistant
+          {viewMode === 'assistant' && (
+            <DesignAssistant 
               nodes={nodes}
               edges={edges}
               onApply={handleApplyOutcomePattern}
-              onComplete={() => setHasSeenWelcome(true)}
             />
           )}
-
-          {panelMode === 'optimize' && (
-            <AIRecommendationEngine
+          
+          {viewMode === 'optimize' && (
+            <AIRecommendationEngine 
               nodes={nodes}
               edges={edges}
               onApplyRecommendation={(newNodes, newEdges) => {
@@ -590,24 +547,13 @@ export function NetworkDesigner({ onComplete, onCancel }: NetworkDesignerProps) 
               }}
             />
           )}
-
-          {panelMode === 'advanced' && (
+          
+          {viewMode === 'advanced' && (
             <NetworkParameters
               onParameterChange={handleParameterChange}
             />
           )}
-
-          {panelMode === 'sustainability' && (
-            <SustainabilityImpact />
-          )}
-
-          {panelMode === 'cross-connects' && (
-            <CrossConnectsPanel
-              crossConnects={[]}
-              onShowInTopology={handleShowInTopology}
-            />
-          )}
-        </SidePanel>
+        </BottomPanel>
       )}
       
       {/* Templates Manager */}
@@ -619,6 +565,5 @@ export function NetworkDesigner({ onComplete, onCancel }: NetworkDesignerProps) 
         onDeleteCustomTemplate={handleDeleteCustomTemplate}
       />
     </div>
-    </OutcomesProvider>
   );
 }
