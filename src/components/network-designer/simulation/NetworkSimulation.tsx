@@ -346,7 +346,7 @@ export function NetworkSimulation({
                   <span className="text-xs font-semibold bg-blue-100 text-blue-800 px-2 py-1 rounded-full">High</span>
                 </div>
                 <div className="text-2xl font-bold text-gray-900 mb-1">
-                  {Math.min(95, 65 + (simulationData.networkScores.security / 3))}%
+                  {Math.min(95, 65 + (simulationData.networkScores.security / 3)).toFixed(2)}%
                 </div>
                 <div className="text-xs text-gray-600">Renewable Energy</div>
                 <div className="mt-2 text-xs text-blue-700">Wind, solar, hydro</div>
