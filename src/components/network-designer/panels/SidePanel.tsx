@@ -24,10 +24,20 @@ export function SidePanel({ mode, onClose, onModeChange, children }: SidePanelPr
   const currentTab = tabs.find(t => t.id === mode);
 
   return (
-    <div
-      className="fixed inset-y-0 right-0 w-[480px] bg-white border-l border-gray-200 shadow-2xl flex flex-col"
-      style={{ zIndex: 120 }}
-    >
+    <>
+      {/* Backdrop for initial welcome */}
+      {mode === 'assistant' && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-30 backdrop-blur-sm"
+          style={{ zIndex: 110 }}
+          onClick={onClose}
+        />
+      )}
+
+      <div
+        className="fixed inset-y-0 right-0 w-[480px] bg-white border-l border-gray-200 shadow-2xl flex flex-col"
+        style={{ zIndex: 120 }}
+      >
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 bg-gray-50">
         <div className="flex items-center space-x-2">
@@ -73,5 +83,6 @@ export function SidePanel({ mode, onClose, onModeChange, children }: SidePanelPr
         {children}
       </div>
     </div>
+    </>
   );
 }
