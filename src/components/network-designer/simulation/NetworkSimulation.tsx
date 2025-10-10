@@ -87,9 +87,9 @@ export function NetworkSimulation({
 
   return (
     <div className="fixed inset-0 flex items-center justify-center z-[100]" style={{ backgroundColor: 'rgba(0,0,0,0.7)' }}>
-      <div className="w-full max-w-3xl mx-6 overflow-hidden transition-all duration-300">
+      <div className="w-full max-w-3xl mx-6 bg-white rounded-xl shadow-2xl overflow-hidden flex flex-col" style={{ height: '80vh', maxHeight: '700px' }}>
         {/* Header card */}
-        <div className="bg-white rounded-t-xl shadow-lg border border-gray-200 p-5">
+        <div className="bg-white border-b border-gray-200 p-5 flex-shrink-0">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
               <div className="p-2 bg-blue-100 rounded-full">
@@ -175,10 +175,13 @@ export function NetworkSimulation({
             ></div>
           </div>
         </div>
-        
+
+        {/* Scrollable Content Area */}
+        <div className="flex-1 overflow-y-auto">
+
         {/* Test Controls */}
-        {showTestControls && (
-          <div className="bg-purple-50 border-x border-gray-200 p-5">
+        <div className={`overflow-hidden transition-all duration-300 ease-in-out ${showTestControls ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'}`}>
+          <div className="bg-purple-50 p-5 border-b border-gray-200">
             <div className="flex items-center justify-between mb-4">
               <h4 className="text-base font-medium text-purple-900 flex items-center">
                 <Sliders className="h-4 w-4 mr-2 text-purple-700" />
@@ -287,11 +290,11 @@ export function NetworkSimulation({
               </p>
             </div>
           </div>
-        )}
-        
+        </div>
+
         {/* Comparison Card */}
-        {showComparison && (
-          <div className="bg-gradient-to-br from-blue-50 to-indigo-50 p-6 border-x border-gray-200">
+        <div className={`overflow-hidden transition-all duration-300 ease-in-out ${showComparison ? 'max-h-[600px] opacity-100' : 'max-h-0 opacity-0'}`}>
+          <div className="bg-gradient-to-br from-blue-50 to-indigo-50 p-6 border-b border-gray-200">
             <div className="flex items-center justify-between mb-4">
               <h4 className="text-base font-medium text-gray-900 flex items-center">
                 <BarChart2 className="h-4 w-4 mr-2 text-blue-600" />
@@ -468,10 +471,10 @@ export function NetworkSimulation({
               </div>
             </div>
           </div>
-        )}
-        
+        </div>
+
         {/* Metrics card */}
-        <div className={`bg-white p-6 ${showComparison || showTestControls ? 'border-x border-gray-200' : 'rounded-t-none border-x border-t border-gray-200'}`}>
+        <div className="bg-white p-6">
           <div className="flex items-center justify-between mb-4">
             <h4 className="text-base font-medium text-gray-900">
               Network Metrics
@@ -536,8 +539,8 @@ export function NetworkSimulation({
           </div>
           
           {/* Extended metrics */}
-          {showDetails && (
-            <div className="mt-5 grid grid-cols-5 gap-3">
+          <div className={`overflow-hidden transition-all duration-300 ease-in-out ${showDetails ? 'max-h-32 opacity-100 mt-5' : 'max-h-0 opacity-0'}`}>
+            <div className="grid grid-cols-5 gap-3">
               {Object.entries(simulationData.networkScores).map(([key, value]) => (
                 <div key={key} className="bg-gray-50 rounded-lg p-3 border border-gray-200">
                   <div className="flex flex-col h-full">
@@ -561,8 +564,8 @@ export function NetworkSimulation({
                 </div>
               ))}
             </div>
-          )}
-          
+          </div>
+
           {/* Network data flow */}
           <div className={`flex items-center justify-center mt-5 h-10 relative ${isPaused ? '' : 'overflow-hidden'}`}>
             {!isPaused && (
@@ -596,8 +599,10 @@ export function NetworkSimulation({
           </div>
         </div>
 
-        {/* Status card */}
-        <div className="bg-gray-50 p-4 rounded-b-xl border border-t-0 border-gray-200">
+        </div>
+
+        {/* Status bar - Fixed at bottom */}
+        <div className="bg-gray-50 p-4 border-t border-gray-200 flex-shrink-0">
           {simulationData.phase === 'initializing' && (
             <p className="text-sm text-amber-600 animate-pulse flex items-center">
               <AlertTriangle className="h-4 w-4 mr-1.5" />
