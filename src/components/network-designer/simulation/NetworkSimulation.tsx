@@ -87,9 +87,9 @@ export function NetworkSimulation({
 
   return (
     <div className="fixed inset-0 flex items-center justify-center z-[100]" style={{ backgroundColor: 'rgba(0,0,0,0.7)' }}>
-      <div className="w-full max-w-3xl mx-6 bg-white rounded-xl shadow-2xl transition-all duration-300 ease-in-out">
+      <div className="w-full max-w-3xl mx-6 bg-white rounded-2xl shadow-2xl transition-all duration-300 ease-in-out overflow-hidden">
         {/* Header card */}
-        <div className="bg-white border-b border-gray-200 p-5 flex-shrink-0">
+        <div className="bg-white border-b border-gray-200 p-5">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
               <div className="p-2 bg-blue-100 rounded-full">
