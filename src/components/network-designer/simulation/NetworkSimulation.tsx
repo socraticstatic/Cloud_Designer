@@ -38,7 +38,7 @@ export function NetworkSimulation({
   onInjectBandwidthLimit
 }: NetworkSimulationProps) {
   // Use a single state to track which panel is active
-  const [activePanel, setActivePanel] = useState<'none' | 'comparison' | 'testControls'>('none');
+  const [activePanel, setActivePanel] = useState<'none' | 'comparison' | 'testControls'>('testControls');
   const [showDetails, setShowDetails] = useState(false);
   const [latencyAmount, setLatencyAmount] = useState(50);
   const [packetLossAmount, setPacketLossAmount] = useState(5);
@@ -87,7 +87,7 @@ export function NetworkSimulation({
 
   return (
     <div className="fixed inset-0 flex items-center justify-center z-[100]" style={{ backgroundColor: 'rgba(0,0,0,0.7)' }}>
-      <div className="w-full max-w-3xl mx-6 bg-white rounded-xl shadow-2xl overflow-hidden flex flex-col" style={{ height: '80vh', maxHeight: '700px' }}>
+      <div className="w-full max-w-3xl mx-6 bg-white rounded-xl shadow-2xl transition-all duration-300 ease-in-out">
         {/* Header card */}
         <div className="bg-white border-b border-gray-200 p-5 flex-shrink-0">
           <div className="flex items-center justify-between">
@@ -176,11 +176,11 @@ export function NetworkSimulation({
           </div>
         </div>
 
-        {/* Scrollable Content Area */}
-        <div className="flex-1 overflow-y-auto">
+        {/* Content Area */}
+        <div>
 
         {/* Test Controls */}
-        <div className={`overflow-hidden transition-all duration-300 ease-in-out ${showTestControls ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'}`}>
+        {showTestControls && (
           <div className="bg-purple-50 p-5 border-b border-gray-200">
             <div className="flex items-center justify-between mb-4">
               <h4 className="text-base font-medium text-purple-900 flex items-center">
@@ -290,10 +290,10 @@ export function NetworkSimulation({
               </p>
             </div>
           </div>
-        </div>
+        )}
 
         {/* Comparison Card */}
-        <div className={`overflow-hidden transition-all duration-300 ease-in-out ${showComparison ? 'max-h-[600px] opacity-100' : 'max-h-0 opacity-0'}`}>
+        {showComparison && (
           <div className="bg-gradient-to-br from-blue-50 to-indigo-50 p-6 border-b border-gray-200">
             <div className="flex items-center justify-between mb-4">
               <h4 className="text-base font-medium text-gray-900 flex items-center">
@@ -471,7 +471,7 @@ export function NetworkSimulation({
               </div>
             </div>
           </div>
-        </div>
+        )}
 
         {/* Metrics card */}
         <div className="bg-white p-6">
@@ -539,8 +539,8 @@ export function NetworkSimulation({
           </div>
           
           {/* Extended metrics */}
-          <div className={`overflow-hidden transition-all duration-300 ease-in-out ${showDetails ? 'max-h-32 opacity-100 mt-5' : 'max-h-0 opacity-0'}`}>
-            <div className="grid grid-cols-5 gap-3">
+          {showDetails && (
+            <div className="grid grid-cols-5 gap-3 mt-5">
               {Object.entries(simulationData.networkScores).map(([key, value]) => (
                 <div key={key} className="bg-gray-50 rounded-lg p-3 border border-gray-200">
                   <div className="flex flex-col h-full">
@@ -564,7 +564,7 @@ export function NetworkSimulation({
                 </div>
               ))}
             </div>
-          </div>
+          )}
 
           {/* Network data flow */}
           <div className={`flex items-center justify-center mt-5 h-10 relative ${isPaused ? '' : 'overflow-hidden'}`}>
@@ -601,7 +601,7 @@ export function NetworkSimulation({
 
         </div>
 
-        {/* Status bar - Fixed at bottom */}
+        {/* Status bar */}
         <div className="bg-gray-50 p-4 border-t border-gray-200 flex-shrink-0">
           {simulationData.phase === 'initializing' && (
             <p className="text-sm text-amber-600 animate-pulse flex items-center">
