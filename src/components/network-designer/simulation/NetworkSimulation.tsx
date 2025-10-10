@@ -315,74 +315,130 @@ export function NetworkSimulation({
               <span className="text-sm text-green-600 font-medium">Environmental Performance</span>
             </div>
 
-            <div className="grid grid-cols-3 gap-4 mb-4">
-              <div className="bg-white rounded-lg p-4 border border-green-200">
-                <div className="flex items-center justify-between mb-2">
-                  <TrendingDown className="h-5 w-5 text-green-600" />
-                  <span className="text-xs font-semibold bg-green-100 text-green-800 px-2 py-1 rounded-full">Grade A</span>
-                </div>
-                <div className="text-2xl font-bold text-gray-900 mb-1">
-                  {(85 - (simulationData.networkScores.performance / 10)).toFixed(1)}
-                </div>
-                <div className="text-xs text-gray-600">tons CO₂e/year</div>
-                <div className="mt-2 text-xs text-green-700">32% below industry avg</div>
-              </div>
-
-              <div className="bg-white rounded-lg p-4 border border-green-200">
-                <div className="flex items-center justify-between mb-2">
-                  <Zap className="h-5 w-5 text-amber-600" />
-                  <span className="text-xs font-semibold bg-amber-100 text-amber-800 px-2 py-1 rounded-full">Efficient</span>
-                </div>
-                <div className="text-2xl font-bold text-gray-900 mb-1">
-                  {(1.2 + (simulationData.networkScores.performance / 1000)).toFixed(2)}
-                </div>
-                <div className="text-xs text-gray-600">PUE Rating</div>
-                <div className="mt-2 text-xs text-amber-700">Industry avg: 1.58</div>
-              </div>
-
-              <div className="bg-white rounded-lg p-4 border border-green-200">
-                <div className="flex items-center justify-between mb-2">
-                  <Activity className="h-5 w-5 text-blue-600" />
-                  <span className="text-xs font-semibold bg-blue-100 text-blue-800 px-2 py-1 rounded-full">High</span>
-                </div>
-                <div className="text-2xl font-bold text-gray-900 mb-1">
-                  {Math.min(95, 65 + (simulationData.networkScores.security / 3)).toFixed(2)}%
-                </div>
-                <div className="text-xs text-gray-600">Renewable Energy</div>
-                <div className="mt-2 text-xs text-blue-700">Wind, solar, hydro</div>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-lg p-4 border border-green-200">
-              <h5 className="text-sm font-semibold text-gray-900 mb-3">Green Optimization Insights</h5>
-              <div className="space-y-2">
-                <div className="flex items-start p-2 bg-green-50 rounded">
-                  <Leaf className="h-4 w-4 text-green-600 mr-2 mt-0.5 flex-shrink-0" />
-                  <div className="text-xs text-gray-700">
-                    <strong>Edge Computing:</strong> Your network design reduces long-distance data transfers by {Math.round(simulationData.networkScores.performance / 2)}%, lowering carbon emissions
+            <div className="grid grid-cols-2 gap-6">
+              {/* Left column: Key metrics */}
+              <div className="space-y-6">
+                <div>
+                  <div className="flex justify-between items-center mb-2">
+                    <div className="flex items-center">
+                      <TrendingDown className="h-4 w-4 text-green-600 mr-1.5" />
+                      <h5 className="text-sm font-medium text-gray-800">Carbon Footprint</h5>
+                    </div>
+                    <div className="flex items-center px-2 py-1 rounded-full bg-green-100 text-green-800">
+                      <span className="text-xs font-semibold">Grade A</span>
+                    </div>
+                  </div>
+                  <div className="mt-1.5 space-y-2">
+                    <div>
+                      <div className="flex justify-between items-center text-xs mb-1">
+                        <span className="text-gray-500">Your Network</span>
+                        <span className="font-medium text-green-600">{(85 - (simulationData.networkScores.performance / 10)).toFixed(1)} tons CO₂e/yr</span>
+                      </div>
+                      <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                        <div className="h-2 bg-green-400 rounded-full" style={{ width: '32%' }}></div>
+                      </div>
+                    </div>
+                    <div>
+                      <div className="flex justify-between items-center text-xs mb-1">
+                        <span className="text-gray-500">Industry Average</span>
+                        <span className="font-medium text-gray-600">125 tons CO₂e/yr</span>
+                      </div>
+                      <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                        <div className="h-2 bg-gray-400 rounded-full" style={{ width: '100%' }}></div>
+                      </div>
+                    </div>
                   </div>
                 </div>
-                <div className="flex items-start p-2 bg-blue-50 rounded">
-                  <Zap className="h-4 w-4 text-blue-600 mr-2 mt-0.5 flex-shrink-0" />
-                  <div className="text-xs text-gray-700">
-                    <strong>Energy Efficiency:</strong> Low latency design ({(simulationData.metrics.latency.current / 10).toFixed(1)}ms) indicates proximity to renewable energy datacenters
+
+                <div>
+                  <div className="flex justify-between items-center mb-2">
+                    <div className="flex items-center">
+                      <Zap className="h-4 w-4 text-amber-600 mr-1.5" />
+                      <h5 className="text-sm font-medium text-gray-800">Energy Efficiency</h5>
+                    </div>
+                    <div className="flex items-center px-2 py-1 rounded-full bg-amber-100 text-amber-800">
+                      <span className="text-xs font-semibold">Efficient</span>
+                    </div>
                   </div>
-                </div>
-                <div className="flex items-start p-2 bg-emerald-50 rounded">
-                  <TrendingDown className="h-4 w-4 text-emerald-600 mr-2 mt-0.5 flex-shrink-0" />
-                  <div className="text-xs text-gray-700">
-                    <strong>B Corp Alignment:</strong> Network security score of {simulationData.networkScores.security}% supports environmental governance standards
+                  <div className="mt-1.5 space-y-2">
+                    <div>
+                      <div className="flex justify-between items-center text-xs mb-1">
+                        <span className="text-gray-500">Your PUE</span>
+                        <span className="font-medium text-green-600">{(1.2 + (simulationData.networkScores.performance / 1000)).toFixed(2)}</span>
+                      </div>
+                      <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                        <div className="h-2 bg-green-400 rounded-full" style={{ width: '76%' }}></div>
+                      </div>
+                    </div>
+                    <div>
+                      <div className="flex justify-between items-center text-xs mb-1">
+                        <span className="text-gray-500">Industry Average</span>
+                        <span className="font-medium text-gray-600">1.58</span>
+                      </div>
+                      <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                        <div className="h-2 bg-gray-400 rounded-full" style={{ width: '100%' }}></div>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
 
-            <div className="mt-4 bg-gradient-to-r from-green-100 to-blue-100 rounded-lg p-3 border border-green-200">
-              <div className="flex items-center">
-                <Shield className="h-5 w-5 text-green-600 mr-2 flex-shrink-0" />
-                <p className="text-xs text-gray-700">
-                  <strong>Compliance:</strong> Your design meets EU Energy Efficiency Directive requirements and supports ISO 14001 certification pathways
-                </p>
+              {/* Right column: Renewable energy and compliance */}
+              <div className="space-y-6">
+                <div>
+                  <div className="flex justify-between items-center mb-2">
+                    <div className="flex items-center">
+                      <Activity className="h-4 w-4 text-blue-600 mr-1.5" />
+                      <h5 className="text-sm font-medium text-gray-800">Renewable Energy</h5>
+                    </div>
+                    <div className="flex items-center px-2 py-1 rounded-full bg-blue-100 text-blue-800">
+                      <span className="text-xs font-semibold">{Math.min(95, 65 + (simulationData.networkScores.security / 3)).toFixed(2)}%</span>
+                    </div>
+                  </div>
+                  <div className="mt-1.5 space-y-2">
+                    <div>
+                      <div className="flex justify-between items-center text-xs mb-1">
+                        <span className="text-gray-500">Your Network</span>
+                        <span className="font-medium text-green-600">{Math.min(95, 65 + (simulationData.networkScores.security / 3)).toFixed(2)}% clean</span>
+                      </div>
+                      <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                        <div className="h-2 bg-green-400 rounded-full" style={{ width: `${Math.min(95, 65 + (simulationData.networkScores.security / 3))}%` }}></div>
+                      </div>
+                    </div>
+                    <div>
+                      <div className="flex justify-between items-center text-xs mb-1">
+                        <span className="text-gray-500">Shared Internet</span>
+                        <span className="font-medium text-gray-600">35% clean</span>
+                      </div>
+                      <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                        <div className="h-2 bg-gray-400 rounded-full" style={{ width: '35%' }}></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <div className="flex justify-between items-center mb-2">
+                    <div className="flex items-center">
+                      <Shield className="h-4 w-4 text-purple-600 mr-1.5" />
+                      <h5 className="text-sm font-medium text-gray-800">Compliance</h5>
+                    </div>
+                  </div>
+                  <div className="mt-1.5 space-y-2">
+                    <div className="flex items-center justify-between p-2 bg-green-50 rounded border border-green-200">
+                      <span className="text-xs font-medium text-gray-900">ISO 14001 Ready</span>
+                      <Shield className="h-3.5 w-3.5 text-green-600" />
+                    </div>
+                    <div className="flex items-center justify-between p-2 bg-green-50 rounded border border-green-200">
+                      <span className="text-xs font-medium text-gray-900">EU Energy Directive</span>
+                      <Shield className="h-3.5 w-3.5 text-green-600" />
+                    </div>
+                    <div className="flex items-center justify-between p-2 bg-gray-50 rounded border border-gray-200">
+                      <span className="text-xs font-medium text-gray-900">B Corp Standards</span>
+                      <AlertTriangle className="h-3.5 w-3.5 text-gray-400" />
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
