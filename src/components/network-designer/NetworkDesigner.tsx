@@ -11,7 +11,8 @@ import { NetworkParameters } from './NetworkParameters';
 import { AbstractionLevelSelector } from './AbstractionLevelSelector';
 import { GlobalView } from './global-view/GlobalView';
 import { CircuitView } from './circuit-view/CircuitView';
-import { HistoryDrawer } from './HistoryDrawer';
+import { SidePanel } from './panels/SidePanel';
+import { PanelToggle } from './panels/PanelToggle';
 import { SustainabilityImpact } from './panels/SustainabilityImpact';
 import { CrossConnectsPanel } from './panels/CrossConnectsPanel';
 import { OutcomesProvider } from './context/OutcomesContext';
@@ -49,7 +50,7 @@ interface NetworkDesignerProps {
 }
 
 type AbstractionLevel = 'global' | 'network' | 'circuit';
-type DrawerMode = 'history' | 'assistant' | 'optimize' | 'advanced' | 'sustainability' | 'cross-connects';
+type PanelMode = 'assistant' | 'optimize' | 'advanced' | 'sustainability' | 'cross-connects' | null;
 
 interface CustomTemplate {
   id: string;
@@ -72,7 +73,7 @@ export function NetworkDesigner({ onComplete, onCancel }: NetworkDesignerProps) 
   const [showSaveTemplateModal, setShowSaveTemplateModal] = useState(false);
   
   // Network history management
-  const { topologyHistory, saveToHistory, undo, canUndo, restoreTopology } = useNetworkHistory();
+  const { saveToHistory, undo, canUndo } = useNetworkHistory();
   
   // Network state management
   const {
@@ -124,8 +125,7 @@ export function NetworkDesigner({ onComplete, onCancel }: NetworkDesignerProps) 
   });
   
   // UI state
-  const [showDrawer, setShowDrawer] = useState(false);
-  const [drawerMode, setDrawerMode] = useState<DrawerMode>('history');
+  const [panelMode, setPanelMode] = useState<PanelMode>(null);
   const [isRunningScenario, setIsRunningScenario] = useState(false);
   
   // Simulation data
@@ -381,22 +381,13 @@ export function NetworkDesigner({ onComplete, onCancel }: NetworkDesignerProps) 
     setAbstractionLevel('network');
   };
 
-  // Handle drawer mode change
-  const handleDrawerModeChange = (mode: DrawerMode) => {
-    setDrawerMode(mode);
-  };
-
-  // Handle topology restore
-  const handleRestoreTopology = (snapshot: { nodes: NetworkNode[]; edges: NetworkEdge[] }) => {
-    restoreTopology(snapshot);
-    setNodes(snapshot.nodes);
-    setEdges(snapshot.edges);
-    window.addToast({
-      type: 'success',
-      title: 'Topology Restored',
-      message: 'Network topology has been restored from history',
-      duration: 3000
-    });
+  // Handle panel toggle
+  const handlePanelToggle = (mode: PanelMode) => {
+    if (panelMode === mode) {
+      setPanelMode(null);
+    } else {
+      setPanelMode(mode);
+    }
   };
 
   // Handle cross-connects panel (placeholder data)
@@ -464,15 +455,11 @@ export function NetworkDesigner({ onComplete, onCancel }: NetworkDesignerProps) 
       <div className="flex flex-col bg-gray-50 rounded-xl border-2 border-gray-200 relative">
       {/* Main Content Area */}
       <div className="relative h-[800px]" style={{ zIndex: 1 }}>
-        {/* Abstraction Level Selector with History - Highest z-index */}
+        {/* Abstraction Level Selector - Highest z-index */}
         <div style={{ zIndex: 100 }}>
           <AbstractionLevelSelector
             currentLevel={abstractionLevel}
             onLevelChange={setAbstractionLevel}
-            onHistoryClick={() => {
-              setDrawerMode('history');
-              setShowDrawer(true);
-            }}
           />
         </div>
 
@@ -560,52 +547,59 @@ export function NetworkDesigner({ onComplete, onCancel }: NetworkDesignerProps) 
         />
       </div>
 
-      {/* Unified Drawer with History and Panels */}
-      <HistoryDrawer
-        isOpen={showDrawer}
-        onClose={() => setShowDrawer(false)}
-        history={topologyHistory}
-        onRestoreTopology={handleRestoreTopology}
-        mode={drawerMode}
-        onModeChange={handleDrawerModeChange}
-      >
-        {drawerMode === 'assistant' && (
-          <DesignAssistant
-            nodes={nodes}
-            edges={edges}
-            onApply={handleApplyOutcomePattern}
-          />
-        )}
+      {/* Panel Toggle Buttons - Only in network view */}
+      {abstractionLevel === 'network' && (
+        <PanelToggle
+          onToggle={handlePanelToggle}
+          activeMode={panelMode}
+        />
+      )}
 
-        {drawerMode === 'optimize' && (
-          <AIRecommendationEngine
-            nodes={nodes}
-            edges={edges}
-            onApplyRecommendation={(newNodes, newEdges) => {
-              setNodes(newNodes);
-              setEdges(newEdges);
-              saveToHistory(newNodes, newEdges);
-            }}
-          />
-        )}
+      {/* Side Panel - Only in network view */}
+      {abstractionLevel === 'network' && panelMode && (
+        <SidePanel
+          mode={panelMode}
+          onClose={() => setPanelMode(null)}
+          onModeChange={(mode) => setPanelMode(mode)}
+        >
+          {panelMode === 'assistant' && (
+            <DesignAssistant
+              nodes={nodes}
+              edges={edges}
+              onApply={handleApplyOutcomePattern}
+            />
+          )}
 
-        {drawerMode === 'advanced' && (
-          <NetworkParameters
-            onParameterChange={handleParameterChange}
-          />
-        )}
+          {panelMode === 'optimize' && (
+            <AIRecommendationEngine
+              nodes={nodes}
+              edges={edges}
+              onApplyRecommendation={(newNodes, newEdges) => {
+                setNodes(newNodes);
+                setEdges(newEdges);
+                saveToHistory(newNodes, newEdges);
+              }}
+            />
+          )}
 
-        {drawerMode === 'sustainability' && (
-          <SustainabilityImpact />
-        )}
+          {panelMode === 'advanced' && (
+            <NetworkParameters
+              onParameterChange={handleParameterChange}
+            />
+          )}
 
-        {drawerMode === 'cross-connects' && (
-          <CrossConnectsPanel
-            crossConnects={[]}
-            onShowInTopology={handleShowInTopology}
-          />
-        )}
-      </HistoryDrawer>
+          {panelMode === 'sustainability' && (
+            <SustainabilityImpact />
+          )}
+
+          {panelMode === 'cross-connects' && (
+            <CrossConnectsPanel
+              crossConnects={[]}
+              onShowInTopology={handleShowInTopology}
+            />
+          )}
+        </SidePanel>
+      )}
       
       {/* Templates Manager */}
       <TemplatesManager
