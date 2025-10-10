@@ -125,8 +125,9 @@ export function NetworkDesigner({ onComplete, onCancel }: NetworkDesignerProps) 
   });
   
   // UI state
-  const [panelMode, setPanelMode] = useState<PanelMode>(null);
+  const [panelMode, setPanelMode] = useState<PanelMode>('assistant');
   const [isRunningScenario, setIsRunningScenario] = useState(false);
+  const [hasSeenWelcome, setHasSeenWelcome] = useState(false);
   
   // Simulation data
   const [simulationData, setSimulationData] = useState({
@@ -385,9 +386,16 @@ export function NetworkDesigner({ onComplete, onCancel }: NetworkDesignerProps) 
   const handlePanelToggle = (mode: PanelMode) => {
     if (panelMode === mode) {
       setPanelMode(null);
+      setHasSeenWelcome(true);
     } else {
       setPanelMode(mode);
     }
+  };
+
+  // Handle panel close
+  const handlePanelClose = () => {
+    setPanelMode(null);
+    setHasSeenWelcome(true);
   };
 
   // Handle cross-connects panel (placeholder data)
@@ -547,8 +555,8 @@ export function NetworkDesigner({ onComplete, onCancel }: NetworkDesignerProps) 
         />
       </div>
 
-      {/* Panel Toggle Buttons - Only in network view */}
-      {abstractionLevel === 'network' && (
+      {/* Panel Toggle Buttons - Only in network view and after welcome */}
+      {abstractionLevel === 'network' && hasSeenWelcome && (
         <PanelToggle
           onToggle={handlePanelToggle}
           activeMode={panelMode}
@@ -559,7 +567,7 @@ export function NetworkDesigner({ onComplete, onCancel }: NetworkDesignerProps) 
       {abstractionLevel === 'network' && panelMode && (
         <SidePanel
           mode={panelMode}
-          onClose={() => setPanelMode(null)}
+          onClose={handlePanelClose}
           onModeChange={(mode) => setPanelMode(mode)}
         >
           {panelMode === 'assistant' && (
@@ -567,6 +575,7 @@ export function NetworkDesigner({ onComplete, onCancel }: NetworkDesignerProps) 
               nodes={nodes}
               edges={edges}
               onApply={handleApplyOutcomePattern}
+              onComplete={() => setHasSeenWelcome(true)}
             />
           )}
 
