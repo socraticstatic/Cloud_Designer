@@ -39,7 +39,6 @@ export function NetworkSimulation({
 }: NetworkSimulationProps) {
   // Use a single state to track which panel is active
   const [activePanel, setActivePanel] = useState<'none' | 'comparison' | 'testControls'>('none');
-  const [activeView, setActiveView] = useState<'performance' | 'business'>('performance');
   const [showDetails, setShowDetails] = useState(false);
   const [latencyAmount, setLatencyAmount] = useState(50);
   const [packetLossAmount, setPacketLossAmount] = useState(5);
@@ -112,52 +111,27 @@ export function NetworkSimulation({
             </div>
             
             <div className="flex items-center space-x-2">
-              <div className="flex items-center bg-gray-100 rounded-full p-1 mr-2">
-                <button
-                  onClick={() => setActiveView('performance')}
-                  className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
-                    activeView === 'performance' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-600 hover:text-gray-900'
-                  }`}
-                  type="button"
-                >
-                  Performance
-                </button>
-                <button
-                  onClick={() => setActiveView('business')}
-                  className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
-                    activeView === 'business' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-600 hover:text-gray-900'
-                  }`}
-                  type="button"
-                >
-                  Business
-                </button>
-              </div>
+              <button
+                onClick={() => togglePanel('comparison')}
+                className={`p-2 rounded-full transition-colors ${
+                  showComparison ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}
+                title={showComparison ? "Hide Comparison" : "Show Comparison"}
+                type="button"
+              >
+                <ChartBar className="h-5 w-5" />
+              </button>
 
-              {activeView === 'performance' && (
-                <>
-                  <button
-                    onClick={() => togglePanel('comparison')}
-                    className={`p-2 rounded-full transition-colors ${
-                      showComparison ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                    }`}
-                    title={showComparison ? "Hide Comparison" : "Show Comparison"}
-                    type="button"
-                  >
-                    <ChartBar className="h-5 w-5" />
-                  </button>
-
-                  <button
-                    onClick={() => togglePanel('testControls')}
-                    className={`p-2 rounded-full transition-colors ${
-                      showTestControls ? 'bg-purple-100 text-purple-600' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                    }`}
-                    title={showTestControls ? "Hide Test Controls" : "Show Test Controls"}
-                    type="button"
-                  >
-                    <Sliders className="h-5 w-5" />
-                  </button>
-                </>
-              )}
+              <button
+                onClick={() => togglePanel('testControls')}
+                className={`p-2 rounded-full transition-colors ${
+                  showTestControls ? 'bg-purple-100 text-purple-600' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}
+                title={showTestControls ? "Hide Test Controls" : "Show Test Controls"}
+                type="button"
+              >
+                <Sliders className="h-5 w-5" />
+              </button>
               
               <button
                 onClick={isPaused ? onResume : onPause}
@@ -496,8 +470,7 @@ export function NetworkSimulation({
           </div>
         )}
         
-        {/* Content card - Performance or Business View */}
-        {activeView === 'performance' && (
+        {/* Metrics card */}
         <div className={`bg-white p-6 ${showComparison || showTestControls ? 'border-x border-gray-200' : 'rounded-t-none border-x border-t border-gray-200'}`}>
           <div className="flex items-center justify-between mb-4">
             <h4 className="text-base font-medium text-gray-900">
@@ -622,139 +595,6 @@ export function NetworkSimulation({
             )}
           </div>
         </div>
-        )}
-
-        {/* Business View */}
-        {activeView === 'business' && (
-        <div className="bg-white p-6 border-x border-t border-gray-200">
-          <div className="flex items-center justify-between mb-5">
-            <h4 className="text-base font-medium text-gray-900">
-              Business Value Analysis
-            </h4>
-          </div>
-
-          {/* Business metrics comparison */}
-          <div className="space-y-4 mb-6">
-            {/* ROI Projection */}
-            <div className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-lg p-4 text-white">
-              <div className="flex items-start space-x-3">
-                <div className="bg-white/20 p-2 rounded-full">
-                  <Zap className="h-5 w-5 text-white" />
-                </div>
-                <div className="flex-1">
-                  <h5 className="font-semibold mb-1">Network Performance Impact</h5>
-                  <p className="text-sm opacity-90 mb-3">
-                    Your custom network design delivers superior performance and reliability compared to shared internet.
-                    Enhanced security, lower latency, and higher availability translate to measurable business outcomes.
-                  </p>
-                  <div className="grid grid-cols-3 gap-2">
-                    <div className="bg-white/10 px-3 py-2 rounded text-center">
-                      <p className="text-xs opacity-80">Productivity Gain</p>
-                      <p className="font-semibold text-sm">+{Math.round(improvements.latency * 0.5)}%</p>
-                    </div>
-                    <div className="bg-white/10 px-3 py-2 rounded text-center">
-                      <p className="text-xs opacity-80">Reliability Improvement</p>
-                      <p className="font-semibold text-sm">+{improvements.availability.toFixed(1)}%</p>
-                    </div>
-                    <div className="bg-white/10 px-3 py-2 rounded text-center">
-                      <p className="text-xs opacity-80">Risk Reduction</p>
-                      <p className="font-semibold text-sm">+{Math.round(improvements.security * 0.7)}%</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Key business outcomes */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="border border-gray-200 rounded-lg p-4">
-                <div className="flex items-center mb-3">
-                  <div className="p-2 bg-green-100 rounded-full mr-3">
-                    <ArrowRight className="h-4 w-4 text-green-600" />
-                  </div>
-                  <h5 className="font-medium text-gray-900">Application Performance</h5>
-                </div>
-                <p className="text-sm text-gray-600 mb-2">
-                  {improvements.latency}% faster response times lead to better user experience and higher customer satisfaction.
-                </p>
-                <div className="flex items-center text-xs text-green-600 bg-green-50 px-2 py-1 rounded-full inline-flex">
-                  ✓ Improved user retention
-                </div>
-              </div>
-
-              <div className="border border-gray-200 rounded-lg p-4">
-                <div className="flex items-center mb-3">
-                  <div className="p-2 bg-blue-100 rounded-full mr-3">
-                    <Shield className="h-4 w-4 text-blue-600" />
-                  </div>
-                  <h5 className="font-medium text-gray-900">Security Posture</h5>
-                </div>
-                <p className="text-sm text-gray-600 mb-2">
-                  {improvements.security}% stronger security reduces risk of data breaches and compliance issues.
-                </p>
-                <div className="flex items-center text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded-full inline-flex">
-                  ✓ Reduced compliance risk
-                </div>
-              </div>
-
-              <div className="border border-gray-200 rounded-lg p-4">
-                <div className="flex items-center mb-3">
-                  <div className="p-2 bg-purple-100 rounded-full mr-3">
-                    <Clock className="h-4 w-4 text-purple-600" />
-                  </div>
-                  <h5 className="font-medium text-gray-900">Operational Efficiency</h5>
-                </div>
-                <p className="text-sm text-gray-600 mb-2">
-                  {improvements.bandwidth}% better bandwidth utilization enables smoother operations and scalability.
-                </p>
-                <div className="flex items-center text-xs text-purple-600 bg-purple-50 px-2 py-1 rounded-full inline-flex">
-                  ✓ Lower operational costs
-                </div>
-              </div>
-
-              <div className="border border-gray-200 rounded-lg p-4">
-                <div className="flex items-center mb-3">
-                  <div className="p-2 bg-amber-100 rounded-full mr-3">
-                    <Activity className="h-4 w-4 text-amber-600" />
-                  </div>
-                  <h5 className="font-medium text-gray-900">Service Availability</h5>
-                </div>
-                <p className="text-sm text-gray-600 mb-2">
-                  {improvements.availability.toFixed(2)}% higher availability means less downtime and revenue loss.
-                </p>
-                <div className="flex items-center text-xs text-amber-600 bg-amber-50 px-2 py-1 rounded-full inline-flex">
-                  ✓ Reduced revenue impact
-                </div>
-              </div>
-            </div>
-
-            {/* Network scores summary */}
-            <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-              <h5 className="font-medium text-gray-900 mb-3">Network Resilience Scores</h5>
-              <div className="grid grid-cols-5 gap-3">
-                {Object.entries(simulationData.networkScores).map(([key, value]) => (
-                  <div key={key} className="text-center">
-                    <div className={`text-2xl font-bold mb-1 ${
-                      value >= 80 ? 'text-green-600' :
-                      value >= 50 ? 'text-amber-600' : 'text-red-600'
-                    }`}>{value}%</div>
-                    <p className="text-xs text-gray-600 capitalize">{key}</p>
-                    <div className="w-full bg-gray-200 rounded-full h-1 mt-1.5">
-                      <div
-                        className={`h-1 rounded-full ${
-                          value >= 80 ? 'bg-green-500' :
-                          value >= 50 ? 'bg-amber-500' : 'bg-red-500'
-                        }`}
-                        style={{ width: `${value}%` }}
-                      ></div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-        )}
 
         {/* Status card */}
         <div className="bg-gray-50 p-4 rounded-b-xl border border-t-0 border-gray-200">
