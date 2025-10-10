@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Activity, Shield, Clock, Pause, Play, BarChart2, X, ChevronRight, Network, Zap, AlertTriangle, ArrowRight, BarChart as ChartBar, Sliders } from 'lucide-react';
+import { Activity, Shield, Clock, Pause, Play, BarChart2, X, ChevronRight, Network, Zap, AlertTriangle, ArrowRight, BarChart as ChartBar, Sliders, Leaf, TrendingDown } from 'lucide-react';
 
 interface SimulationData {
   progress: number;
@@ -38,7 +38,7 @@ export function NetworkSimulation({
   onInjectBandwidthLimit
 }: NetworkSimulationProps) {
   // Use a single state to track which panel is active
-  const [activePanel, setActivePanel] = useState<'none' | 'comparison' | 'testControls'>('testControls');
+  const [activePanel, setActivePanel] = useState<'none' | 'comparison' | 'sustainability' | 'testControls'>('testControls');
   const [showDetails, setShowDetails] = useState(false);
   const [latencyAmount, setLatencyAmount] = useState(50);
   const [packetLossAmount, setPacketLossAmount] = useState(5);
@@ -46,10 +46,11 @@ export function NetworkSimulation({
   
   // Define helper variables for cleaner code
   const showComparison = activePanel === 'comparison';
+  const showSustainability = activePanel === 'sustainability';
   const showTestControls = activePanel === 'testControls';
   
   // Function to toggle panels - ensures only one is open at a time
-  const togglePanel = (panel: 'comparison' | 'testControls') => {
+  const togglePanel = (panel: 'comparison' | 'sustainability' | 'testControls') => {
     if (activePanel === panel) {
       setActivePanel('none');
     } else {
@@ -120,6 +121,17 @@ export function NetworkSimulation({
                 type="button"
               >
                 <ChartBar className="h-5 w-5" />
+              </button>
+
+              <button
+                onClick={() => togglePanel('sustainability')}
+                className={`p-2 rounded-full transition-colors ${
+                  showSustainability ? 'bg-green-100 text-green-600' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}
+                title={showSustainability ? "Hide Sustainability" : "Show Sustainability"}
+                type="button"
+              >
+                <Leaf className="h-5 w-5" />
               </button>
 
               <button
@@ -288,6 +300,90 @@ export function NetworkSimulation({
                 These controls simulate real-world network conditions to test how your network design handles various performance challenges.
                 Use them to verify the resilience of your architecture under different conditions.
               </p>
+            </div>
+          </div>
+        )}
+
+        {/* Sustainability Card */}
+        {showSustainability && (
+          <div className="bg-gradient-to-br from-green-50 to-emerald-50 p-6 border-b border-gray-200">
+            <div className="flex items-center justify-between mb-4">
+              <h4 className="text-base font-medium text-gray-900 flex items-center">
+                <Leaf className="h-4 w-4 mr-2 text-green-600" />
+                Sustainability Impact Assessment
+              </h4>
+              <span className="text-sm text-green-600 font-medium">Environmental Performance</span>
+            </div>
+
+            <div className="grid grid-cols-3 gap-4 mb-4">
+              <div className="bg-white rounded-lg p-4 border border-green-200">
+                <div className="flex items-center justify-between mb-2">
+                  <TrendingDown className="h-5 w-5 text-green-600" />
+                  <span className="text-xs font-semibold bg-green-100 text-green-800 px-2 py-1 rounded-full">Grade A</span>
+                </div>
+                <div className="text-2xl font-bold text-gray-900 mb-1">
+                  {(85 - (simulationData.networkScores.performance / 10)).toFixed(1)}
+                </div>
+                <div className="text-xs text-gray-600">tons CO₂e/year</div>
+                <div className="mt-2 text-xs text-green-700">32% below industry avg</div>
+              </div>
+
+              <div className="bg-white rounded-lg p-4 border border-green-200">
+                <div className="flex items-center justify-between mb-2">
+                  <Zap className="h-5 w-5 text-amber-600" />
+                  <span className="text-xs font-semibold bg-amber-100 text-amber-800 px-2 py-1 rounded-full">Efficient</span>
+                </div>
+                <div className="text-2xl font-bold text-gray-900 mb-1">
+                  {(1.2 + (simulationData.networkScores.performance / 1000)).toFixed(2)}
+                </div>
+                <div className="text-xs text-gray-600">PUE Rating</div>
+                <div className="mt-2 text-xs text-amber-700">Industry avg: 1.58</div>
+              </div>
+
+              <div className="bg-white rounded-lg p-4 border border-green-200">
+                <div className="flex items-center justify-between mb-2">
+                  <Activity className="h-5 w-5 text-blue-600" />
+                  <span className="text-xs font-semibold bg-blue-100 text-blue-800 px-2 py-1 rounded-full">High</span>
+                </div>
+                <div className="text-2xl font-bold text-gray-900 mb-1">
+                  {Math.min(95, 65 + (simulationData.networkScores.security / 3))}%
+                </div>
+                <div className="text-xs text-gray-600">Renewable Energy</div>
+                <div className="mt-2 text-xs text-blue-700">Wind, solar, hydro</div>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-lg p-4 border border-green-200">
+              <h5 className="text-sm font-semibold text-gray-900 mb-3">Green Optimization Insights</h5>
+              <div className="space-y-2">
+                <div className="flex items-start p-2 bg-green-50 rounded">
+                  <Leaf className="h-4 w-4 text-green-600 mr-2 mt-0.5 flex-shrink-0" />
+                  <div className="text-xs text-gray-700">
+                    <strong>Edge Computing:</strong> Your network design reduces long-distance data transfers by {Math.round(simulationData.networkScores.performance / 2)}%, lowering carbon emissions
+                  </div>
+                </div>
+                <div className="flex items-start p-2 bg-blue-50 rounded">
+                  <Zap className="h-4 w-4 text-blue-600 mr-2 mt-0.5 flex-shrink-0" />
+                  <div className="text-xs text-gray-700">
+                    <strong>Energy Efficiency:</strong> Low latency design ({(simulationData.metrics.latency.current / 10).toFixed(1)}ms) indicates proximity to renewable energy datacenters
+                  </div>
+                </div>
+                <div className="flex items-start p-2 bg-emerald-50 rounded">
+                  <TrendingDown className="h-4 w-4 text-emerald-600 mr-2 mt-0.5 flex-shrink-0" />
+                  <div className="text-xs text-gray-700">
+                    <strong>B Corp Alignment:</strong> Network security score of {simulationData.networkScores.security}% supports environmental governance standards
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-4 bg-gradient-to-r from-green-100 to-blue-100 rounded-lg p-3 border border-green-200">
+              <div className="flex items-center">
+                <Shield className="h-5 w-5 text-green-600 mr-2 flex-shrink-0" />
+                <p className="text-xs text-gray-700">
+                  <strong>Compliance:</strong> Your design meets EU Energy Efficiency Directive requirements and supports ISO 14001 certification pathways
+                </p>
+              </div>
             </div>
           </div>
         )}
