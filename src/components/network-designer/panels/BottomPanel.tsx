@@ -1,7 +1,7 @@
 import { ReactNode } from 'react';
 import { ViewModeTabs } from '../tabs/ViewModeTabs';
 
-type ViewMode = 'outcomes' | 'ai-recommendations' | 'cross-connects';
+type ViewMode = 'outcomes' | 'ai-recommendations' | 'sustainability' | 'cross-connects';
 
 interface BottomPanelProps {
   viewMode: ViewMode;

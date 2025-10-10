@@ -9,6 +9,9 @@ export interface BusinessOutcomes {
   multiRegion: boolean;
   costPriority: 'low' | 'medium' | 'high';
   complianceRequired: boolean;
+  sustainabilityPriority: 'low' | 'medium' | 'high';
+  renewableEnergyPreferred: boolean;
+  carbonNeutralGoal: boolean;
 }
 
 interface OutcomesContextType {
@@ -26,6 +29,9 @@ const defaultOutcomes: BusinessOutcomes = {
   multiRegion: false,
   costPriority: 'medium',
   complianceRequired: false,
+  sustainabilityPriority: 'medium',
+  renewableEnergyPreferred: false,
+  carbonNeutralGoal: false,
 };
 
 const OutcomesContext = createContext<OutcomesContextType | undefined>(undefined);

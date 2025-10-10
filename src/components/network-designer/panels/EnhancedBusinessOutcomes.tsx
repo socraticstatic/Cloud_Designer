@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Target, Shield, DollarSign, CheckCircle2, TrendingUp, Activity, Clock, ArrowRight } from 'lucide-react';
+import { Target, Shield, DollarSign, CheckCircle2, TrendingUp, Activity, Clock, ArrowRight, Leaf } from 'lucide-react';
 import { useOutcomes } from '../context/OutcomesContext';
 
 export function EnhancedBusinessOutcomes() {
@@ -182,6 +182,56 @@ export function EnhancedBusinessOutcomes() {
               <option value="low">Minimize costs</option>
               <option value="medium">Balanced</option>
               <option value="high">Performance first</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div className="bg-green-50 rounded-lg p-4 border border-green-200">
+        <h3 className="text-sm font-medium text-gray-900 mb-3 flex items-center">
+          <Leaf className="h-4 w-4 mr-2 text-green-600" />
+          Sustainability Goals
+        </h3>
+        <div className="grid grid-cols-2 gap-3">
+          <label className="flex items-center space-x-2 p-3 bg-white rounded border border-green-100 cursor-pointer hover:border-green-300 transition-colors">
+            <input
+              type="checkbox"
+              checked={outcomes.renewableEnergyPreferred}
+              onChange={(e) => updateOutcomes({ renewableEnergyPreferred: e.target.checked })}
+              className="w-4 h-4 text-green-600 rounded"
+            />
+            <div className="text-sm">
+              <div className="font-medium text-gray-900">Renewable Energy</div>
+              <div className="text-xs text-gray-500">Prioritize green datacenters</div>
+            </div>
+          </label>
+
+          <label className="flex items-center space-x-2 p-3 bg-white rounded border border-green-100 cursor-pointer hover:border-green-300 transition-colors">
+            <input
+              type="checkbox"
+              checked={outcomes.carbonNeutralGoal}
+              onChange={(e) => updateOutcomes({ carbonNeutralGoal: e.target.checked })}
+              className="w-4 h-4 text-green-600 rounded"
+            />
+            <div className="text-sm">
+              <div className="font-medium text-gray-900">Carbon Neutral</div>
+              <div className="text-xs text-gray-500">Net-zero emissions target</div>
+            </div>
+          </label>
+
+          <div className="col-span-2 p-3 bg-white rounded border border-green-100">
+            <div className="font-medium text-gray-900 mb-2 flex items-center text-sm">
+              <Leaf className="h-3.5 w-3.5 mr-1 text-green-600" />
+              Sustainability Priority
+            </div>
+            <select
+              value={outcomes.sustainabilityPriority}
+              onChange={(e) => updateOutcomes({ sustainabilityPriority: e.target.value as 'low' | 'medium' | 'high' })}
+              className="w-full p-1.5 border border-gray-300 rounded text-xs bg-white"
+            >
+              <option value="low">Standard practices</option>
+              <option value="medium">Balanced approach</option>
+              <option value="high">Maximum efficiency</option>
             </select>
           </div>
         </div>

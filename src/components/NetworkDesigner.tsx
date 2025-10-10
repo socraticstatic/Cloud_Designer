@@ -31,6 +31,7 @@ const DesignAssistant = lazy(() => import('./network-designer/DesignAssistant').
 const NetworkParameters = lazy(() => import('./network-designer/NetworkParameters').then(module => ({ default: module.NetworkParameters })));
 const EnhancedBusinessOutcomes = lazy(() => import('./network-designer/panels/EnhancedBusinessOutcomes').then(module => ({ default: module.EnhancedBusinessOutcomes })));
 const ReactiveAIPanel = lazy(() => import('./network-designer/panels/ReactiveAIPanel').then(module => ({ default: module.ReactiveAIPanel })));
+const SustainabilityImpact = lazy(() => import('./network-designer/panels/SustainabilityImpact').then(module => ({ default: module.SustainabilityImpact })));
 const TemplatesManager = lazy(() => import('./network-designer/panels/TemplatesManager').then(module => ({ default: module.TemplatesManager })));
 const SaveTemplateModal = lazy(() => import('./network-designer/SaveTemplateModal').then(module => ({ default: module.SaveTemplateModal })));
 const NetworkSimulation = lazy(() => import('./network-designer/simulation/NetworkSimulation').then(module => ({ default: module.NetworkSimulation })));
@@ -267,7 +268,7 @@ export function NetworkDesigner({
   };
   
   // UI state
-  const [viewMode, setViewMode] = useState<'outcomes' | 'ai-recommendations' | 'cross-connects'>('outcomes');
+  const [viewMode, setViewMode] = useState<'outcomes' | 'ai-recommendations' | 'sustainability' | 'cross-connects'>('outcomes');
   const [isRunningScenario, setIsRunningScenario] = useState(false);
   const [showDefaultSetup, setShowDefaultSetup] = useState(false);
   
@@ -851,6 +852,10 @@ export function NetworkDesigner({
                   saveToHistory(newNodes, newEdges);
                 }}
               />
+            )}
+
+            {viewMode === 'sustainability' && (
+              <SustainabilityImpact />
             )}
 
             {viewMode === 'cross-connects' && (

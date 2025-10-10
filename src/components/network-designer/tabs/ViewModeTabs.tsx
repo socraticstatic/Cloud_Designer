@@ -1,6 +1,6 @@
-import { Target, Sparkles, Cable, ArrowRight } from 'lucide-react';
+import { Target, Sparkles, Cable, ArrowRight, Leaf } from 'lucide-react';
 
-type ViewMode = 'outcomes' | 'ai-recommendations' | 'cross-connects';
+type ViewMode = 'outcomes' | 'ai-recommendations' | 'sustainability' | 'cross-connects';
 
 interface ViewModeTabsProps {
   viewMode: ViewMode;
@@ -9,6 +9,7 @@ interface ViewModeTabsProps {
 
 export function ViewModeTabs({ viewMode, onChange }: ViewModeTabsProps) {
   const isAIMode = viewMode === 'outcomes' || viewMode === 'ai-recommendations';
+  const isSustainabilityMode = viewMode === 'sustainability';
 
   return (
     <div className="border-b border-gray-200">
@@ -44,6 +45,20 @@ export function ViewModeTabs({ viewMode, onChange }: ViewModeTabsProps) {
             </div>
           </button>
         </div>
+
+        <button
+          onClick={() => onChange('sustainability')}
+          className={`py-3 px-6 text-sm font-medium transition-colors border-r border-gray-200 ${
+            viewMode === 'sustainability'
+              ? 'text-green-600 border-b-2 border-green-600 bg-green-50'
+              : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+          }`}
+        >
+          <div className="flex items-center justify-center">
+            <Leaf className="h-4 w-4 mr-2" />
+            <span>Sustainability</span>
+          </div>
+        </button>
 
         <button
           onClick={() => onChange('cross-connects')}
