@@ -295,7 +295,7 @@ export function NetworkSimulation({
             <div className="flex items-center justify-between mb-4">
               <h4 className="text-base font-medium text-gray-900 flex items-center">
                 <BarChart2 className="h-4 w-4 mr-2 text-blue-600" />
-                Performance Comparison
+                Business Performance Comparison
               </h4>
               <span className="text-sm text-blue-600 font-medium">Your Network vs. Shared Internet</span>
             </div>
