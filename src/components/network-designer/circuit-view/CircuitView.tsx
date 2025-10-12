@@ -214,7 +214,7 @@ export function CircuitView({
       </div>
 
       {/* Main content area */}
-      <div className="absolute inset-0 top-16 overflow-auto" style={{ right: selectedDevice || selectedPort || selectedCircuit ? '384px' : '0' }}>
+      <div className="absolute inset-0 top-16" style={{ right: selectedDevice || selectedPort || selectedCircuit ? '384px' : '0' }}>
         {nodes.length === 0 ? (
           <div className="absolute inset-0 flex items-center justify-center">
             <div className="bg-white rounded-xl shadow-lg p-8 max-w-md text-center">
