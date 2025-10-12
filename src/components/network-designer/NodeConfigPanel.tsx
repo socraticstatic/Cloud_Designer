@@ -41,69 +41,43 @@ export function NodeConfigPanel({
   }, [isVisible, node.type]);
 
   const loadLocationData = async () => {
-    console.log('[NodeConfigPanel] Loading location data for node type:', node.type);
     setLoadingLocations(true);
     try {
       if (node.type === 'destination') {
         const provider = node.config?.provider || 'AWS';
-        console.log('[NodeConfigPanel] Loading cloud regions for provider:', provider);
-
-        if (!node.config?.provider) {
-          handleConfigChange('provider', provider);
-        }
-
         const regions = await getCloudRegionLocations(provider);
-        console.log('[NodeConfigPanel] Loaded cloud regions:', regions.length, 'regions');
         setCloudRegions(regions);
       } else if (node.type === 'datacenter') {
-        const defaultProvider = node.config?.provider || 'Equinix';
-        console.log('[NodeConfigPanel] Loading datacenter locations for provider:', defaultProvider);
-
-        if (!node.config?.provider) {
-          handleConfigChange('provider', defaultProvider);
-        }
-
         const locations = await getDatacenterLocations();
-        console.log('[NodeConfigPanel] Loaded datacenter locations:', locations.length, 'locations');
         setDatacenterLocations(locations);
       }
     } catch (error) {
-      console.error('[NodeConfigPanel] Error loading location data:', error);
+      console.error('Error loading location data:', error);
     } finally {
       setLoadingLocations(false);
     }
   };
 
   const handleProviderChange = async (provider: string) => {
-    console.log('[NodeConfigPanel] Provider changed to:', provider);
     handleConfigChange('provider', provider);
 
     if (node.type === 'destination') {
       setLoadingLocations(true);
       try {
         const regions = await getCloudRegionLocations(provider);
-        console.log('[NodeConfigPanel] Loaded regions after provider change:', regions.length);
         setCloudRegions(regions);
       } catch (error) {
-        console.error('[NodeConfigPanel] Error loading regions:', error);
+        console.error('Error loading regions:', error);
       } finally {
         setLoadingLocations(false);
       }
-    } else if (node.type === 'datacenter') {
-      const locations = await getDatacenterLocations();
-      console.log('[NodeConfigPanel] Loaded datacenter locations after provider change:', locations.length);
-      setDatacenterLocations(locations);
     }
   };
 
   const handleRegionChange = (regionCode: string) => {
     const region = cloudRegions.find(r => r.region_code === regionCode);
     if (region) {
-      const cityName = region.state
-        ? `${region.city}, ${region.state}`
-        : region.city;
       onUpdate({
-        name: cityName,
         config: {
           ...node.config,
           region: regionCode,
@@ -122,11 +96,7 @@ export function NodeConfigPanel({
       l => l.facility_code === facilityCode && l.provider === node.config?.provider
     );
     if (location) {
-      const cityName = location.state
-        ? `${location.city}, ${location.state}`
-        : location.city;
       onUpdate({
-        name: cityName,
         config: {
           ...node.config,
           facilityCode: location.facility_code,
@@ -375,10 +345,8 @@ export function NodeConfigPanel({
                     className="form-select"
                     disabled={loadingLocations}
                   >
-                    <option value="">
-                      {loadingLocations ? 'Loading regions...' : 'Select a region...'}
-                    </option>
-                    {(cloudRegions || []).map(region => (
+                    <option value="">Select a region...</option>
+                    {cloudRegions.map(region => (
                       <option key={region.region_code} value={region.region_code}>
                         {region.region_name}
                       </option>
@@ -432,36 +400,16 @@ export function NodeConfigPanel({
                     value={node.config?.facilityCode || ''}
                     onChange={(e) => handleDatacenterChange(e.target.value)}
                     className="form-select"
+                    disabled={loadingLocations}
                   >
                     <option value="">Select a facility...</option>
-                    {node.config?.provider === 'Equinix' && (
-                      <>
-                        <option value="DC2">DC2 - Ashburn, VA</option>
-                        <option value="DC6">DC6 - Ashburn, VA</option>
-                        <option value="DC10">DC10 - Ashburn, VA</option>
-                        <option value="SV1">SV1 - San Jose, CA</option>
-                        <option value="SV5">SV5 - San Jose, CA</option>
-                      </>
-                    )}
-                    {node.config?.provider === 'Digital Realty' && (
-                      <>
-                        <option value="IAD1">IAD1 - Ashburn, VA</option>
-                        <option value="SJC1">SJC1 - Santa Clara, CA</option>
-                        <option value="DFW1">DFW1 - Dallas, TX</option>
-                      </>
-                    )}
-                    {node.config?.provider === 'Coresite' && (
-                      <>
-                        <option value="VA1">VA1 - Reston, VA</option>
-                        <option value="SV2">SV2 - Santa Clara, CA</option>
-                      </>
-                    )}
-                    {node.config?.provider === 'CyrusOne' && (
-                      <>
-                        <option value="IAD-1">IAD-1 - Sterling, VA</option>
-                        <option value="PHX-1">PHX-1 - Phoenix, AZ</option>
-                      </>
-                    )}
+                    {datacenterLocations
+                      .filter(loc => loc.provider === (node.config?.provider || 'Equinix'))
+                      .map(location => (
+                        <option key={location.facility_code} value={location.facility_code}>
+                          {location.facility_code} - {location.city}, {location.state || location.country}
+                        </option>
+                      ))}
                   </select>
                 </div>
                 {node.config?.city && (

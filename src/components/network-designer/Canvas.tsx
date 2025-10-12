@@ -22,7 +22,6 @@ interface CanvasProps {
   onUpdateEdge?: (edgeId: string, updates: Partial<NetworkEdge>) => void;
   onDeleteNode?: (nodeId: string) => void;
   onDeleteEdge?: (edgeId: string) => void;
-  onViewportChange?: (viewport: { panOffset: { x: number; y: number }; zoomLevel: number }) => void;
 }
 
 // Memoized Edge renderer for better performance
@@ -44,8 +43,7 @@ export const Canvas = forwardRef<HTMLDivElement, CanvasProps>(({
   onUpdateNode,
   onUpdateEdge,
   onDeleteNode,
-  onDeleteEdge,
-  onViewportChange
+  onDeleteEdge
 }, ref) => {
   const internalCanvasRef = useRef<HTMLDivElement>(null);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
@@ -94,7 +92,7 @@ export const Canvas = forwardRef<HTMLDivElement, CanvasProps>(({
 
     const nodeXs = nodes.map(n => n.x);
     const nodeYs = nodes.map(n => n.y);
-
+    
     setContentBounds({
       minX: Math.min(...nodeXs) - 100,
       minY: Math.min(...nodeYs) - 100,
@@ -102,13 +100,6 @@ export const Canvas = forwardRef<HTMLDivElement, CanvasProps>(({
       maxY: Math.max(...nodeYs) + 100
     });
   }, [nodes]);
-
-  // Notify parent of viewport changes
-  useEffect(() => {
-    if (onViewportChange) {
-      onViewportChange({ panOffset, zoomLevel });
-    }
-  }, [panOffset, zoomLevel, onViewportChange]);
   
   // Handle middle-mouse/spacebar panning
   useEffect(() => {

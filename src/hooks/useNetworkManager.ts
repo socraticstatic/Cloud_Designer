@@ -26,71 +26,15 @@ export function useNetworkManager(
   }, [nodes, edges]);
 
   // Create a new node
-  const addNode = (type: NetworkNode['type'], functionType?: string, networkType?: string, provider?: string, canvasRef?: React.RefObject<HTMLDivElement>, viewportInfo?: { panOffset: { x: number; y: number }; zoomLevel: number }) => {
+  const addNode = (type: NetworkNode['type'], functionType?: string, networkType?: string, provider?: string) => {
     const displayName = getNodeDisplayName(type, functionType, networkType, provider);
-
-    let x = Math.random() * 600 + 100;
-    let y = Math.min(Math.random() * 300 + 100, 800 - 64);
-
-    if (canvasRef?.current && viewportInfo) {
-      const canvasRect = canvasRef.current.getBoundingClientRect();
-      const centerX = canvasRect.width / 2;
-      const centerY = canvasRect.height / 2;
-
-      const targetX = (centerX - viewportInfo.panOffset.x) / viewportInfo.zoomLevel - 32;
-      const targetY = (centerY - viewportInfo.panOffset.y) / viewportInfo.zoomLevel - 32;
-
-      const nodeSize = 64;
-      const minDistance = 100;
-
-      const isPositionClear = (testX: number, testY: number) => {
-        return !nodes.some(node => {
-          const dx = node.x - testX;
-          const dy = node.y - testY;
-          const distance = Math.sqrt(dx * dx + dy * dy);
-          return distance < minDistance;
-        });
-      };
-
-      let finalX = targetX;
-      let finalY = targetY;
-
-      if (!isPositionClear(targetX, targetY)) {
-        const searchRadius = 150;
-        const angleStep = Math.PI / 8;
-        let found = false;
-
-        for (let radius = minDistance; radius <= searchRadius && !found; radius += 50) {
-          for (let angle = 0; angle < Math.PI * 2 && !found; angle += angleStep) {
-            const testX = targetX + Math.cos(angle) * radius;
-            const testY = targetY + Math.sin(angle) * radius;
-
-            if (testX >= 50 && testX <= 750 && testY >= 50 && testY <= 750) {
-              if (isPositionClear(testX, testY)) {
-                finalX = testX;
-                finalY = testY;
-                found = true;
-              }
-            }
-          }
-        }
-
-        if (!found) {
-          finalX = targetX + 150;
-          finalY = targetY;
-        }
-      }
-
-      x = Math.max(50, Math.min(finalX, 750));
-      y = Math.max(50, Math.min(finalY, 750));
-    }
-
+    
     const newNode: NetworkNode = {
       id: `node-${Date.now()}`,
       type,
       ...(type === 'function' && { functionType }),
-      x,
-      y,
+      x: Math.random() * 600 + 100,
+      y: Math.min(Math.random() * 300 + 100, 800 - 64),
       name: displayName,
       icon: getNodeIcon(type, functionType, networkType),
       status: 'inactive',

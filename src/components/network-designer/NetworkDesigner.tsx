@@ -59,16 +59,13 @@ interface CustomTemplate {
 export function NetworkDesigner({ onComplete, onCancel }: NetworkDesignerProps) {
   // Refs
   const canvasRef = useRef<HTMLDivElement>(null);
-
+  
   // Abstraction level state
   const [abstractionLevel, setAbstractionLevel] = useState<AbstractionLevel>('network');
-
+  
   // Custom templates state
   const [customTemplates, setCustomTemplates] = useState<CustomTemplate[]>([]);
   const [showSaveTemplateModal, setShowSaveTemplateModal] = useState(false);
-
-  // Viewport state
-  const [viewportInfo, setViewportInfo] = useState({ panOffset: { x: 0, y: 0 }, zoomLevel: 1 });
   
   // Network history management
   const { saveToHistory, undo, canUndo } = useNetworkHistory();
@@ -180,11 +177,6 @@ export function NetworkDesigner({ onComplete, onCancel }: NetworkDesignerProps) 
   // Handle node drag end
   const handleNodeDragEnd = () => {
     saveToHistory(nodes, edges);
-  };
-
-  // Handle adding a node with viewport-aware positioning
-  const handleAddNode = (type: NetworkNode['type'], functionType?: string, networkType?: string, provider?: string) => {
-    return addNode(type, functionType, networkType, provider, canvasRef, viewportInfo);
   };
   
   // Handle running simulation
@@ -415,7 +407,6 @@ export function NetworkDesigner({ onComplete, onCancel }: NetworkDesignerProps) 
             onEdgeClick={handleEdgeSelection}
             maxY={800}
             ref={canvasRef}
-            onViewportChange={setViewportInfo}
           />
         );
         
@@ -471,7 +462,7 @@ export function NetworkDesigner({ onComplete, onCancel }: NetworkDesignerProps) 
         {abstractionLevel === 'network' && (
           <div style={{ zIndex: 100, pointerEvents: 'auto' }}>
             <Toolbar
-              onAddNode={handleAddNode}
+              onAddNode={addNode}
               onToggleEdgeCreation={toggleEdgeCreation}
               isCreatingEdge={isCreatingEdge}
               onCancel={undo}
