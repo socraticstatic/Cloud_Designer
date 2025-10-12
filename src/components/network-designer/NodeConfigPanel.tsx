@@ -375,8 +375,10 @@ export function NodeConfigPanel({
                     className="form-select"
                     disabled={loadingLocations}
                   >
-                    <option value="">Select a region...</option>
-                    {cloudRegions.map(region => (
+                    <option value="">
+                      {loadingLocations ? 'Loading regions...' : 'Select a region...'}
+                    </option>
+                    {(cloudRegions || []).map(region => (
                       <option key={region.region_code} value={region.region_code}>
                         {region.region_name}
                       </option>
@@ -432,8 +434,10 @@ export function NodeConfigPanel({
                     className="form-select"
                     disabled={loadingLocations}
                   >
-                    <option value="">Select a facility...</option>
-                    {datacenterLocations
+                    <option value="">
+                      {loadingLocations ? 'Loading facilities...' : 'Select a facility...'}
+                    </option>
+                    {(datacenterLocations || [])
                       .filter(loc => loc.provider === (node.config?.provider || 'Equinix'))
                       .map(location => (
                         <option key={location.facility_code} value={location.facility_code}>
