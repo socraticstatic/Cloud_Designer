@@ -13,6 +13,14 @@ export interface NetworkNode {
     provider?: string;
     region?: string;
     location?: string;
+
+    // Geographic properties
+    city?: string;
+    state?: string;
+    country?: string;
+    latitude?: number;
+    longitude?: number;
+    facilityCode?: string;
     
     // Network type properties
     networkType?: 'internet' | 'vpn' | 'ethernet' | 'iot' | 'private';

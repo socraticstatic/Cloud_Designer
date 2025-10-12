@@ -1,7 +1,15 @@
 import { useState, useEffect } from 'react';
-import { Network, Activity, Shield, Server, PanelRight, Menu, Database, Router, Cloud, Globe, Lock, Feather as Ethernet, Wifi } from 'lucide-react';
+import { Network, Activity, Shield, Server, PanelRight, Menu, Database, Router, Cloud, Globe, Lock, Feather as Ethernet, Wifi, MapPin } from 'lucide-react';
 import { NetworkNode } from '../types';
 import { FloatingPanel } from './FloatingPanel';
+import {
+  getCloudRegionLocations,
+  getDatacenterLocations,
+  getCloudProviders,
+  getDatacenterProviders,
+  type CloudRegionLocation,
+  type DatacenterLocation
+} from '../../services/locationService';
 
 interface NodeConfigPanelProps {
   node: NetworkNode;
@@ -12,22 +20,96 @@ interface NodeConfigPanelProps {
   containerRef: React.RefObject<HTMLElement>;
 }
 
-export function NodeConfigPanel({ 
-  node, 
-  isVisible, 
-  onClose, 
-  onUpdate, 
+export function NodeConfigPanel({
+  node,
+  isVisible,
+  onClose,
+  onUpdate,
   onDelete,
-  containerRef 
+  containerRef
 }: NodeConfigPanelProps) {
   const [activeTab, setActiveTab] = useState<'connectivity' | 'routing' | 'security'>('connectivity');
+  const [cloudRegions, setCloudRegions] = useState<CloudRegionLocation[]>([]);
+  const [datacenterLocations, setDatacenterLocations] = useState<DatacenterLocation[]>([]);
+  const [loadingLocations, setLoadingLocations] = useState(false);
 
   useEffect(() => {
     if (isVisible) {
-      // Reset to default tab when panel becomes visible
       setActiveTab('connectivity');
+      loadLocationData();
     }
-  }, [isVisible]);
+  }, [isVisible, node.type]);
+
+  const loadLocationData = async () => {
+    setLoadingLocations(true);
+    try {
+      if (node.type === 'destination') {
+        const provider = node.config?.provider || 'AWS';
+        const regions = await getCloudRegionLocations(provider);
+        setCloudRegions(regions);
+      } else if (node.type === 'datacenter') {
+        const locations = await getDatacenterLocations();
+        setDatacenterLocations(locations);
+      }
+    } catch (error) {
+      console.error('Error loading location data:', error);
+    } finally {
+      setLoadingLocations(false);
+    }
+  };
+
+  const handleProviderChange = async (provider: string) => {
+    handleConfigChange('provider', provider);
+
+    if (node.type === 'destination') {
+      setLoadingLocations(true);
+      try {
+        const regions = await getCloudRegionLocations(provider);
+        setCloudRegions(regions);
+      } catch (error) {
+        console.error('Error loading regions:', error);
+      } finally {
+        setLoadingLocations(false);
+      }
+    }
+  };
+
+  const handleRegionChange = (regionCode: string) => {
+    const region = cloudRegions.find(r => r.region_code === regionCode);
+    if (region) {
+      onUpdate({
+        config: {
+          ...node.config,
+          region: regionCode,
+          city: region.city,
+          state: region.state || undefined,
+          country: region.country,
+          latitude: Number(region.latitude),
+          longitude: Number(region.longitude)
+        }
+      });
+    }
+  };
+
+  const handleDatacenterChange = (facilityCode: string) => {
+    const location = datacenterLocations.find(
+      l => l.facility_code === facilityCode && l.provider === node.config?.provider
+    );
+    if (location) {
+      onUpdate({
+        config: {
+          ...node.config,
+          facilityCode: location.facility_code,
+          location: `${location.city}, ${location.state || location.country}`,
+          city: location.city,
+          state: location.state || undefined,
+          country: location.country,
+          latitude: Number(location.latitude),
+          longitude: Number(location.longitude)
+        }
+      });
+    }
+  };
 
   if (!node) return null;
 
@@ -242,19 +324,46 @@ export function NodeConfigPanel({
             {node.type === 'destination' && (
               <>
                 <div className="form-group">
+                  <label htmlFor="provider">Cloud Provider</label>
+                  <select
+                    id="provider"
+                    value={node.config?.provider || 'AWS'}
+                    onChange={(e) => handleProviderChange(e.target.value)}
+                    className="form-select"
+                  >
+                    {getCloudProviders().map(p => (
+                      <option key={p} value={p}>{p}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="form-group">
                   <label htmlFor="region">Region</label>
                   <select
                     id="region"
-                    value={node.config?.region || 'us-east-1'}
-                    onChange={(e) => handleConfigChange('region', e.target.value)}
+                    value={node.config?.region || ''}
+                    onChange={(e) => handleRegionChange(e.target.value)}
                     className="form-select"
+                    disabled={loadingLocations}
                   >
-                    <option value="us-east-1">US East (N. Virginia)</option>
-                    <option value="us-west-1">US West (N. California)</option>
-                    <option value="eu-west-1">Europe (Ireland)</option>
-                    <option value="ap-northeast-1">Asia Pacific (Tokyo)</option>
+                    <option value="">Select a region...</option>
+                    {cloudRegions.map(region => (
+                      <option key={region.region_code} value={region.region_code}>
+                        {region.region_name}
+                      </option>
+                    ))}
                   </select>
                 </div>
+                {node.config?.city && (
+                  <div className="form-group">
+                    <label className="flex items-center text-sm text-gray-600">
+                      <MapPin className="h-4 w-4 mr-1" />
+                      Location
+                    </label>
+                    <div className="text-sm text-gray-900 bg-gray-50 px-3 py-2 rounded border border-gray-200">
+                      {node.config.city}{node.config.state ? `, ${node.config.state}` : ''}, {node.config.country}
+                    </div>
+                  </div>
+                )}
                 <div className="form-group">
                   <label htmlFor="vpcId">VPC/VNET ID</label>
                   <input
@@ -272,16 +381,48 @@ export function NodeConfigPanel({
             {node.type === 'datacenter' && (
               <>
                 <div className="form-group">
-                  <label htmlFor="location">Location</label>
-                  <input
-                    id="location"
-                    type="text"
-                    value={node.config?.location || ''}
-                    onChange={(e) => handleConfigChange('location', e.target.value)}
-                    placeholder="e.g., Ashburn VA3"
-                    className="form-input"
-                  />
+                  <label htmlFor="dcProvider">Datacenter Provider</label>
+                  <select
+                    id="dcProvider"
+                    value={node.config?.provider || 'Equinix'}
+                    onChange={(e) => handleProviderChange(e.target.value)}
+                    className="form-select"
+                  >
+                    {getDatacenterProviders().map(p => (
+                      <option key={p} value={p}>{p}</option>
+                    ))}
+                  </select>
                 </div>
+                <div className="form-group">
+                  <label htmlFor="facility">Facility</label>
+                  <select
+                    id="facility"
+                    value={node.config?.facilityCode || ''}
+                    onChange={(e) => handleDatacenterChange(e.target.value)}
+                    className="form-select"
+                    disabled={loadingLocations}
+                  >
+                    <option value="">Select a facility...</option>
+                    {datacenterLocations
+                      .filter(loc => loc.provider === (node.config?.provider || 'Equinix'))
+                      .map(location => (
+                        <option key={location.facility_code} value={location.facility_code}>
+                          {location.facility_code} - {location.city}, {location.state || location.country}
+                        </option>
+                      ))}
+                  </select>
+                </div>
+                {node.config?.city && (
+                  <div className="form-group">
+                    <label className="flex items-center text-sm text-gray-600">
+                      <MapPin className="h-4 w-4 mr-1" />
+                      Location
+                    </label>
+                    <div className="text-sm text-gray-900 bg-gray-50 px-3 py-2 rounded border border-gray-200">
+                      {node.config.city}{node.config.state ? `, ${node.config.state}` : ''}, {node.config.country}
+                    </div>
+                  </div>
+                )}
                 <div className="form-group">
                   <label htmlFor="crossConnectType">Cross-Connect Type</label>
                   <select
