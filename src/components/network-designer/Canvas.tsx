@@ -13,6 +13,7 @@ interface CanvasProps {
   isCreatingEdge: boolean;
   edgeStart: string | null;
   isReadOnly?: boolean;
+  abstractionLevel?: 'global' | 'network' | 'circuit';
   onNodeClick: (node: NetworkNode | null) => void;
   onNodeDrag: (nodeId: string, x: number, y: number) => void;
   onNodeDragEnd: () => void;
@@ -35,6 +36,7 @@ export const Canvas = forwardRef<HTMLDivElement, CanvasProps>(({
   isCreatingEdge,
   edgeStart,
   isReadOnly = false,
+  abstractionLevel = 'network',
   onNodeClick,
   onNodeDrag,
   onNodeDragEnd,
@@ -358,19 +360,24 @@ export const Canvas = forwardRef<HTMLDivElement, CanvasProps>(({
                 // Ensure we have valid numbers
                 const validX = typeof x === 'number' ? x : 0;
                 const validY = typeof y === 'number' ? y : 0;
-                
-                // Apply bounds to keep nodes within the canvas
-                const boundedX = Math.max(0, Math.min(validX, (canvasRef.current?.clientWidth || 0) / zoomLevel - 64));
-                const boundedY = Math.max(0, Math.min(validY, maxY - 64));
-                
+
+                // Apply bounds to keep nodes within the canvas only if NOT in network view
+                let boundedX = validX;
+                let boundedY = validY;
+
+                if (abstractionLevel !== 'network') {
+                  boundedX = Math.max(0, Math.min(validX, (canvasRef.current?.clientWidth || 0) / zoomLevel - 64));
+                  boundedY = Math.max(0, Math.min(validY, maxY - 64));
+                }
+
                 // Snap to grid if enabled
                 const snappedX = snapToGrid ? Math.round(boundedX / gridSize) * gridSize : boundedX;
                 const snappedY = snapToGrid ? Math.round(boundedY / gridSize) * gridSize : boundedY;
-                
+
                 // Ensure we're always passing valid numbers
                 onNodeDrag(
-                  node.id, 
-                  isNaN(snappedX) ? 0 : snappedX, 
+                  node.id,
+                  isNaN(snappedX) ? 0 : snappedX,
                   isNaN(snappedY) ? 0 : snappedY
                 );
               }}
