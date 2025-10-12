@@ -432,18 +432,36 @@ export function NodeConfigPanel({
                     value={node.config?.facilityCode || ''}
                     onChange={(e) => handleDatacenterChange(e.target.value)}
                     className="form-select"
-                    disabled={loadingLocations}
                   >
-                    <option value="">
-                      {loadingLocations ? 'Loading facilities...' : `Select a facility... (${(datacenterLocations || []).filter(loc => loc.provider === (node.config?.provider || 'Equinix')).length} available)`}
-                    </option>
-                    {(datacenterLocations || [])
-                      .filter(loc => loc.provider === (node.config?.provider || 'Equinix'))
-                      .map(location => (
-                        <option key={location.facility_code} value={location.facility_code}>
-                          {location.facility_code} - {location.city}, {location.state || location.country}
-                        </option>
-                      ))}
+                    <option value="">Select a facility...</option>
+                    {node.config?.provider === 'Equinix' && (
+                      <>
+                        <option value="DC2">DC2 - Ashburn, VA</option>
+                        <option value="DC6">DC6 - Ashburn, VA</option>
+                        <option value="DC10">DC10 - Ashburn, VA</option>
+                        <option value="SV1">SV1 - San Jose, CA</option>
+                        <option value="SV5">SV5 - San Jose, CA</option>
+                      </>
+                    )}
+                    {node.config?.provider === 'Digital Realty' && (
+                      <>
+                        <option value="IAD1">IAD1 - Ashburn, VA</option>
+                        <option value="SJC1">SJC1 - Santa Clara, CA</option>
+                        <option value="DFW1">DFW1 - Dallas, TX</option>
+                      </>
+                    )}
+                    {node.config?.provider === 'Coresite' && (
+                      <>
+                        <option value="VA1">VA1 - Reston, VA</option>
+                        <option value="SV2">SV2 - Santa Clara, CA</option>
+                      </>
+                    )}
+                    {node.config?.provider === 'CyrusOne' && (
+                      <>
+                        <option value="IAD-1">IAD-1 - Sterling, VA</option>
+                        <option value="PHX-1">PHX-1 - Phoenix, AZ</option>
+                      </>
+                    )}
                   </select>
                 </div>
                 {node.config?.city && (
