@@ -3,6 +3,14 @@ import { createClient } from '@supabase/supabase-js';
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
+if (!supabaseUrl || !supabaseAnonKey) {
+  console.error('[LocationService] Missing Supabase credentials!', {
+    hasUrl: !!supabaseUrl,
+    hasKey: !!supabaseAnonKey
+  });
+}
+
+console.log('[LocationService] Initializing Supabase client with URL:', supabaseUrl);
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 export interface DatacenterLocation {
@@ -42,10 +50,14 @@ let datacenterCache: DatacenterLocation[] | null = null;
 let cloudRegionCache: Map<string, CloudRegionLocation[]> | null = null;
 
 export async function getDatacenterLocations(): Promise<DatacenterLocation[]> {
+  console.log('[LocationService] getDatacenterLocations called');
+
   if (datacenterCache) {
+    console.log('[LocationService] Returning cached datacenter locations:', datacenterCache.length);
     return datacenterCache;
   }
 
+  console.log('[LocationService] Fetching datacenter locations from database');
   const { data, error } = await supabase
     .from('datacenter_locations')
     .select('*')
@@ -53,11 +65,12 @@ export async function getDatacenterLocations(): Promise<DatacenterLocation[]> {
     .order('city', { ascending: true });
 
   if (error) {
-    console.error('Error fetching datacenter locations:', error);
+    console.error('[LocationService] Error fetching datacenter locations:', error);
     return [];
   }
 
   datacenterCache = data || [];
+  console.log('[LocationService] Fetched', datacenterCache.length, 'datacenter locations');
   return datacenterCache;
 }
 
