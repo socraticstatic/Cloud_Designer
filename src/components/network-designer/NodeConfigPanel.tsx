@@ -45,9 +45,20 @@ export function NodeConfigPanel({
     try {
       if (node.type === 'destination') {
         const provider = node.config?.provider || 'AWS';
+
+        if (!node.config?.provider) {
+          handleConfigChange('provider', provider);
+        }
+
         const regions = await getCloudRegionLocations(provider);
         setCloudRegions(regions);
       } else if (node.type === 'datacenter') {
+        const defaultProvider = node.config?.provider || 'Equinix';
+
+        if (!node.config?.provider) {
+          handleConfigChange('provider', defaultProvider);
+        }
+
         const locations = await getDatacenterLocations();
         setDatacenterLocations(locations);
       }
