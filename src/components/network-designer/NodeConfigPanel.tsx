@@ -435,7 +435,7 @@ export function NodeConfigPanel({
                     disabled={loadingLocations}
                   >
                     <option value="">
-                      {loadingLocations ? 'Loading facilities...' : 'Select a facility...'}
+                      {loadingLocations ? 'Loading facilities...' : `Select a facility... (${(datacenterLocations || []).filter(loc => loc.provider === (node.config?.provider || 'Equinix')).length} available)`}
                     </option>
                     {(datacenterLocations || [])
                       .filter(loc => loc.provider === (node.config?.provider || 'Equinix'))
