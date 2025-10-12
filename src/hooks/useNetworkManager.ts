@@ -26,15 +26,30 @@ export function useNetworkManager(
   }, [nodes, edges]);
 
   // Create a new node
-  const addNode = (type: NetworkNode['type'], functionType?: string, networkType?: string, provider?: string) => {
+  const addNode = (type: NetworkNode['type'], functionType?: string, networkType?: string, provider?: string, canvasRef?: React.RefObject<HTMLDivElement>, viewportInfo?: { panOffset: { x: number; y: number }; zoomLevel: number }) => {
     const displayName = getNodeDisplayName(type, functionType, networkType, provider);
-    
+
+    let x = Math.random() * 600 + 100;
+    let y = Math.min(Math.random() * 300 + 100, 800 - 64);
+
+    if (canvasRef?.current && viewportInfo) {
+      const canvasRect = canvasRef.current.getBoundingClientRect();
+      const centerX = canvasRect.width / 2;
+      const centerY = canvasRect.height / 2;
+
+      x = (centerX - viewportInfo.panOffset.x) / viewportInfo.zoomLevel - 32;
+      y = (centerY - viewportInfo.panOffset.y) / viewportInfo.zoomLevel - 32;
+
+      x = Math.max(50, Math.min(x, 750));
+      y = Math.max(50, Math.min(y, 750));
+    }
+
     const newNode: NetworkNode = {
       id: `node-${Date.now()}`,
       type,
       ...(type === 'function' && { functionType }),
-      x: Math.random() * 600 + 100,
-      y: Math.min(Math.random() * 300 + 100, 800 - 64),
+      x,
+      y,
       name: displayName,
       icon: getNodeIcon(type, functionType, networkType),
       status: 'inactive',
