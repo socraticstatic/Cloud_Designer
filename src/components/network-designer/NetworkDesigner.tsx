@@ -401,7 +401,6 @@ export function NetworkDesigner({ onComplete, onCancel }: NetworkDesignerProps) 
             selectedEdge={selectedEdge}
             isCreatingEdge={isCreatingEdge}
             edgeStart={edgeStart}
-            abstractionLevel={abstractionLevel}
             onNodeClick={handleNodeClick}
             onNodeDrag={handleNodeDrag}
             onNodeDragEnd={handleNodeDragEnd}
