@@ -99,7 +99,11 @@ export function NodeConfigPanel({
   const handleRegionChange = (regionCode: string) => {
     const region = cloudRegions.find(r => r.region_code === regionCode);
     if (region) {
+      const cityName = region.state
+        ? `${region.city}, ${region.state}`
+        : region.city;
       onUpdate({
+        name: cityName,
         config: {
           ...node.config,
           region: regionCode,
@@ -118,7 +122,11 @@ export function NodeConfigPanel({
       l => l.facility_code === facilityCode && l.provider === node.config?.provider
     );
     if (location) {
+      const cityName = location.state
+        ? `${location.city}, ${location.state}`
+        : location.city;
       onUpdate({
+        name: cityName,
         config: {
           ...node.config,
           facilityCode: location.facility_code,
