@@ -62,15 +62,19 @@ export async function getDatacenterLocations(): Promise<DatacenterLocation[]> {
 }
 
 export async function getCloudRegionLocations(provider?: string): Promise<CloudRegionLocation[]> {
+  console.log('[LocationService] getCloudRegionLocations called with provider:', provider);
+
   if (!cloudRegionCache) {
     cloudRegionCache = new Map();
   }
 
   const cacheKey = provider || 'all';
   if (cloudRegionCache.has(cacheKey)) {
+    console.log('[LocationService] Returning cached regions for:', cacheKey);
     return cloudRegionCache.get(cacheKey)!;
   }
 
+  console.log('[LocationService] Fetching from database for provider:', provider);
   let query = supabase
     .from('cloud_region_locations')
     .select('*')
@@ -84,11 +88,12 @@ export async function getCloudRegionLocations(provider?: string): Promise<CloudR
   const { data, error } = await query;
 
   if (error) {
-    console.error('Error fetching cloud region locations:', error);
+    console.error('[LocationService] Error fetching cloud region locations:', error);
     return [];
   }
 
   const regions = data || [];
+  console.log('[LocationService] Fetched', regions.length, 'regions for provider:', provider);
   cloudRegionCache.set(cacheKey, regions);
   return regions;
 }

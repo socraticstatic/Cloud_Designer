@@ -41,47 +41,58 @@ export function NodeConfigPanel({
   }, [isVisible, node.type]);
 
   const loadLocationData = async () => {
+    console.log('[NodeConfigPanel] Loading location data for node type:', node.type);
     setLoadingLocations(true);
     try {
       if (node.type === 'destination') {
         const provider = node.config?.provider || 'AWS';
+        console.log('[NodeConfigPanel] Loading cloud regions for provider:', provider);
 
         if (!node.config?.provider) {
           handleConfigChange('provider', provider);
         }
 
         const regions = await getCloudRegionLocations(provider);
+        console.log('[NodeConfigPanel] Loaded cloud regions:', regions.length, 'regions');
         setCloudRegions(regions);
       } else if (node.type === 'datacenter') {
         const defaultProvider = node.config?.provider || 'Equinix';
+        console.log('[NodeConfigPanel] Loading datacenter locations for provider:', defaultProvider);
 
         if (!node.config?.provider) {
           handleConfigChange('provider', defaultProvider);
         }
 
         const locations = await getDatacenterLocations();
+        console.log('[NodeConfigPanel] Loaded datacenter locations:', locations.length, 'locations');
         setDatacenterLocations(locations);
       }
     } catch (error) {
-      console.error('Error loading location data:', error);
+      console.error('[NodeConfigPanel] Error loading location data:', error);
     } finally {
       setLoadingLocations(false);
     }
   };
 
   const handleProviderChange = async (provider: string) => {
+    console.log('[NodeConfigPanel] Provider changed to:', provider);
     handleConfigChange('provider', provider);
 
     if (node.type === 'destination') {
       setLoadingLocations(true);
       try {
         const regions = await getCloudRegionLocations(provider);
+        console.log('[NodeConfigPanel] Loaded regions after provider change:', regions.length);
         setCloudRegions(regions);
       } catch (error) {
-        console.error('Error loading regions:', error);
+        console.error('[NodeConfigPanel] Error loading regions:', error);
       } finally {
         setLoadingLocations(false);
       }
+    } else if (node.type === 'datacenter') {
+      const locations = await getDatacenterLocations();
+      console.log('[NodeConfigPanel] Loaded datacenter locations after provider change:', locations.length);
+      setDatacenterLocations(locations);
     }
   };
 
