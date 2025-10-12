@@ -204,7 +204,7 @@ export function CleanLogicalView({
   };
 
   return (
-    <div className="p-8 w-full h-full overflow-auto">
+    <div className="p-8 max-w-7xl mx-auto">
       <div className="space-y-8">
         {cloudNodes.length > 0 && (
           <div>

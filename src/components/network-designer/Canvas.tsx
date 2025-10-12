@@ -358,15 +358,19 @@ export const Canvas = forwardRef<HTMLDivElement, CanvasProps>(({
                 // Ensure we have valid numbers
                 const validX = typeof x === 'number' ? x : 0;
                 const validY = typeof y === 'number' ? y : 0;
-
-                // Snap to grid if enabled (no bounds checking - allow free placement)
-                const snappedX = snapToGrid ? Math.round(validX / gridSize) * gridSize : validX;
-                const snappedY = snapToGrid ? Math.round(validY / gridSize) * gridSize : validY;
-
+                
+                // Apply bounds to keep nodes within the canvas
+                const boundedX = Math.max(0, Math.min(validX, (canvasRef.current?.clientWidth || 0) / zoomLevel - 64));
+                const boundedY = Math.max(0, Math.min(validY, maxY - 64));
+                
+                // Snap to grid if enabled
+                const snappedX = snapToGrid ? Math.round(boundedX / gridSize) * gridSize : boundedX;
+                const snappedY = snapToGrid ? Math.round(boundedY / gridSize) * gridSize : boundedY;
+                
                 // Ensure we're always passing valid numbers
                 onNodeDrag(
-                  node.id,
-                  isNaN(snappedX) ? 0 : snappedX,
+                  node.id, 
+                  isNaN(snappedX) ? 0 : snappedX, 
                   isNaN(snappedY) ? 0 : snappedY
                 );
               }}
