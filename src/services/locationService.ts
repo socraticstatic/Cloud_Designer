@@ -126,7 +126,7 @@ export async function getDatacenterByFacility(provider: string, facilityCode: st
 }
 
 export function getCloudProviders(): string[] {
-  return ['AWS', 'Azure', 'GCP'];
+  return ['AWS', 'Azure', 'GCP', 'Oracle'];
 }
 
 export function getDatacenterProviders(): string[] {
