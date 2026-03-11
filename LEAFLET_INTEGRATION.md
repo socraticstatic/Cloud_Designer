@@ -107,17 +107,59 @@ Potential improvements:
 
 ## Troubleshooting
 
-### Nodes Not Appearing
-- Ensure nodes have location, region, or city in config
-- Check browser console for coordinate lookup errors
-- Manually add latitude/longitude if automatic geocoding fails
+### Nodes Not Appearing on Map
+
+**Symptom**: You built a network in Topo view but don't see nodes when switching to Pano (Global) view.
+
+**Solutions**:
+1. **Check Browser Console** - Open browser console (F12) and look for geo enrichment logs:
+   - `[Global View] Enriching X nodes with geo data...` - Shows enrichment is happening
+   - `[Geo Enrichment] Looking up coordinates for "..."` - Shows what location is being looked up
+   - `[Geo Enrichment] ✓ Found: ...` - Successful coordinate lookup
+   - `[Geo Enrichment] ✗ Could not find coordinates` - Failed lookup
+
+2. **Ensure Nodes Have Location Info** - Nodes need at least ONE of these config fields:
+   - `region` (e.g., "us-east-1", "eastus", "europe-west1")
+   - `location` (e.g., "New York", "London", "Tokyo")
+   - `city` (e.g., "San Francisco", "Singapore")
+
+3. **Supported Regions**:
+   - **AWS**: us-east-1, us-west-2, eu-west-1, ap-southeast-1, etc.
+   - **Azure**: eastus, westus, northeurope, southeastasia, etc.
+   - **GCP**: us-central1, europe-west1, asia-east1, etc.
+   - **Cities**: 20+ major cities worldwide
+
+4. **Manual Coordinates** - If automatic lookup fails, add coordinates manually to node config:
+   ```typescript
+   config: {
+     latitude: 40.7128,
+     longitude: -74.0060,
+     city: 'New York',
+     country: 'USA'
+   }
+   ```
+
+5. **Default Fallback** - If no match is found, nodes get default US center coordinates (39.8°N, 98.6°W)
 
 ### Map Not Loading
 - Check internet connection (requires OpenStreetMap tiles)
 - Verify Leaflet CSS is imported in index.css
 - Check browser console for errors
+- Ensure you have at least one node with geo coordinates
+
+### Empty State Shows Even With Nodes
+- Nodes might not have geo coordinates yet
+- Check console logs to see enrichment status
+- Try manually adding `latitude` and `longitude` to node configs
 
 ### Performance Issues
 - Consider clustering if you have 100+ nodes
 - Reduce connection lines by filtering inactive ones
 - Use browser dev tools to profile performance
+
+### Debug Mode
+To see detailed enrichment logs:
+1. Open browser console (F12)
+2. Switch to Pano (Global) view
+3. Look for `[Global View]` and `[Geo Enrichment]` log messages
+4. Check which nodes are being enriched and whether lookups succeed

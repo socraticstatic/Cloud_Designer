@@ -147,23 +147,41 @@ export function NetworkDesigner({ onComplete, onCancel }: NetworkDesignerProps) 
   // Ensure nodes have geo data when switching to global view
   useEffect(() => {
     if (abstractionLevel === 'global' && nodes.length > 0) {
-      const nodesNeedingGeoData = nodes.some(
+      const nodesNeedingGeoData = nodes.filter(
         node => !node.config?.latitude || !node.config?.longitude
       );
 
-      if (nodesNeedingGeoData) {
+      if (nodesNeedingGeoData.length > 0) {
+        console.log(`[Global View] Enriching ${nodesNeedingGeoData.length} nodes with geo data...`);
+        nodesNeedingGeoData.forEach(node => {
+          console.log(`  - ${node.name}: region=${node.config?.region}, location=${node.config?.location}, city=${node.config?.city}`);
+        });
+
         const enrichedNodes = ensureNodesHaveGeoData(nodes);
-        const hasChanges = enrichedNodes.some((node, i) =>
-          node.config?.latitude !== nodes[i].config?.latitude ||
-          node.config?.longitude !== nodes[i].config?.longitude
+
+        // Check if enrichment actually added coordinates
+        const successfullyEnriched = enrichedNodes.filter(
+          (node, i) =>
+            (node.config?.latitude !== nodes[i].config?.latitude ||
+             node.config?.longitude !== nodes[i].config?.longitude) &&
+            node.config?.latitude !== undefined
         );
 
-        if (hasChanges) {
+        console.log(`[Global View] Successfully enriched ${successfullyEnriched.length} nodes`);
+        successfullyEnriched.forEach(node => {
+          console.log(`  ✓ ${node.name}: ${node.config?.latitude}, ${node.config?.longitude} (${node.config?.city})`);
+        });
+
+        if (successfullyEnriched.length > 0) {
           setNodes(enrichedNodes);
+        } else {
+          console.warn('[Global View] No nodes were successfully enriched. Check node config for region/location/city fields.');
         }
+      } else {
+        console.log('[Global View] All nodes already have geo data');
       }
     }
-  }, [abstractionLevel, nodes, setNodes]);
+  }, [abstractionLevel]);
   
   // Handle node click in canvas
   const handleNodeClick = (node: NetworkNode | null) => {
