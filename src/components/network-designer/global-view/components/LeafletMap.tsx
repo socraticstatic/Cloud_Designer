@@ -54,6 +54,8 @@ export function LeafletMap({ nodes, edges, onNodeSelect, selectedNodeId }: Leafl
   useEffect(() => {
     if (!mapRef.current) return;
 
+    console.log(`[LeafletMap] Rendering with ${nodes.length} nodes`);
+
     const map = mapRef.current;
     const markers = markersRef.current;
 
@@ -68,6 +70,9 @@ export function LeafletMap({ nodes, edges, onNodeSelect, selectedNodeId }: Leafl
         const hasGeoData =
           node.config?.latitude !== undefined &&
           node.config?.longitude !== undefined;
+        if (!hasGeoData) {
+          console.log(`[LeafletMap] ✗ Skipping ${node.name}: no geo data (lat=${node.config?.latitude}, lng=${node.config?.longitude})`);
+        }
         return hasGeoData;
       })
       .map(node => ({
@@ -78,6 +83,8 @@ export function LeafletMap({ nodes, edges, onNodeSelect, selectedNodeId }: Leafl
         type: node.type,
         status: node.status,
       }));
+
+    console.log(`[LeafletMap] Filtered to ${nodeLocations.length} nodes with valid coordinates`);
 
     const getMarkerColor = (status: string) => {
       switch (status) {
@@ -141,7 +148,10 @@ export function LeafletMap({ nodes, edges, onNodeSelect, selectedNodeId }: Leafl
 
       marker.addTo(map);
       markers.set(location.id, marker);
+      console.log(`[LeafletMap] ✓ Added marker for ${location.name} at [${location.lat}, ${location.lng}]`);
     });
+
+    console.log(`[LeafletMap] Total markers rendered: ${markers.size}`);
 
     edges.forEach(edge => {
       const sourceNode = nodeLocations.find(loc => loc.id === edge.source);

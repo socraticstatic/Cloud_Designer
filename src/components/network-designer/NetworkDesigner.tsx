@@ -144,20 +144,22 @@ export function NetworkDesigner({ onComplete, onCancel }: NetworkDesignerProps) 
     }));
   }, [networkScores]);
 
-  // Ensure nodes have geo data when in global view
-  // This runs when:
-  // 1. Switching TO global view (abstractionLevel changes)
-  // 2. Nodes change WHILE IN global view (template loaded, etc.)
+  // Ensure nodes have geo data when switching TO global view
+  // This handles the case where user creates nodes in topology view, then switches to global view
+  // Note: Templates are now enriched in applyTemplate() before being set into state,
+  // so this useEffect only needs to handle the view-switching scenario
   useEffect(() => {
     if (abstractionLevel === 'global' && nodes.length > 0) {
+      console.log(`[Global View Switch] Checking ${nodes.length} nodes for geo data...`);
+
       const nodesNeedingGeoData = nodes.filter(
         node => !node.config?.latitude || !node.config?.longitude
       );
 
       if (nodesNeedingGeoData.length > 0) {
-        console.log(`[Global View] Enriching ${nodesNeedingGeoData.length} nodes with geo data...`);
+        console.log(`[Global View Switch] Found ${nodesNeedingGeoData.length} nodes needing enrichment`);
         nodesNeedingGeoData.forEach(node => {
-          console.log(`  - ${node.name}: region=${node.config?.region}, location=${node.config?.location}, city=${node.config?.city}`);
+          console.log(`  - ${node.name}: region=${node.config?.region || 'none'}, location=${node.config?.location || 'none'}, city=${node.config?.city || 'none'}`);
         });
 
         const enrichedNodes = ensureNodesHaveGeoData(nodes);
@@ -170,21 +172,26 @@ export function NetworkDesigner({ onComplete, onCancel }: NetworkDesignerProps) 
             node.config?.latitude !== undefined
         );
 
-        console.log(`[Global View] Successfully enriched ${successfullyEnriched.length} nodes`);
+        console.log(`[Global View Switch] Successfully enriched ${successfullyEnriched.length} nodes`);
         successfullyEnriched.forEach(node => {
-          console.log(`  ✓ ${node.name}: ${node.config?.latitude}, ${node.config?.longitude} (${node.config?.city})`);
+          console.log(`  ✓ ${node.name}: ${node.config?.latitude}, ${node.config?.longitude} (${node.config?.city || 'unknown'})`);
         });
 
         if (successfullyEnriched.length > 0) {
           setNodes(enrichedNodes);
         } else {
-          console.warn('[Global View] No nodes were successfully enriched. Check node config for region/location/city fields.');
+          console.warn('[Global View Switch] No nodes were successfully enriched. Nodes may not have region/location/city fields.');
         }
       } else {
-        console.log('[Global View] All nodes already have geo data');
+        console.log('[Global View Switch] All nodes already have geo data ✓');
+        nodes.forEach(node => {
+          if (node.config?.latitude && node.config?.longitude) {
+            console.log(`  ✓ ${node.name}: ${node.config.latitude}, ${node.config.longitude}`);
+          }
+        });
       }
     }
-  }, [abstractionLevel, nodes]);
+  }, [abstractionLevel]);
   
   // Handle node click in canvas
   const handleNodeClick = (node: NetworkNode | null) => {

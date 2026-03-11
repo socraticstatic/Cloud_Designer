@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { NetworkNode, NetworkEdge } from '../types';
 import { calculateNetworkScores } from '../utils/calculations';
 import { getNodeIcon, getNodeDisplayName } from '../utils/nodeUtils';
+import { ensureNodesHaveGeoData } from '../utils/sampleGeoData';
 
 export function useNetworkManager(
   saveToHistory: (nodes: NetworkNode[], edges: NetworkEdge[]) => void
@@ -107,9 +108,10 @@ export function useNetworkManager(
   
   // Apply a template
   const applyTemplate = (templateNodes: NetworkNode[], templateEdges: NetworkEdge[]) => {
+    console.log(`[applyTemplate] Loading template with ${templateNodes.length} nodes`);
     const timestamp = Date.now();
     const idMap = new Map<string, string>();
-    
+
     // Create new nodes with unique IDs
     const newNodes = templateNodes.map(node => {
       const newId = `${node.id}-${timestamp}`;
@@ -119,7 +121,25 @@ export function useNetworkManager(
         id: newId
       };
     });
-    
+
+    // Enrich nodes with geo data BEFORE setting them into state
+    // This ensures nodes have coordinates from the moment they're loaded
+    console.log(`[applyTemplate] Enriching ${newNodes.length} nodes with geo data...`);
+    const enrichedNodes = ensureNodesHaveGeoData(newNodes);
+
+    // Log enrichment results
+    const enrichedCount = enrichedNodes.filter(
+      node => node.config?.latitude !== undefined && node.config?.longitude !== undefined
+    ).length;
+    console.log(`[applyTemplate] Successfully enriched ${enrichedCount}/${enrichedNodes.length} nodes`);
+    enrichedNodes.forEach(node => {
+      if (node.config?.latitude && node.config?.longitude) {
+        console.log(`  ✓ ${node.name}: ${node.config.latitude}, ${node.config.longitude} (${node.config.city || 'unknown city'})`);
+      } else {
+        console.log(`  ✗ ${node.name}: No geo data`);
+      }
+    });
+
     // Create new edges with updated references
     const newEdges = templateEdges.map(edge => {
       return {
@@ -129,10 +149,10 @@ export function useNetworkManager(
         target: idMap.get(edge.target) || edge.target
       };
     });
-    
-    setNodes(newNodes);
+
+    setNodes(enrichedNodes);
     setEdges(newEdges);
-    saveToHistory(newNodes, newEdges);
+    saveToHistory(enrichedNodes, newEdges);
   };
   
   return {
