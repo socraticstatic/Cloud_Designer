@@ -29,7 +29,8 @@ export const highAvailabilityTemplate: Template = {
       status: 'inactive',
       config: {
         networkType: 'at&t core',
-        provider: 'AT&T'
+        provider: 'AT&T',
+        city: 'Dallas'
       }
     },
     {
@@ -45,7 +46,8 @@ export const highAvailabilityTemplate: Template = {
         routerType: 'cloud',
         asn: 65000,
         fastReroute: true,
-        bfd: true
+        bfd: true,
+        city: 'Ashburn'
       }
     },
     {
@@ -61,7 +63,8 @@ export const highAvailabilityTemplate: Template = {
         routerType: 'cloud',
         asn: 65001,
         fastReroute: true,
-        bfd: true
+        bfd: true,
+        city: 'Ashburn'
       }
     },
     {

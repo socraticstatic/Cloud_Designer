@@ -29,7 +29,8 @@ export const cloudToCloudLocalTemplate: Template = {
       status: 'inactive',
       config: {
         networkType: 'at&t core',
-        provider: 'AT&T'
+        provider: 'AT&T',
+        city: 'Dallas'
       }
     },
     {
@@ -44,7 +45,8 @@ export const cloudToCloudLocalTemplate: Template = {
       config: {
         routerType: 'cloud',
         asn: 65000,
-        capacity: '10Gbps'
+        capacity: '10Gbps',
+        city: 'Ashburn'
       }
     },
     {

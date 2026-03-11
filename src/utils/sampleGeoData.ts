@@ -121,6 +121,8 @@ function getSampleGeoCoordinates(location: string, provider?: string): GeoData |
     'san francisco': { latitude: 37.7749, longitude: -122.4194, city: 'San Francisco', country: 'USA' },
     'los angeles': { latitude: 34.0522, longitude: -118.2437, city: 'Los Angeles', country: 'USA' },
     'chicago': { latitude: 41.8781, longitude: -87.6298, city: 'Chicago', country: 'USA' },
+    'dallas': { latitude: 32.7767, longitude: -96.7970, city: 'Dallas', country: 'USA' },
+    'ashburn': { latitude: 39.0438, longitude: -77.4874, city: 'Ashburn', country: 'USA' },
     'paris': { latitude: 48.8566, longitude: 2.3522, city: 'Paris', country: 'France' },
     'frankfurt': { latitude: 50.1109, longitude: 8.6821, city: 'Frankfurt', country: 'Germany' },
     'mumbai': { latitude: 19.0760, longitude: 72.8777, city: 'Mumbai', country: 'India' },

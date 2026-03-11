@@ -144,7 +144,10 @@ export function NetworkDesigner({ onComplete, onCancel }: NetworkDesignerProps) 
     }));
   }, [networkScores]);
 
-  // Ensure nodes have geo data when switching to global view
+  // Ensure nodes have geo data when in global view
+  // This runs when:
+  // 1. Switching TO global view (abstractionLevel changes)
+  // 2. Nodes change WHILE IN global view (template loaded, etc.)
   useEffect(() => {
     if (abstractionLevel === 'global' && nodes.length > 0) {
       const nodesNeedingGeoData = nodes.filter(
@@ -181,7 +184,7 @@ export function NetworkDesigner({ onComplete, onCancel }: NetworkDesignerProps) 
         console.log('[Global View] All nodes already have geo data');
       }
     }
-  }, [abstractionLevel]);
+  }, [abstractionLevel, nodes]);
   
   // Handle node click in canvas
   const handleNodeClick = (node: NetworkNode | null) => {
