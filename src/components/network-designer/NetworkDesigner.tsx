@@ -36,6 +36,7 @@ import {
   useTemplatesManager 
 } from '../../hooks';
 import { getNodeIcon } from '../../utils/nodeUtils';
+import { ensureNodesHaveGeoData } from '../../utils/sampleGeoData';
 import { Z_INDEX, DEFAULT_NETWORK_CONFIG } from '../../constants';
 import { NetworkNode, NetworkEdge } from './types';
 import { DesignAssistant } from './DesignAssistant';
@@ -142,6 +143,27 @@ export function NetworkDesigner({ onComplete, onCancel }: NetworkDesignerProps) 
       networkScores
     }));
   }, [networkScores]);
+
+  // Ensure nodes have geo data when switching to global view
+  useEffect(() => {
+    if (abstractionLevel === 'global' && nodes.length > 0) {
+      const nodesNeedingGeoData = nodes.some(
+        node => !node.config?.latitude || !node.config?.longitude
+      );
+
+      if (nodesNeedingGeoData) {
+        const enrichedNodes = ensureNodesHaveGeoData(nodes);
+        const hasChanges = enrichedNodes.some((node, i) =>
+          node.config?.latitude !== nodes[i].config?.latitude ||
+          node.config?.longitude !== nodes[i].config?.longitude
+        );
+
+        if (hasChanges) {
+          setNodes(enrichedNodes);
+        }
+      }
+    }
+  }, [abstractionLevel, nodes, setNodes]);
   
   // Handle node click in canvas
   const handleNodeClick = (node: NetworkNode | null) => {
