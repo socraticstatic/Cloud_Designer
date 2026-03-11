@@ -11,29 +11,46 @@ export function addSampleGeoDataToNodes(nodes: NetworkNode[]): NetworkNode[] {
     const location = node.config?.region || node.config?.location || node.config?.city;
     const provider = node.config?.provider;
 
-    if (!location) {
-      console.warn(`[Geo Enrichment] Node "${node.name}" has no location info (region/location/city)`);
-      return node;
+    // If we have location data, try to resolve it
+    if (location) {
+      console.log(`[Geo Enrichment] Looking up coordinates for "${location}" (node: ${node.name})`);
+      const geoData = getSampleGeoCoordinates(location, provider);
+
+      if (geoData) {
+        console.log(`[Geo Enrichment] ✓ Found: ${geoData.city} at (${geoData.latitude}, ${geoData.longitude})`);
+        return {
+          ...node,
+          config: {
+            ...node.config,
+            latitude: geoData.latitude,
+            longitude: geoData.longitude,
+            city: geoData.city || node.config?.city,
+            country: geoData.country || node.config?.country,
+          },
+        };
+      }
     }
 
-    console.log(`[Geo Enrichment] Looking up coordinates for "${location}" (node: ${node.name})`);
-    const geoData = getSampleGeoCoordinates(location, provider);
+    // No location field or lookup failed - use intelligent fallbacks
+    console.warn(`[Geo Enrichment] Node "${node.name}" has no location info, using fallback strategy...`);
+    const fallbackGeoData = inferLocationFromNodeCharacteristics(node, nodes);
 
-    if (geoData) {
-      console.log(`[Geo Enrichment] ✓ Found: ${geoData.city} at (${geoData.latitude}, ${geoData.longitude})`);
+    if (fallbackGeoData) {
+      console.log(`[Geo Enrichment] ✓ Fallback: ${fallbackGeoData.city} at (${fallbackGeoData.latitude}, ${fallbackGeoData.longitude})`);
       return {
         ...node,
         config: {
           ...node.config,
-          latitude: geoData.latitude,
-          longitude: geoData.longitude,
-          city: geoData.city || node.config?.city,
-          country: geoData.country || node.config?.country,
+          latitude: fallbackGeoData.latitude,
+          longitude: fallbackGeoData.longitude,
+          city: fallbackGeoData.city || node.config?.city || node.name,
+          country: fallbackGeoData.country || node.config?.country || 'USA',
         },
       };
     }
 
-    console.warn(`[Geo Enrichment] ✗ Could not find coordinates for "${location}"`);
+    // This should never happen, but if it does, return node unchanged
+    console.error(`[Geo Enrichment] ✗ Failed to assign coordinates for "${node.name}"`);
     return node;
   });
 }
@@ -43,6 +60,93 @@ interface GeoData {
   longitude: number;
   city: string;
   country: string;
+}
+
+function inferLocationFromNodeCharacteristics(node: NetworkNode, allNodes: NetworkNode[]): GeoData | null {
+  // Strategy 1: Infer from provider
+  if (node.config?.provider) {
+    const provider = node.config.provider.toLowerCase();
+
+    // Map providers to their primary locations
+    const providerLocations: Record<string, GeoData> = {
+      'at&t': { latitude: 39.0438, longitude: -77.4874, city: 'Ashburn', country: 'USA' },
+      'verizon': { latitude: 40.7128, longitude: -74.0060, city: 'New York', country: 'USA' },
+      'centurylink': { latitude: 39.7392, longitude: -104.9903, city: 'Denver', country: 'USA' },
+      'lumen': { latitude: 39.7392, longitude: -104.9903, city: 'Denver', country: 'USA' },
+      'comcast': { latitude: 39.9526, longitude: -75.1652, city: 'Philadelphia', country: 'USA' },
+      'charter': { latitude: 39.0997, longitude: -94.5786, city: 'Kansas City', country: 'USA' },
+      'cogent': { latitude: 38.9072, longitude: -77.0369, city: 'Washington DC', country: 'USA' },
+      'level3': { latitude: 39.7392, longitude: -104.9903, city: 'Denver', country: 'USA' },
+      'telia': { latitude: 59.3293, longitude: 18.0686, city: 'Stockholm', country: 'Sweden' },
+      'bt': { latitude: 51.5074, longitude: -0.1278, city: 'London', country: 'UK' },
+      'deutsche telekom': { latitude: 50.1109, longitude: 8.6821, city: 'Frankfurt', country: 'Germany' },
+      'ntt': { latitude: 35.6762, longitude: 139.6503, city: 'Tokyo', country: 'Japan' },
+    };
+
+    for (const [key, location] of Object.entries(providerLocations)) {
+      if (provider.includes(key)) {
+        console.log(`  → Inferred from provider: ${node.config.provider} → ${location.city}`);
+        return location;
+      }
+    }
+  }
+
+  // Strategy 2: Infer from networkType
+  if (node.config?.networkType) {
+    const networkType = node.config.networkType.toLowerCase();
+
+    if (networkType.includes('at&t')) {
+      console.log(`  → Inferred from networkType: ${node.config.networkType} → Ashburn`);
+      return { latitude: 39.0438, longitude: -77.4874, city: 'Ashburn', country: 'USA' };
+    }
+    if (networkType.includes('verizon')) {
+      console.log(`  → Inferred from networkType: ${node.config.networkType} → New York`);
+      return { latitude: 40.7128, longitude: -74.0060, city: 'New York', country: 'USA' };
+    }
+    if (networkType.includes('internet') || networkType.includes('public')) {
+      console.log(`  → Inferred from networkType: ${node.config.networkType} → Major Internet Exchange (Ashburn)`);
+      return { latitude: 39.0438, longitude: -77.4874, city: 'Ashburn', country: 'USA' };
+    }
+  }
+
+  // Strategy 3: For routers, calculate position based on connected nodes
+  if (node.type === 'function' && node.functionType === 'Router') {
+    const connectedNodes = findConnectedNodes(node.id, allNodes);
+    if (connectedNodes.length >= 2) {
+      const nodesWithCoords = connectedNodes.filter(n => n.config?.latitude && n.config?.longitude);
+      if (nodesWithCoords.length >= 2) {
+        const avgLat = nodesWithCoords.reduce((sum, n) => sum + (n.config!.latitude || 0), 0) / nodesWithCoords.length;
+        const avgLng = nodesWithCoords.reduce((sum, n) => sum + (n.config!.longitude || 0), 0) / nodesWithCoords.length;
+        console.log(`  → Calculated midpoint between ${nodesWithCoords.length} connected nodes`);
+        return { latitude: avgLat, longitude: avgLng, city: 'Router Junction', country: 'USA' };
+      }
+    }
+
+    // Default router location (major internet exchange point)
+    console.log(`  → Using default router location (major IX)`);
+    return { latitude: 39.0438, longitude: -77.4874, city: 'Ashburn IX', country: 'USA' };
+  }
+
+  // Strategy 4: Default fallback based on node type
+  if (node.type === 'network') {
+    console.log(`  → Using default network node location`);
+    return { latitude: 39.0438, longitude: -77.4874, city: 'Network Hub', country: 'USA' };
+  }
+
+  if (node.type === 'destination') {
+    console.log(`  → Using default cloud destination location`);
+    return { latitude: 39.0438, longitude: -77.4874, city: 'Cloud Region', country: 'USA' };
+  }
+
+  // Final fallback - center of continental US
+  console.log(`  → Using final fallback location (center of US)`);
+  return { latitude: 39.8283, longitude: -98.5795, city: node.name, country: 'USA' };
+}
+
+function findConnectedNodes(nodeId: string, allNodes: NetworkNode[]): NetworkNode[] {
+  // This is a simplified version - in a real implementation, you'd use the edges
+  // For now, return empty array since we don't have access to edges here
+  return [];
 }
 
 function getSampleGeoCoordinates(location: string, provider?: string): GeoData | null {
@@ -158,5 +262,38 @@ function getSampleGeoCoordinates(location: string, provider?: string): GeoData |
 }
 
 export function ensureNodesHaveGeoData(nodes: NetworkNode[]): NetworkNode[] {
-  return addSampleGeoDataToNodes(nodes);
+  console.log(`\n[Geo Enrichment] Starting enrichment for ${nodes.length} nodes...`);
+
+  const enrichedNodes = addSampleGeoDataToNodes(nodes);
+
+  // Validate that all nodes now have coordinates
+  const validationResult = validateNodesHaveCoordinates(enrichedNodes);
+
+  console.log(`[Geo Enrichment] Enrichment complete:`);
+  console.log(`  ✓ ${validationResult.withCoordinates} nodes have coordinates`);
+  if (validationResult.withoutCoordinates > 0) {
+    console.error(`  ✗ ${validationResult.withoutCoordinates} nodes missing coordinates:`);
+    validationResult.nodesWithoutCoordinates.forEach(nodeName => {
+      console.error(`    - ${nodeName}`);
+    });
+  }
+  console.log('');
+
+  return enrichedNodes;
+}
+
+function validateNodesHaveCoordinates(nodes: NetworkNode[]): {
+  withCoordinates: number;
+  withoutCoordinates: number;
+  nodesWithoutCoordinates: string[];
+} {
+  const nodesWithoutCoords = nodes.filter(
+    node => !node.config?.latitude || !node.config?.longitude
+  );
+
+  return {
+    withCoordinates: nodes.length - nodesWithoutCoords.length,
+    withoutCoordinates: nodesWithoutCoords.length,
+    nodesWithoutCoordinates: nodesWithoutCoords.map(n => n.name),
+  };
 }

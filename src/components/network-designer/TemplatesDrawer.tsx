@@ -51,7 +51,8 @@ export function TemplatesDrawer({
           status: 'inactive',
           config: {
             networkType: 'at&t core',
-            provider: 'AT&T'
+            provider: 'AT&T',
+            location: 'ashburn'
           }
         },
         {
@@ -65,7 +66,8 @@ export function TemplatesDrawer({
           status: 'inactive',
           config: {
             routerType: 'cloud',
-            asn: 65000
+            asn: 65000,
+            location: 'ashburn'
           }
         },
         {
@@ -116,7 +118,8 @@ export function TemplatesDrawer({
           status: 'inactive',
           config: {
             networkType: 'at&t core',
-            provider: 'AT&T'
+            provider: 'AT&T',
+            location: 'ashburn'
           }
         },
         {
@@ -130,7 +133,8 @@ export function TemplatesDrawer({
           status: 'inactive',
           config: {
             routerType: 'cloud',
-            asn: 65000
+            asn: 65000,
+            location: 'ashburn'
           }
         },
         {
@@ -202,7 +206,8 @@ export function TemplatesDrawer({
           status: 'inactive',
           config: {
             networkType: 'at&t core',
-            provider: 'AT&T'
+            provider: 'AT&T',
+            location: 'ashburn'
           }
         },
         {
@@ -218,7 +223,8 @@ export function TemplatesDrawer({
             routerType: 'cloud',
             asn: 65000,
             fastReroute: true,
-            bfd: true
+            bfd: true,
+            location: 'ashburn'
           }
         },
         {
@@ -234,7 +240,8 @@ export function TemplatesDrawer({
             routerType: 'cloud',
             asn: 65001,
             fastReroute: true,
-            bfd: true
+            bfd: true,
+            location: 'ashburn'
           }
         },
         {
