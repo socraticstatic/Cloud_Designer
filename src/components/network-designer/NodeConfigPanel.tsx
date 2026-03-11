@@ -423,30 +423,6 @@ export function NodeConfigPanel({
                     </div>
                   </div>
                 )}
-                <div className="form-group">
-                  <label htmlFor="crossConnectType">Cross-Connect Type</label>
-                  <select
-                    id="crossConnectType"
-                    value={node.config?.crossConnectType || 'fiber'}
-                    onChange={(e) => handleConfigChange('crossConnectType', e.target.value)}
-                    className="form-select"
-                  >
-                    <option value="fiber">Fiber</option>
-                    <option value="copper">Copper</option>
-                    <option value="virtual">Virtual</option>
-                  </select>
-                </div>
-                <div className="form-group">
-                  <label htmlFor="meetMeRoom">Meet-Me Room</label>
-                  <input
-                    id="meetMeRoom"
-                    type="text"
-                    value={node.config?.meetMeRoom || ''}
-                    onChange={(e) => handleConfigChange('meetMeRoom', e.target.value)}
-                    placeholder="e.g., MMR2-1A"
-                    className="form-input"
-                  />
-                </div>
               </>
             )}
 

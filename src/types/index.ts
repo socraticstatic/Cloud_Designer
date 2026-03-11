@@ -63,8 +63,6 @@ export interface NetworkNode {
     translationRules?: string;
     
     // Datacenter properties
-    crossConnectType?: 'fiber' | 'copper' | 'virtual';
-    meetMeRoom?: string;
     physicalSecurity?: boolean;
     dcCompliance?: 'tier3' | 'tier4' | 'soc2' | 'iso27001';
     

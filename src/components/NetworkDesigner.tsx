@@ -7,7 +7,6 @@ import { StatusBar } from './network-designer/StatusBar';
 import { NodeConfigPanel } from './network-designer/NodeConfigPanel';
 import { EdgeConfigPanel } from './network-designer/EdgeConfigPanel';
 import { AbstractionLevelSelector } from './network-designer/AbstractionLevelSelector';
-import { BottomPanel } from './network-designer/panels/BottomPanel';
 import { HistoryDrawer } from './network-designer/HistoryDrawer';
 import {
   useNetworkHistory,
@@ -20,7 +19,6 @@ import { getNodeIcon } from '../utils/nodeUtils';
 import { DEFAULT_NETWORK_CONFIG } from '../constants';
 import { NetworkNode, NetworkEdge } from './types';
 import { DefaultNetworkSetup } from './network-designer/DefaultNetworkSetup';
-import { LOAData, CrossConnectData } from './crossconnect/CrossConnectWorkflow';
 
 // Lazy load heavy components
 const GlobalView = lazy(() => import('./network-designer/global-view/GlobalView').then(module => ({ default: module.GlobalView })));
@@ -31,7 +29,6 @@ const NetworkParameters = lazy(() => import('./network-designer/NetworkParameter
 const TemplatesManager = lazy(() => import('./network-designer/panels/TemplatesManager').then(module => ({ default: module.TemplatesManager })));
 const SaveTemplateModal = lazy(() => import('./network-designer/SaveTemplateModal').then(module => ({ default: module.SaveTemplateModal })));
 const NetworkSimulation = lazy(() => import('./network-designer/simulation/NetworkSimulation').then(module => ({ default: module.NetworkSimulation })));
-const CrossConnectsPanel = lazy(() => import('./network-designer/panels/CrossConnectsPanel').then(module => ({ default: module.CrossConnectsPanel })));
 
 // Lazy load simulation functions
 const simulationModule = lazy(() => import('./network-designer/simulation/runSimulation'));
@@ -49,14 +46,6 @@ interface NetworkDesignerProps {
   onComplete: (config: ConnectionConfig) => void;
   onCancel: () => void;
   isReadOnly?: boolean;
-  crossConnects?: {
-    id: string;
-    loa: LOAData;
-    connection: CrossConnectData;
-    showInTopology?: boolean;
-  }[];
-  selectedCrossConnectId?: string | null;
-  onSelectCrossConnect?: (id: string | null) => void;
 }
 
 type AbstractionLevel = 'global' | 'network' | 'circuit';
@@ -70,13 +59,10 @@ interface CustomTemplate {
   isCustom?: boolean;
 }
 
-export function NetworkDesigner({ 
-  onComplete, 
-  onCancel, 
-  isReadOnly = false,
-  crossConnects = [],
-  selectedCrossConnectId = null,
-  onSelectCrossConnect = () => {}
+export function NetworkDesigner({
+  onComplete,
+  onCancel,
+  isReadOnly = false
 }: NetworkDesignerProps) {
   // Refs
   const canvasRef = useRef<HTMLDivElement>(null);
@@ -264,7 +250,6 @@ export function NetworkDesigner({
   };
   
   // UI state
-  const [viewMode, setViewMode] = useState<'cross-connects'>('cross-connects');
   const [isRunningScenario, setIsRunningScenario] = useState(false);
   const [showDefaultSetup, setShowDefaultSetup] = useState(false);
   
@@ -280,125 +265,6 @@ export function NetworkDesigner({
     networkScores
   });
 
-  // Effect to integrate cross-connects into the network when they're selected
-  useEffect(() => {
-    if (selectedCrossConnectId) {
-      const crossConnect = crossConnects.find(cc => cc.id === selectedCrossConnectId);
-      if (crossConnect && crossConnect.showInTopology) {
-        // Add nodes and connections for the cross-connect
-        integrateSelectedCrossConnect(crossConnect);
-      }
-    }
-  }, [selectedCrossConnectId, crossConnects]);
-  
-  // Function to integrate a cross-connect into the network topology
-  const integrateSelectedCrossConnect = (crossConnect: {
-    id: string;
-    loa: LOAData;
-    connection: CrossConnectData;
-  }) => {
-    // Check if nodes for this cross-connect already exist
-    const existingSourceNode = nodes.find(node => 
-      node.name === `Source: ${crossConnect.connection.sourceLocation}`
-    );
-    
-    const existingTargetNode = nodes.find(node => 
-      node.name === `Target: ${crossConnect.connection.targetLocation}`
-    );
-    
-    // If both nodes already exist and are connected, no need to add them again
-    if (existingSourceNode && existingTargetNode) {
-      const connectionExists = edges.some(edge => 
-        (edge.source === existingSourceNode.id && edge.target === existingTargetNode.id) ||
-        (edge.source === existingTargetNode.id && edge.target === existingSourceNode.id)
-      );
-      
-      if (connectionExists) {
-        // Select one of the existing nodes to focus the view
-        handleNodeSelection(existingSourceNode);
-        return;
-      }
-    }
-    
-    // Create source node if it doesn't exist
-    const sourceNode = existingSourceNode || {
-      id: `cc-source-${Date.now()}`,
-      type: 'datacenter' as const,
-      x: 200,
-      y: 200,
-      name: `Source: ${crossConnect.connection.sourceLocation}`,
-      icon: getNodeIcon('datacenter'),
-      status: 'active' as const,
-      config: {
-        location: crossConnect.connection.sourceLocation,
-        provider: crossConnect.loa.requestedProvider,
-        crossConnectType: crossConnect.connection.connectionType,
-        crossConnectRef: crossConnect.connection.loaReference
-      }
-    };
-    
-    // Create target node if it doesn't exist
-    const targetNode = existingTargetNode || {
-      id: `cc-target-${Date.now()}`,
-      type: 'function' as const,
-      functionType: 'Router',
-      x: 400,
-      y: 200,
-      name: `Target: ${crossConnect.connection.targetLocation}`,
-      icon: getNodeIcon('function', 'Router'),
-      status: 'active' as const,
-      config: {
-        location: crossConnect.connection.targetLocation,
-        crossConnectRef: crossConnect.connection.loaReference
-      }
-    };
-    
-    // Create the connection
-    const newEdge = {
-      id: `cc-edge-${Date.now()}`,
-      source: existingSourceNode ? existingSourceNode.id : sourceNode.id,
-      target: existingTargetNode ? existingTargetNode.id : targetNode.id,
-      type: crossConnect.connection.connectionType === 'fiber' ? 'Fiber' : 'Copper',
-      bandwidth: crossConnect.connection.bandwidth,
-      status: 'active' as const,
-      metrics: {
-        latency: '2.1ms',
-        throughput: crossConnect.connection.bandwidth,
-        packetLoss: '0.01%',
-        bandwidthUtilization: 35
-      },
-      config: {
-        resilience: crossConnect.connection.redundancy === 'dual' ? 'redundant' : 'single',
-        crossConnectRef: crossConnect.connection.loaReference,
-        vlanId: crossConnect.connection.vlanId
-      }
-    };
-    
-    // Add the nodes and edge to the network
-    let newNodes = [...nodes];
-    let newEdges = [...edges];
-    
-    if (!existingSourceNode) newNodes.push(sourceNode);
-    if (!existingTargetNode) newNodes.push(targetNode);
-    
-    newEdges.push(newEdge);
-    
-    // Update the network
-    setNodes(newNodes);
-    setEdges(newEdges);
-    saveToHistory(newNodes, newEdges);
-    
-    // Select the source node to focus the view
-    handleNodeSelection(existingSourceNode || sourceNode);
-    
-    window.addToast({
-      type: 'success',
-      title: 'Cross-Connect Integrated',
-      message: 'The cross-connect has been added to your network topology',
-      duration: 3000
-    });
-  };
-  
   // Update simulation network scores when networkScores change
   useEffect(() => {
     setSimulationData(prev => ({
@@ -826,21 +692,6 @@ export function NetworkDesigner({
         />
       </div>
 
-      {/* Bottom Panel - Only in network view */}
-      {abstractionLevel === 'network' && !isReadOnly && (
-        <BottomPanel
-          viewMode={viewMode}
-          setViewMode={setViewMode}
-        >
-          <Suspense fallback={<ComponentLoader />}>
-            <CrossConnectsPanel
-              crossConnects={crossConnects}
-              onShowInTopology={(id) => onSelectCrossConnect?.(id)}
-            />
-          </Suspense>
-        </BottomPanel>
-      )}
-      
       {/* Templates Manager */}
       <Suspense fallback={null}>
         <TemplatesManager
