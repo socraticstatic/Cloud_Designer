@@ -1,7 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { lazy, Suspense } from 'react';
 import { ConnectionConfig } from '../types';
-import { OutcomesProvider } from './network-designer/context/OutcomesContext';
 import { Canvas } from './network-designer/Canvas';
 import { Toolbar } from './network-designer/Toolbar';
 import { StatusBar } from './network-designer/StatusBar';
@@ -10,12 +9,12 @@ import { EdgeConfigPanel } from './network-designer/EdgeConfigPanel';
 import { AbstractionLevelSelector } from './network-designer/AbstractionLevelSelector';
 import { BottomPanel } from './network-designer/panels/BottomPanel';
 import { HistoryDrawer } from './network-designer/HistoryDrawer';
-import { 
-  useNetworkHistory, 
-  useNetworkManager, 
-  useSelectionManager, 
-  useEdgeCreator, 
-  useTemplatesManager 
+import {
+  useNetworkHistory,
+  useNetworkManager,
+  useSelectionManager,
+  useEdgeCreator,
+  useTemplatesManager
 } from '../hooks';
 import { getNodeIcon } from '../utils/nodeUtils';
 import { DEFAULT_NETWORK_CONFIG } from '../constants';
@@ -29,9 +28,6 @@ const CircuitView = lazy(() => import('./network-designer/circuit-view/CircuitVi
 const AIRecommendationEngine = lazy(() => import('./network-designer/AIRecommendationEngine').then(module => ({ default: module.AIRecommendationEngine })));
 const DesignAssistant = lazy(() => import('./network-designer/DesignAssistant').then(module => ({ default: module.DesignAssistant })));
 const NetworkParameters = lazy(() => import('./network-designer/NetworkParameters').then(module => ({ default: module.NetworkParameters })));
-const EnhancedBusinessOutcomes = lazy(() => import('./network-designer/panels/EnhancedBusinessOutcomes').then(module => ({ default: module.EnhancedBusinessOutcomes })));
-const ReactiveAIPanel = lazy(() => import('./network-designer/panels/ReactiveAIPanel').then(module => ({ default: module.ReactiveAIPanel })));
-const SustainabilityImpact = lazy(() => import('./network-designer/panels/SustainabilityImpact').then(module => ({ default: module.SustainabilityImpact })));
 const TemplatesManager = lazy(() => import('./network-designer/panels/TemplatesManager').then(module => ({ default: module.TemplatesManager })));
 const SaveTemplateModal = lazy(() => import('./network-designer/SaveTemplateModal').then(module => ({ default: module.SaveTemplateModal })));
 const NetworkSimulation = lazy(() => import('./network-designer/simulation/NetworkSimulation').then(module => ({ default: module.NetworkSimulation })));
@@ -268,7 +264,7 @@ export function NetworkDesigner({
   };
   
   // UI state
-  const [viewMode, setViewMode] = useState<'outcomes' | 'ai-recommendations' | 'sustainability' | 'cross-connects'>('outcomes');
+  const [viewMode, setViewMode] = useState<'cross-connects'>('cross-connects');
   const [isRunningScenario, setIsRunningScenario] = useState(false);
   const [showDefaultSetup, setShowDefaultSetup] = useState(false);
   
@@ -705,7 +701,6 @@ export function NetworkDesigner({
   };
 
   return (
-    <OutcomesProvider>
     <div className="flex flex-col bg-gray-50 rounded-xl border-2 border-gray-200 relative">
       {/* Main Content Area */}
       <div className="relative h-[800px]" style={{ zIndex: 1 }}>
@@ -838,32 +833,10 @@ export function NetworkDesigner({
           setViewMode={setViewMode}
         >
           <Suspense fallback={<ComponentLoader />}>
-            {viewMode === 'outcomes' && (
-              <EnhancedBusinessOutcomes />
-            )}
-
-            {viewMode === 'ai-recommendations' && (
-              <ReactiveAIPanel
-                nodes={nodes}
-                edges={edges}
-                onApplyRecommendation={(newNodes, newEdges) => {
-                  setNodes(newNodes);
-                  setEdges(newEdges);
-                  saveToHistory(newNodes, newEdges);
-                }}
-              />
-            )}
-
-            {viewMode === 'sustainability' && (
-              <SustainabilityImpact />
-            )}
-
-            {viewMode === 'cross-connects' && (
-              <CrossConnectsPanel
-                crossConnects={crossConnects}
-                onShowInTopology={(id) => onSelectCrossConnect?.(id)}
-              />
-            )}
+            <CrossConnectsPanel
+              crossConnects={crossConnects}
+              onShowInTopology={(id) => onSelectCrossConnect?.(id)}
+            />
           </Suspense>
         </BottomPanel>
       )}
@@ -887,6 +860,5 @@ export function NetworkDesigner({
         onRestoreTopology={handleRestoreTopology}
       />
     </div>
-    </OutcomesProvider>
   );
 }
