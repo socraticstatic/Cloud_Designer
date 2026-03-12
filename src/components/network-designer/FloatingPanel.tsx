@@ -126,10 +126,10 @@ export function FloatingPanel({
     // Calculate position initially
     calculatePosition();
 
-    // Trigger animation after position is set
-    const animationTimer = setTimeout(() => {
+    // Trigger animation on next frame after position is set (avoids flash)
+    const raf = requestAnimationFrame(() => {
       setAnimateIn(true);
-    }, 50);
+    });
 
     // Recalculate on window resize or container scroll
     window.addEventListener('resize', calculatePosition);
@@ -151,7 +151,7 @@ export function FloatingPanel({
           console.warn('Error removing scroll listener', e);
         }
       }
-      clearTimeout(animationTimer);
+      cancelAnimationFrame(raf);
       setAnimateIn(false);
     };
   }, [anchorPosition, isVisible, containerRef]);
@@ -166,11 +166,12 @@ export function FloatingPanel({
           ? 'opacity-100 transform-gpu translate-y-0' 
           : 'opacity-0 transform-gpu translate-y-4'
       }`}
-      style={{ 
-        left: `${position.x}px`, 
+      style={{
+        left: `${position.x}px`,
         top: `${position.y}px`,
         width: '380px',
-        zIndex: 1000 // Significantly higher z-index to ensure it's above everything else
+        zIndex: 1000,
+        transition: 'left 150ms ease, top 150ms ease'
       }}
     >
       <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 bg-gray-50 rounded-t-lg sticky top-0 z-10">
