@@ -12,6 +12,7 @@ import {
   DevicePortsMap,
   ViewMode
 } from './CircuitTypes';
+import { CANVAS_SAFE_AREA } from '../../../constants';
 
 interface CircuitViewProps {
   nodes: NetworkNode[];
@@ -282,7 +283,7 @@ export function CircuitView({
   const hasDetail = !!(selectedDevice || selectedPort || selectedCircuit);
 
   return (
-    <div className="flex flex-col w-full h-full bg-gray-50">
+    <div className="flex flex-col w-full h-full bg-gray-50" style={{ paddingLeft: CANVAS_SAFE_AREA.LEFT }}>
       {/* Top bar: breadcrumb */}
       <div className="flex-shrink-0 bg-white border-b border-gray-200 px-6 py-4">
         <Breadcrumb
