@@ -46,6 +46,7 @@ export const Canvas = forwardRef<HTMLDivElement, CanvasProps>(({
   onDeleteEdge
 }, ref) => {
   const internalCanvasRef = useRef<HTMLDivElement>(null);
+  const currentMousePosRef = useRef({ x: 0, y: 0 });
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const [isPanning, setIsPanning] = useState(false);
@@ -101,6 +102,15 @@ export const Canvas = forwardRef<HTMLDivElement, CanvasProps>(({
     });
   }, [nodes]);
   
+  // Track real mouse position globally so spacebar pan can use it
+  useEffect(() => {
+    const track = (e: MouseEvent) => {
+      currentMousePosRef.current = { x: e.clientX, y: e.clientY };
+    };
+    document.addEventListener('mousemove', track);
+    return () => document.removeEventListener('mousemove', track);
+  }, []);
+
   // Handle middle-mouse/spacebar panning
   useEffect(() => {
     if (!canvasRef || !('current' in canvasRef) || !canvasRef.current) return;
@@ -138,10 +148,10 @@ export const Canvas = forwardRef<HTMLDivElement, CanvasProps>(({
       if (e.code === 'Space' && !isPanning) {
         e.preventDefault();
         setIsPanning(true);
-        const mouseEvent = new MouseEvent('mousemove');
-        setStartPanPosition({ 
-          x: mouseEvent.clientX - panOffset.x, 
-          y: mouseEvent.clientY - panOffset.y 
+        const { x, y } = currentMousePosRef.current;
+        setStartPanPosition({
+          x: x - panOffset.x,
+          y: y - panOffset.y
         });
         document.body.style.cursor = 'grab';
       }
