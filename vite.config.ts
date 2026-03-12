@@ -22,9 +22,9 @@ export default defineConfig(({ command, mode }) => {
             return 'react-vendor';
           }
 
-          // Icons
+          // Icons — bundled with react-vendor to guarantee React is loaded first
           if (id.includes('node_modules/lucide-react')) {
-            return 'icons';
+            return 'react-vendor';
           }
 
           // PDF generation libraries (large)
