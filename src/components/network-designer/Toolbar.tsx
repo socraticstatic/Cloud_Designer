@@ -48,7 +48,8 @@ export function Toolbar({
     icon: type.id === 'SDWAN' ? PanelRight :
           type.id === 'Firewall' ? Shield :
           type.id === 'VNF' ? Activity :
-          type.id === 'VNAT' ? Menu : Activity
+          type.id === 'VNAT' ? Menu :
+          type.id === 'FlexWare' ? PanelRight : Activity
   }));
 
   const networkTypesWithIcons = NETWORK_TYPES.map(type => ({
@@ -56,7 +57,8 @@ export function Toolbar({
     icon: type.id === 'Internet' ? Network :
           type.id === 'VPN' ? Lock :
           type.id === 'Ethernet' ? Ethernet :
-          type.id === 'IoT' ? Wifi :
+          type.id === 'ADI' ? Network :
+          type.id === 'Wavelength' ? Wifi :
           type.id === 'AT&T Core' ? Globe : Network
   }));
 

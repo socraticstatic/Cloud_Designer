@@ -4,7 +4,8 @@ import { Divide as LucideIcon } from 'lucide-react';
 export interface NetworkNode {
   id: string;
   type: 'function' | 'destination' | 'network' | 'datacenter';
-  functionType?: 'Router' | 'SDWAN' | 'Firewall' | 'VNF' | 'VNAT'; // Type for function nodes
+  functionType?: 'Router' | 'Cloud Router' | 'SDWAN' | 'Firewall' | 'VNF' | 'VNAT' | 'FlexWare';
+  cloudProvider?: string;
   x: number;
   y: number;
   name: string;

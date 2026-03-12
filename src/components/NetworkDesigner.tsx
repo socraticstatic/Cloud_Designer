@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { lazy, Suspense } from 'react';
 import { ConnectionConfig } from '../types';
 import { Canvas } from './network-designer/Canvas';
@@ -17,6 +17,7 @@ import {
 } from '../hooks';
 import { getNodeIcon } from '../utils/nodeUtils';
 import { ensureNodesHaveGeoData } from '../utils/sampleGeoData';
+import { getAutoConnectTarget } from '../data/connectionDefaults';
 import { DEFAULT_NETWORK_CONFIG, Z_INDEX, getSafeCenter, CANVAS_BOUNDS } from '../constants';
 import { NetworkNode, NetworkEdge } from './types';
 import { DefaultNetworkSetup } from './network-designer/DefaultNetworkSetup';
@@ -172,7 +173,10 @@ export function NetworkDesigner({
     saveToHistory(nodesWithIcons, restoredEdges);
   };
 
-  // Edge creation
+  // Helper to find node by ID
+  const getNodeById = useCallback((id: string) => nodes.find(n => n.id === id), [nodes]);
+
+  // Edge creation with service-aware defaults
   const {
     isCreatingEdge,
     edgeStart,
@@ -181,7 +185,44 @@ export function NetworkDesigner({
     cancelEdgeCreation
   } = useEdgeCreator(edges, setEdges, (edge) => {
     handleEdgeSelection(edge);
-  });
+  }, getNodeById);
+
+  // Auto-connecting wrapper: adds node, then offers auto-connection
+  const handleAddNode = useCallback((type: NetworkNode['type'], functionType?: string, networkType?: string, provider?: string) => {
+    const newNode = addNode(type, functionType, networkType, provider);
+    if (!newNode) return newNode;
+
+    // Check for auto-connection opportunity
+    const autoConnect = getAutoConnectTarget(newNode, nodes);
+    if (autoConnect) {
+      const { targetNode, edgeDefaults } = autoConnect;
+      const newEdge: NetworkEdge = {
+        id: `edge-${Date.now()}`,
+        source: targetNode.id,
+        target: newNode.id,
+        type: edgeDefaults.type,
+        bandwidth: edgeDefaults.bandwidth,
+        status: 'inactive',
+        config: {
+          ...(edgeDefaults.resilience ? { resilience: edgeDefaults.resilience } : {}),
+        }
+      };
+      const updatedEdges = [...edges, newEdge];
+      setEdges(updatedEdges);
+      saveToHistory([...nodes, newNode], updatedEdges);
+
+      if (typeof window !== 'undefined' && window.addToast) {
+        window.addToast({
+          type: 'success',
+          title: 'Auto-Connected',
+          message: `${newNode.name} connected to ${targetNode.name} via ${edgeDefaults.type}`,
+          duration: 3000
+        });
+      }
+    }
+
+    return newNode;
+  }, [addNode, nodes, edges, setEdges, saveToHistory]);
   
   // Enrich nodes with geo data when switching to global view
   useEffect(() => {
@@ -627,6 +668,14 @@ export function NetworkDesigner({
                   duration: 2000
                 });
               }}
+              onSelectNode={(nodeId) => {
+                const node = nodes.find(n => n.id === nodeId);
+                if (node) handleNodeSelection(node);
+              }}
+              onSelectEdge={(edgeId) => {
+                const edge = edges.find(e => e.id === edgeId);
+                if (edge) handleEdgeSelection(edge);
+              }}
             />
           </div>
         )}
@@ -638,7 +687,7 @@ export function NetworkDesigner({
         {abstractionLevel === 'network' && !isReadOnly && (
           <div style={{ zIndex: Z_INDEX.CHROME, pointerEvents: 'auto' }}>
             <Toolbar
-              onAddNode={addNode}
+              onAddNode={handleAddNode}
               onToggleEdgeCreation={toggleEdgeCreation}
               isCreatingEdge={isCreatingEdge}
               onCancel={handleUndo}
