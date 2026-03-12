@@ -310,6 +310,19 @@ export function NetworkDesigner({
     handleNodeSelection(node);
   };
   
+  // Handle undo - restore nodes and edges from history
+  const handleUndo = () => {
+    const prevState = undo();
+    if (prevState) {
+      const nodesWithIcons = prevState.nodes.map(node => ({
+        ...node,
+        icon: getNodeIcon(node.type, node.functionType, node.cloudProvider, node.config)
+      }));
+      setNodes(nodesWithIcons);
+      setEdges(prevState.edges);
+    }
+  };
+
   // Handle node drag
   const handleNodeDrag = (nodeId: string, x: number, y: number) => {
     const node = nodes.find(n => n.id === nodeId);
@@ -627,7 +640,7 @@ export function NetworkDesigner({
               onAddNode={addNode}
               onToggleEdgeCreation={toggleEdgeCreation}
               isCreatingEdge={isCreatingEdge}
-              onCancel={undo}
+              onCancel={handleUndo}
               hasConnections={edges.length > 0}
               canUndo={canUndo}
               onRunScenario={handleRunSimulation}
