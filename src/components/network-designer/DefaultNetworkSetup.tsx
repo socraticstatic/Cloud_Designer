@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { Router, Network, ArrowRight, Sparkles, Globe, Upload, Brain, FileImage, Zap, LayoutGrid as Layout, Cloud, FolderOpen, Clock, Trash2 } from 'lucide-react';
 import { NetworkNode, NetworkEdge } from '../../types';
 import { getNodeIcon } from '../../utils/nodeUtils';
+import { demoNodes, demoEdges } from '../../data/demoTopology';
 
 interface DefaultNetworkSetupProps {
   isOpen: boolean;
@@ -53,6 +54,15 @@ export function DefaultNetworkSetup({ isOpen, onComplete, onApplyTemplate }: Def
       }
     } else {
       const mockTopologies: SavedTopology[] = [
+        {
+          id: 'hero-demo',
+          name: 'NetBond Advanced - Leadership Demo',
+          description: 'Dallas HQ + Chicago DR, dual-diverse AVPN, NetBond to AWS + Azure, FlexWare with SD-WAN + Firewall at each site',
+          savedAt: Date.now() - 1800000,
+          lastModified: Date.now() - 900000,
+          nodes: demoNodes,
+          edges: demoEdges,
+        },
         {
           id: 'mock-1',
           name: 'Production Environment',
