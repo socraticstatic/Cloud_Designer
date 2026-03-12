@@ -534,6 +534,71 @@ export function DefaultNetworkSetup({ isOpen, onComplete, onApplyTemplate }: Def
           }
         }
       ]
+    },
+    {
+      id: 'sdwan-hybrid',
+      name: 'SD-WAN + MPLS Hybrid',
+      description: 'SD-WAN overlay with MPLS underlay to multi-cloud',
+      preview: {
+        icons: [
+          { icon: Globe, color: 'text-orange-500' },
+          { icon: Cloud, color: 'text-indigo-500' },
+          { icon: Cloud, color: 'text-blue-500' }
+        ]
+      },
+      nodes: [
+        { id: 'ipe-sdwan', type: 'network' as const, x: 80, y: 200, name: 'AT&T Core - Dallas', icon: Globe, status: 'inactive' as const, config: { networkType: 'at&t core', city: 'Dallas' } },
+        { id: 'internet-sdwan', type: 'network' as const, x: 80, y: 400, name: 'Internet', icon: Globe, status: 'inactive' as const, config: { networkType: 'internet' } },
+        { id: 'sdwan-edge', type: 'function' as const, functionType: 'SDWAN' as const, x: 240, y: 250, name: 'SD-WAN Edge', icon: Cloud, status: 'inactive' as const, config: { sdwanRole: 'edge' } },
+        { id: 'fw-sdwan', type: 'function' as const, functionType: 'Firewall' as const, x: 240, y: 380, name: 'Firewall', icon: Cloud, status: 'inactive' as const, config: { firewallType: 'ngfw', inspectionLevel: 'deep' } },
+        { id: 'cr-sdwan', type: 'function' as const, functionType: 'Router' as const, x: 420, y: 300, name: 'Cloud Router', icon: Cloud, status: 'inactive' as const, config: { routerType: 'cloud', routingProtocol: 'bgp', fastReroute: true, bfd: true } },
+        { id: 'aws-sdwan', type: 'destination' as const, cloudProvider: 'AWS', x: 600, y: 220, name: 'AWS', icon: Cloud, status: 'inactive' as const, config: { provider: 'AWS', region: 'us-east-1' } },
+        { id: 'azure-sdwan', type: 'destination' as const, cloudProvider: 'Azure', x: 600, y: 380, name: 'Azure', icon: Cloud, status: 'inactive' as const, config: { provider: 'Azure', region: 'East US' } }
+      ],
+      edges: [
+        { id: 'e-ipe-sdwan', source: 'ipe-sdwan', target: 'sdwan-edge', type: 'MPLS', bandwidth: '1 Gbps', status: 'inactive' as const, config: { resilience: 'redundant' } },
+        { id: 'e-int-sdwan', source: 'internet-sdwan', target: 'sdwan-edge', type: 'Internet', bandwidth: '1 Gbps', status: 'inactive' as const },
+        { id: 'e-sdwan-cr', source: 'sdwan-edge', target: 'cr-sdwan', type: 'VPN', bandwidth: '1 Gbps', status: 'inactive' as const },
+        { id: 'e-ipe-fw', source: 'ipe-sdwan', target: 'fw-sdwan', type: 'Ethernet', bandwidth: '10 Gbps', status: 'inactive' as const },
+        { id: 'e-fw-cr', source: 'fw-sdwan', target: 'cr-sdwan', type: 'Ethernet', bandwidth: '10 Gbps', status: 'inactive' as const },
+        { id: 'e-cr-aws', source: 'cr-sdwan', target: 'aws-sdwan', type: 'Direct Connect', bandwidth: '10 Gbps', status: 'inactive' as const, config: { resilience: 'redundant' } },
+        { id: 'e-cr-azure', source: 'cr-sdwan', target: 'azure-sdwan', type: 'ExpressRoute', bandwidth: '10 Gbps', status: 'inactive' as const, config: { resilience: 'redundant' } }
+      ]
+    },
+    {
+      id: 'dual-diverse-ha',
+      name: 'Dual-Diverse HA',
+      description: 'Dual IPE, dual Cloud Routers, BFD fast reroute',
+      preview: {
+        icons: [
+          { icon: Globe, color: 'text-orange-500' },
+          { icon: Cloud, color: 'text-purple-500' },
+          { icon: Cloud, color: 'text-blue-500' }
+        ]
+      },
+      nodes: [
+        { id: 'ipe-dal', type: 'network' as const, x: 60, y: 180, name: 'AT&T Core - Dallas', icon: Globe, status: 'inactive' as const, config: { networkType: 'at&t core', city: 'Dallas' } },
+        { id: 'ipe-chi', type: 'network' as const, x: 60, y: 420, name: 'AT&T Core - Chicago', icon: Globe, status: 'inactive' as const, config: { networkType: 'at&t core', city: 'Chicago' } },
+        { id: 'fw-p', type: 'function' as const, functionType: 'Firewall' as const, x: 210, y: 180, name: 'Firewall Primary', icon: Cloud, status: 'inactive' as const, config: { firewallType: 'ngfw', highAvailability: true } },
+        { id: 'fw-s', type: 'function' as const, functionType: 'Firewall' as const, x: 210, y: 420, name: 'Firewall Secondary', icon: Cloud, status: 'inactive' as const, config: { firewallType: 'ngfw', highAvailability: true } },
+        { id: 'cr-p', type: 'function' as const, functionType: 'Router' as const, x: 380, y: 220, name: 'Cloud Router Primary', icon: Cloud, status: 'inactive' as const, config: { routerType: 'cloud', routingProtocol: 'bgp', fastReroute: true, bfd: true } },
+        { id: 'cr-s', type: 'function' as const, functionType: 'Router' as const, x: 380, y: 380, name: 'Cloud Router Secondary', icon: Cloud, status: 'inactive' as const, config: { routerType: 'cloud', routingProtocol: 'bgp', fastReroute: true, bfd: true } },
+        { id: 'aws-dd', type: 'destination' as const, cloudProvider: 'AWS', x: 560, y: 220, name: 'AWS', icon: Cloud, status: 'inactive' as const, config: { provider: 'AWS', region: 'us-east-1' } },
+        { id: 'azure-dd', type: 'destination' as const, cloudProvider: 'Azure', x: 560, y: 380, name: 'Azure', icon: Cloud, status: 'inactive' as const, config: { provider: 'Azure', region: 'East US' } }
+      ],
+      edges: [
+        { id: 'e-dal-fw1', source: 'ipe-dal', target: 'fw-p', type: 'Ethernet', bandwidth: '10 Gbps', status: 'inactive' as const },
+        { id: 'e-fw1-cr1', source: 'fw-p', target: 'cr-p', type: 'MPLS', bandwidth: '10 Gbps', status: 'inactive' as const, config: { resilience: 'dualdiverse', bfd: true } },
+        { id: 'e-dal-cr2', source: 'ipe-dal', target: 'cr-s', type: 'MPLS', bandwidth: '10 Gbps', status: 'inactive' as const, config: { resilience: 'dualdiverse', bfd: true } },
+        { id: 'e-chi-fw2', source: 'ipe-chi', target: 'fw-s', type: 'Ethernet', bandwidth: '10 Gbps', status: 'inactive' as const },
+        { id: 'e-fw2-cr2', source: 'fw-s', target: 'cr-s', type: 'MPLS', bandwidth: '10 Gbps', status: 'inactive' as const, config: { resilience: 'dualdiverse', bfd: true } },
+        { id: 'e-chi-cr1', source: 'ipe-chi', target: 'cr-p', type: 'MPLS', bandwidth: '10 Gbps', status: 'inactive' as const, config: { resilience: 'dualdiverse', bfd: true } },
+        { id: 'e-cr-cross', source: 'cr-p', target: 'cr-s', type: 'Ethernet', bandwidth: '10 Gbps', status: 'inactive' as const, config: { resilience: 'ha', bfd: true } },
+        { id: 'e-cr1-aws', source: 'cr-p', target: 'aws-dd', type: 'Direct Connect', bandwidth: '10 Gbps', status: 'inactive' as const, config: { resilience: 'redundant' } },
+        { id: 'e-cr2-aws', source: 'cr-s', target: 'aws-dd', type: 'Direct Connect', bandwidth: '10 Gbps', status: 'inactive' as const, config: { resilience: 'redundant' } },
+        { id: 'e-cr1-azure', source: 'cr-p', target: 'azure-dd', type: 'ExpressRoute', bandwidth: '10 Gbps', status: 'inactive' as const, config: { resilience: 'redundant' } },
+        { id: 'e-cr2-azure', source: 'cr-s', target: 'azure-dd', type: 'ExpressRoute', bandwidth: '10 Gbps', status: 'inactive' as const, config: { resilience: 'redundant' } }
+      ]
     }
   ];
 

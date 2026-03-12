@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Sparkles, Zap, Shield, Network, TrendingUp, AlertCircle, CheckCircle2, Loader, ArrowRight, Target } from 'lucide-react';
 import { useOutcomes } from '../context/OutcomesContext';
 import { NetworkNode, NetworkEdge } from '../../types';
+import { applyRecommendation } from '../../../engine/topologyGenerator';
 
 interface ReactiveAIPanelProps {
   nodes: NetworkNode[];
@@ -249,7 +250,21 @@ export function ReactiveAIPanel({ nodes, edges, onApplyRecommendation }: Reactiv
 
             <button
               onClick={() => {
-                console.log('Apply recommendation:', rec.id);
+                // Map recommendation ID to generator action
+                const actionMap: Record<string, string> = {
+                  'high-availability': 'redundant',
+                  'backup-paths': 'redundant',
+                  'security-enhanced': 'security',
+                  'multi-region': 'multiregion',
+                  'cost-optimization': 'cost',
+                  'low-latency': 'redundant',
+                  'high-bandwidth': 'redundant',
+                };
+                const action = actionMap[rec.id];
+                if (action) {
+                  const result = applyRecommendation(action, nodes, edges);
+                  onApplyRecommendation(result.nodes, result.edges);
+                }
               }}
               className="mt-3 w-full px-3 py-1.5 bg-white border border-gray-300 rounded hover:border-blue-500 hover:bg-blue-50 transition-colors flex items-center justify-center text-sm font-medium text-gray-700 hover:text-blue-700"
             >
