@@ -295,7 +295,7 @@ export function CircuitView({
       </div>
 
       {/* Content row: main + drawer */}
-      <div className="flex flex-1 min-h-0">
+      <div className="flex flex-1 min-h-0 relative">
         {/* Main content */}
         <div className="flex-1 overflow-auto relative">
           {nodes.length === 0 ? (
@@ -346,21 +346,25 @@ export function CircuitView({
           )}
         </div>
 
-        {/* Right detail drawer - pushes content via flex, animated width */}
-        <div className={`transition-all duration-300 ease-in-out overflow-hidden flex-shrink-0 ${hasDetail ? 'w-96' : 'w-0'}`}>
-          <div className="w-96 h-full">
-            <RightDetailPanel
-              selectedDevice={selectedNodeData}
-              selectedPort={selectedPortData}
-              selectedCircuit={selectedCircuitData}
-              devicePorts={devicePorts}
-              circuits={circuits}
-              nodes={nodes}
-              onClose={handleCloseDetail}
-              onSelectDevice={handleDeviceSelect}
-              onSelectPort={handlePortSelect}
-            />
-          </div>
+        {/* Right detail drawer - slides over content */}
+        <div
+          className="absolute top-0 right-0 h-full w-96 transition-transform duration-300 ease-in-out shadow-xl"
+          style={{
+            transform: hasDetail ? 'translateX(0)' : 'translateX(100%)',
+            zIndex: 30,
+          }}
+        >
+          <RightDetailPanel
+            selectedDevice={selectedNodeData}
+            selectedPort={selectedPortData}
+            selectedCircuit={selectedCircuitData}
+            devicePorts={devicePorts}
+            circuits={circuits}
+            nodes={nodes}
+            onClose={handleCloseDetail}
+            onSelectDevice={handleDeviceSelect}
+            onSelectPort={handlePortSelect}
+          />
         </div>
       </div>
     </div>
