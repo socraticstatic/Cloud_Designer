@@ -32,7 +32,6 @@ export const Node = memo(function Node({
   const nodeRef = useRef<HTMLDivElement>(null);
   const nameInputRef = useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = useState(false);
-  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const [isEditingName, setIsEditingName] = useState(false);
   const [nodeName, setNodeName] = useState(node.name);
   const [hasDragged, setHasDragged] = useState(false);
@@ -47,49 +46,7 @@ export const Node = memo(function Node({
     setPosition({ x: node.x, y: node.y });
   }, [node.x, node.y]);
 
-  // Handle drag events
-  useEffect(() => {
-    if (!isDragging) return;
-
-    const handleMouseMove = (e: MouseEvent) => {
-      if (nodeRef.current) {
-        const rect = nodeRef.current.parentElement?.getBoundingClientRect();
-        if (rect) {
-          // Calculate position accounting for zoom level
-          const x = (e.clientX - rect.left) / zoomLevel - dragOffset.x;
-          const y = (e.clientY - rect.top) / zoomLevel - dragOffset.y;
-
-          // Check if we've moved more than 5 pixels (threshold to detect drag)
-          const deltaX = Math.abs(e.clientX - dragStartPos.current.x);
-          const deltaY = Math.abs(e.clientY - dragStartPos.current.y);
-          if (deltaX > 5 || deltaY > 5) {
-            setHasDragged(true);
-          }
-
-          onDrag(x, y);
-        }
-      }
-    };
-
-    const handleMouseUp = () => {
-      setIsDragging(false);
-      onDragEnd();
-
-      // Reset hasDragged after a short delay to allow click handler to check it
-      setTimeout(() => setHasDragged(false), 50);
-
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
-    };
-
-    document.addEventListener('mousemove', handleMouseMove);
-    document.addEventListener('mouseup', handleMouseUp);
-
-    return () => {
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
-    };
-  }, [isDragging, dragOffset, onDrag, onDragEnd, zoomLevel]);
+  // Drag is handled inline in onMouseDown to avoid triggering drag visuals on double-click
 
   // Focus input when editing starts
   useEffect(() => {
@@ -128,7 +85,7 @@ export const Node = memo(function Node({
         ref={nodeRef}
         className={`
           absolute w-16 h-16 flex items-center justify-center
-          rounded-lg transition-all duration-200
+          rounded-lg transition-all duration-200 select-none
           ${background}
           ${isReadOnly ? 'cursor-default' : isCreatingEdge ? 'cursor-crosshair' : isDragging ? 'cursor-grabbing' : 'cursor-grab'}
           ${isDragging ? 'shadow-lg scale-105' : 'shadow-sm hover:shadow-md'}
@@ -158,17 +115,49 @@ export const Node = memo(function Node({
             e.stopPropagation();
             setShowTooltip(false);
             const rect = nodeRef.current.getBoundingClientRect();
-
-            // Store initial mouse position for drag detection
             dragStartPos.current = { x: e.clientX, y: e.clientY };
             setHasDragged(false);
 
-            setDragOffset({
+            const offset = {
               x: (e.clientX - rect.left) / zoomLevel,
               y: (e.clientY - rect.top) / zoomLevel
-            });
-            setIsDragging(true);
-            onDragStart();
+            };
+
+            // Only enter drag state after 5px movement — prevents drag visuals on double-click
+            let dragStarted = false;
+
+            const handleMouseMove = (me: MouseEvent) => {
+              const deltaX = Math.abs(me.clientX - dragStartPos.current.x);
+              const deltaY = Math.abs(me.clientY - dragStartPos.current.y);
+              if (deltaX > 5 || deltaY > 5) {
+                if (!dragStarted) {
+                  dragStarted = true;
+                  setIsDragging(true);
+                  onDragStart();
+                }
+                setHasDragged(true);
+                const parentRect = nodeRef.current?.parentElement?.getBoundingClientRect();
+                if (parentRect) {
+                  onDrag(
+                    (me.clientX - parentRect.left) / zoomLevel - offset.x,
+                    (me.clientY - parentRect.top) / zoomLevel - offset.y
+                  );
+                }
+              }
+            };
+
+            const handleMouseUp = () => {
+              if (dragStarted) {
+                setIsDragging(false);
+                onDragEnd();
+              }
+              setTimeout(() => setHasDragged(false), 50);
+              document.removeEventListener('mousemove', handleMouseMove);
+              document.removeEventListener('mouseup', handleMouseUp);
+            };
+
+            document.addEventListener('mousemove', handleMouseMove);
+            document.addEventListener('mouseup', handleMouseUp);
           }
         }}
       >
@@ -210,7 +199,7 @@ export const Node = memo(function Node({
               className={`
                 text-xs font-medium transition-all duration-200
                 ${isSelected ? 'text-blue-700' : 'text-gray-600'}
-                hover:text-blue-600 cursor-text
+                hover:text-blue-600 cursor-pointer
               `}
               onClick={(e) => {
                 e.stopPropagation();
