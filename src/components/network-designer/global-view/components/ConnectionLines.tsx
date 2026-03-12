@@ -47,11 +47,11 @@ export function ConnectionLines({
               y2={targetLocation.coordinates.y + 20}
               stroke={
                 isSelected ? '#3b82f6' :
-                isActive ? '#10b981' : 
-                '#94a3b8'
+                isActive ? '#10b981' :
+                '#475569'
               }
-              strokeWidth={isSelected ? 3 : isHighCapacity ? 2 : 1.5}
-              strokeOpacity={isSelected ? 0.9 : isActive ? 0.7 : 0.4}
+              strokeWidth={isSelected ? 3.5 : isHighCapacity ? 2.5 : 2}
+              strokeOpacity={isSelected ? 1.0 : isActive ? 0.9 : 0.65}
               strokeDasharray={edge?.type === 'VPN' ? '5,5' : undefined}
             />
           );

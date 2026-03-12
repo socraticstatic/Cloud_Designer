@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { BrainCircuit as Circuit } from 'lucide-react';
+import { BrainCircuit as CircuitIcon } from 'lucide-react';
 import type { NetworkNode, NetworkEdge } from '../../types';
 import { Breadcrumb } from './components/Breadcrumb';
 import { RightDetailPanel } from './components/RightDetailPanel';
@@ -21,9 +21,119 @@ interface CircuitViewProps {
   onZoomOut: () => void;
 }
 
-export function CircuitView({ 
-  nodes, 
-  edges, 
+// ─── Circuit table for "Circuits" view mode ──────────────────────────────────
+function CircuitsTable({
+  circuits,
+  nodes,
+}: {
+  circuits: CircuitType[];
+  nodes: NetworkNode[];
+}) {
+  const getNodeName = (portId: string) => {
+    const nodeId = portId.split('-port-')[0];
+    return nodes.find(n => n.id === nodeId)?.name || nodeId;
+  };
+
+  const typeLabel = (t: string) =>
+    t === 'dark-fiber' ? 'Dark Fiber' :
+    t === 'wave' ? 'Wavelength' :
+    t === 'ethernet' ? 'Ethernet' : 'MPLS';
+
+  return (
+    <div className="p-6">
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+          <h3 className="font-semibold text-gray-900">All Circuits</h3>
+          <span className="text-sm text-gray-500">
+            {circuits.filter(c => c.status === 'active').length} active / {circuits.length} total
+          </span>
+        </div>
+
+        {circuits.length === 0 ? (
+          <div className="p-12 text-center text-gray-400 text-sm">
+            No circuits. Add nodes and connections in Topo View first.
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="bg-gray-50 text-left">
+                  {['Source', 'Destination', 'Type', 'Capacity', 'Status', 'Latency', 'Loss', 'Optical'].map(h => (
+                    <th key={h} className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                      {h}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {circuits.map(circuit => (
+                  <tr key={circuit.id} className="hover:bg-gray-50 transition-colors">
+                    <td className="px-4 py-3 font-medium text-gray-900">
+                      {getNodeName(circuit.sourcePort)}
+                    </td>
+                    <td className="px-4 py-3 text-gray-700">
+                      {getNodeName(circuit.targetPort)}
+                    </td>
+                    <td className="px-4 py-3 text-gray-600">{typeLabel(circuit.type)}</td>
+                    <td className="px-4 py-3 text-gray-600 font-mono text-xs">{circuit.capacity}</td>
+                    <td className="px-4 py-3">
+                      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
+                        circuit.status === 'active' ? 'bg-green-100 text-green-700' :
+                        circuit.status === 'degraded' ? 'bg-amber-100 text-amber-700' :
+                        'bg-gray-100 text-gray-600'
+                      }`}>
+                        <span className={`w-1.5 h-1.5 rounded-full mr-1.5 ${
+                          circuit.status === 'active' ? 'bg-green-500' :
+                          circuit.status === 'degraded' ? 'bg-amber-500' : 'bg-gray-400'
+                        }`} />
+                        {circuit.status === 'active' ? 'Active' :
+                         circuit.status === 'degraded' ? 'Degraded' : 'Inactive'}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3">
+                      {circuit.metrics ? (
+                        <span className={`font-mono text-xs ${
+                          circuit.metrics.latency > 2 ? 'text-amber-600' : 'text-gray-700'
+                        }`}>
+                          {circuit.metrics.latency.toFixed(1)}ms
+                        </span>
+                      ) : <span className="text-gray-400 text-xs">—</span>}
+                    </td>
+                    <td className="px-4 py-3">
+                      {circuit.metrics ? (
+                        <span className={`font-mono text-xs ${
+                          circuit.metrics.loss > 1 ? 'text-red-600' :
+                          circuit.metrics.loss > 0.5 ? 'text-amber-600' : 'text-gray-700'
+                        }`}>
+                          {circuit.metrics.loss.toFixed(2)}dB
+                        </span>
+                      ) : <span className="text-gray-400 text-xs">—</span>}
+                    </td>
+                    <td className="px-4 py-3">
+                      {circuit.metrics ? (
+                        <span className={`font-mono text-xs ${
+                          circuit.metrics.light < -20 ? 'text-red-600' :
+                          circuit.metrics.light < -15 ? 'text-amber-600' : 'text-gray-700'
+                        }`}>
+                          {circuit.metrics.light.toFixed(1)}dBm
+                        </span>
+                      ) : <span className="text-gray-400 text-xs">—</span>}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── Main CircuitView ─────────────────────────────────────────────────────────
+export function CircuitView({
+  nodes,
+  edges,
   selectedNode,
   onNodeSelect,
   onZoomOut
@@ -32,42 +142,29 @@ export function CircuitView({
   const [selectedPort, setSelectedPort] = useState<string | null>(null);
   const [selectedCircuit, setSelectedCircuit] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>({ mode: 'logical' });
-  
-  // Update selected device when selectedNode prop changes
+
   useEffect(() => {
-    if (selectedNode) {
-      setSelectedDevice(selectedNode);
-    }
+    if (selectedNode) setSelectedDevice(selectedNode);
   }, [selectedNode]);
-  
+
   // Generate ports for network devices based on connections
   const generatePorts = (nodeId: string): Port[] => {
     const nodeEdges = edges.filter(e => e.source === nodeId || e.target === nodeId);
     const node = nodes.find(n => n.id === nodeId);
-    
     if (!node) return [];
-    
-    // Determine how many ports to generate based on node type
-    const basePorts = node.type === 'function' ? 8 : 
-                     node.type === 'destination' ? 4 : 6;
-    
-    // Generate connected ports
+
+    const basePorts = node.type === 'function' ? 8 : node.type === 'destination' ? 4 : 6;
+
     const connectedPorts = nodeEdges.map((edge, index) => {
       const isSource = edge.source === nodeId;
       const connectedTo = isSource ? edge.target : edge.source;
       const portNumber = index % basePorts + 1;
       const slotNumber = Math.floor(index / basePorts) + 1;
-      
-      // Determine port type based on edge characteristics
-      const portType = edge.type.toLowerCase().includes('fiber') || 
-                     edge.bandwidth.includes('100') ? 'fiber' : 
-                     edge.type.toLowerCase().includes('virtual') ? 'virtual' : 'copper';
-      
-      // Determine if it's a front or back port
-      const position = node.type === 'function' ? 
-                      (portType === 'fiber' ? 'back' : 'front') : 
-                      'front';
-                      
+      const portType =
+        edge.type.toLowerCase().includes('fiber') || edge.bandwidth.includes('100') ? 'fiber' :
+        edge.type.toLowerCase().includes('virtual') ? 'virtual' : 'copper';
+      const position = node.type === 'function' ? (portType === 'fiber' ? 'back' : 'front') : 'front';
+
       return {
         id: `${nodeId}-port-${portNumber}-slot-${slotNumber}`,
         name: `Port ${portNumber}/${slotNumber}`,
@@ -77,20 +174,16 @@ export function CircuitView({
         connectedTo,
         position,
         slot: slotNumber,
-        module: portType === 'fiber' ? 'SFP+' : 
-               portType === 'virtual' ? 'Virtual' : 'RJ45'
-      };
+        module: portType === 'fiber' ? 'SFP+' : portType === 'virtual' ? 'Virtual' : 'RJ45'
+      } as Port;
     });
-    
-    // Add some unused ports to fill out slots
+
     const totalPorts = Math.max(basePorts * 2, connectedPorts.length + 4);
     const unusedPorts: Port[] = [];
-    
     for (let i = connectedPorts.length; i < totalPorts; i++) {
       const portNumber = i % basePorts + 1;
       const slotNumber = Math.floor(i / basePorts) + 1;
       const isFront = i % 2 === 0;
-      
       unusedPorts.push({
         id: `${nodeId}-port-unused-${i + 1}`,
         name: `Port ${portNumber}/${slotNumber}`,
@@ -102,91 +195,60 @@ export function CircuitView({
         module: isFront ? 'RJ45' : 'SFP+'
       });
     }
-    
+
     return [...connectedPorts, ...unusedPorts];
   };
-  
-  // Generate circuits between devices
+
   const generateCircuits = (): CircuitType[] => {
     return edges.map((edge, index) => {
-      // Get the source and target nodes
       const sourceNode = nodes.find(n => n.id === edge.source);
       const targetNode = nodes.find(n => n.id === edge.target);
-      
       if (!sourceNode || !targetNode) return null;
-      
-      // Create port IDs that match the format from generatePorts
+
       const sourcePortId = `${edge.source}-port-${(index % 8) + 1}-slot-${Math.floor(index / 8) + 1}`;
       const targetPortId = `${edge.target}-port-${(index % 8) + 1}-slot-${Math.floor(index / 8) + 1}`;
-      
-      // Create a circuit
+
       return {
         id: `circuit-${edge.id}`,
         sourcePort: sourcePortId,
         targetPort: targetPortId,
-        type: edge.type.includes('Fiber') ? 'dark-fiber' : 
-              edge.type.includes('MPLS') ? 'mpls' :
-              edge.type.includes('Direct') ? 'ethernet' : 'wave',
+        type:
+          edge.type.includes('Fiber') ? 'dark-fiber' :
+          edge.type.includes('MPLS') ? 'mpls' :
+          edge.type.includes('Direct') ? 'ethernet' : 'wave',
         capacity: edge.bandwidth,
         status: edge.status as 'active' | 'inactive',
         metrics: edge.status === 'active' ? (() => {
-          // Deterministic variation 0.0-1.0 from edge ID characters
           const v = (edge.id.split('').reduce((a, c) => a + c.charCodeAt(0), 0) % 100) / 100;
-          // Optical power: higher bandwidth = better signal (-12 to -20 dBm)
           const bwGbps = parseFloat(edge.bandwidth) || 1;
           const lightBase = bwGbps >= 100 ? -11 : bwGbps >= 10 ? -13 : -15;
-          // Latency base from circuit type
-          const latBase = edge.type.includes('MPLS') ? 1.2 :
-                          edge.type.includes('Direct') ? 0.6 : 0.9;
+          const latBase =
+            edge.type.includes('MPLS') ? 1.2 :
+            edge.type.includes('Direct') ? 0.6 : 0.9;
           return {
             light: lightBase - v * 4,
             loss: 0.18 + v * 0.28,
-            latency: edge.metrics?.latency
-              ? edge.metrics.latency / 1000
-              : latBase + v * 0.3
+            latency: edge.metrics?.latency ? edge.metrics.latency / 1000 : latBase + v * 0.3
           };
         })() : undefined
-      };
+      } as CircuitType;
     }).filter(Boolean) as CircuitType[];
   };
 
-  // Find all nodes connected to the selected device
-  const getConnectedNodes = (nodeId: string) => {
-    if (!nodeId) return [];
-    
-    return nodes.filter(node => {
-      return edges.some(edge => 
-        (edge.source === nodeId && edge.target === node.id) ||
-        (edge.target === nodeId && edge.source === node.id)
-      );
-    });
-  };
-  
-  // Get all devices with their ports
   const devicePorts: DevicePortsMap = {};
-  nodes.forEach(node => {
-    devicePorts[node.id] = generatePorts(node.id);
-  });
-  
+  nodes.forEach(node => { devicePorts[node.id] = generatePorts(node.id); });
   const circuits = generateCircuits();
-  
-  // Find the selected node details
-  const selectedNodeData = nodes.find(n => n.id === selectedDevice);
-  
-  // Find the circuit details if a circuit is selected
-  const selectedCircuitData = selectedCircuit 
-    ? circuits.find(c => c.id === selectedCircuit) 
-    : null;
-  
-  // Find the port details if a port is selected
-  const selectedPortData = selectedPort && selectedDevice
-    ? devicePorts[selectedDevice]?.find(p => p.id === selectedPort)
-    : null;
-  
+
+  const selectedNodeData = nodes.find(n => n.id === selectedDevice) ?? null;
+  const selectedCircuitData = selectedCircuit ? circuits.find(c => c.id === selectedCircuit) ?? null : null;
+  const selectedPortData =
+    selectedPort && selectedDevice
+      ? devicePorts[selectedDevice]?.find(p => p.id === selectedPort) ?? null
+      : null;
+
   const handleDeviceSelect = (deviceId: string) => {
     const node = nodes.find(n => n.id === deviceId);
     if (!node) return;
-
     setSelectedDevice(deviceId);
     onNodeSelect(node);
     setSelectedPort(null);
@@ -217,9 +279,11 @@ export function CircuitView({
     onNodeSelect(null);
   };
 
+  const hasDetail = !!(selectedDevice || selectedPort || selectedCircuit);
+
   return (
     <div className="relative w-full h-full bg-gray-50">
-      {/* Top bar with breadcrumb */}
+      {/* Top bar: breadcrumb */}
       <div className="absolute top-0 left-0 right-0 bg-white border-b border-gray-200 px-6 py-4 z-40">
         <Breadcrumb
           selectedDevice={selectedDevice}
@@ -229,12 +293,15 @@ export function CircuitView({
         />
       </div>
 
-      {/* Main content area */}
-      <div className="absolute inset-0 top-16 overflow-auto" style={{ right: selectedDevice || selectedPort || selectedCircuit ? '384px' : '0' }}>
+      {/* Main content */}
+      <div
+        className="absolute inset-0 top-16 overflow-auto"
+        style={{ right: hasDetail ? '384px' : '0' }}
+      >
         {nodes.length === 0 ? (
           <div className="absolute inset-0 flex items-center justify-center">
             <div className="bg-white rounded-xl shadow-lg p-8 max-w-md text-center">
-              <Circuit className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+              <CircuitIcon className="h-16 w-16 text-gray-300 mx-auto mb-4" />
               <h3 className="text-xl font-semibold text-gray-900 mb-2">No Network to Visualize</h3>
               <p className="text-gray-600 mb-6">
                 Create your network in the Topo View first, then switch to Infra View to see detailed hardware information.
@@ -258,6 +325,8 @@ export function CircuitView({
             onSelectPort={handlePortSelect}
             circuits={circuits}
           />
+        ) : viewMode.mode === 'physical' ? (
+          <CircuitsTable circuits={circuits} nodes={nodes} />
         ) : (
           <CleanLogicalView
             nodes={nodes}
@@ -269,7 +338,7 @@ export function CircuitView({
         )}
       </div>
 
-      {/* View mode selector - only shown when nodes exist */}
+      {/* View mode selector */}
       {nodes.length > 0 && (
         <ViewModeSelector
           currentMode={viewMode}
