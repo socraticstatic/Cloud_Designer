@@ -16,6 +16,7 @@ import {
   useTemplatesManager
 } from '../hooks';
 import { getNodeIcon } from '../utils/nodeUtils';
+import { ensureNodesHaveGeoData } from '../utils/sampleGeoData';
 import { DEFAULT_NETWORK_CONFIG } from '../constants';
 import { NetworkNode, NetworkEdge } from './types';
 import { DefaultNetworkSetup } from './network-designer/DefaultNetworkSetup';
@@ -182,6 +183,22 @@ export function NetworkDesigner({
     handleEdgeSelection(edge);
   });
   
+  // Enrich nodes with geo data when switching to global view
+  useEffect(() => {
+    if (abstractionLevel === 'global' && nodes.length > 0) {
+      const nodesNeedingGeo = nodes.filter(
+        n => !n.config?.latitude || !n.config?.longitude
+      );
+      if (nodesNeedingGeo.length > 0) {
+        const enriched = ensureNodesHaveGeoData(nodes);
+        const anyAdded = enriched.some(
+          (n, i) => n.config?.latitude !== nodes[i]?.config?.latitude && n.config?.latitude !== undefined
+        );
+        if (anyAdded) setNodes(enriched);
+      }
+    }
+  }, [abstractionLevel]);
+
   // Check if we need to show the default network setup
   useEffect(() => {
     if (nodes.length === 0 && edges.length === 0) {

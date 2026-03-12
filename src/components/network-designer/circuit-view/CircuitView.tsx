@@ -3,11 +3,14 @@ import { BrainCircuit as Circuit } from 'lucide-react';
 import type { NetworkNode, NetworkEdge } from '../../types';
 import { Breadcrumb } from './components/Breadcrumb';
 import { RightDetailPanel } from './components/RightDetailPanel';
+import { ViewModeSelector } from './components/ViewModeSelector';
 import { CleanLogicalView } from './views/CleanLogicalView';
+import { PhysicalRackView } from './PhysicalRackView';
 import {
   Port,
   Circuit as CircuitType,
-  DevicePortsMap
+  DevicePortsMap,
+  ViewMode
 } from './CircuitTypes';
 
 interface CircuitViewProps {
@@ -28,6 +31,7 @@ export function CircuitView({
   const [selectedDevice, setSelectedDevice] = useState<string | null>(selectedNode);
   const [selectedPort, setSelectedPort] = useState<string | null>(null);
   const [selectedCircuit, setSelectedCircuit] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<ViewMode>({ mode: 'logical' });
   
   // Update selected device when selectedNode prop changes
   useEffect(() => {
@@ -125,11 +129,23 @@ export function CircuitView({
               edge.type.includes('Direct') ? 'ethernet' : 'wave',
         capacity: edge.bandwidth,
         status: edge.status as 'active' | 'inactive',
-        metrics: edge.status === 'active' ? {
-          light: -12.5 - Math.random() * 10,  // dBm
-          loss: 0.2 + Math.random() * 0.3,    // dB
-          latency: 0.8 + Math.random() * 0.4  // ms
-        } : undefined
+        metrics: edge.status === 'active' ? (() => {
+          // Deterministic variation 0.0-1.0 from edge ID characters
+          const v = (edge.id.split('').reduce((a, c) => a + c.charCodeAt(0), 0) % 100) / 100;
+          // Optical power: higher bandwidth = better signal (-12 to -20 dBm)
+          const bwGbps = parseFloat(edge.bandwidth) || 1;
+          const lightBase = bwGbps >= 100 ? -11 : bwGbps >= 10 ? -13 : -15;
+          // Latency base from circuit type
+          const latBase = edge.type.includes('MPLS') ? 1.2 :
+                          edge.type.includes('Direct') ? 0.6 : 0.9;
+          return {
+            light: lightBase - v * 4,
+            loss: 0.18 + v * 0.28,
+            latency: edge.metrics?.latency
+              ? edge.metrics.latency / 1000
+              : latBase + v * 0.3
+          };
+        })() : undefined
       };
     }).filter(Boolean) as CircuitType[];
   };
@@ -232,6 +248,16 @@ export function CircuitView({
               </button>
             </div>
           </div>
+        ) : viewMode.mode === 'rack' ? (
+          <PhysicalRackView
+            nodes={nodes}
+            selectedDeviceId={selectedDevice}
+            onSelectDevice={handleDeviceSelect}
+            devicePorts={devicePorts}
+            selectedPort={selectedPort}
+            onSelectPort={handlePortSelect}
+            circuits={circuits}
+          />
         ) : (
           <CleanLogicalView
             nodes={nodes}
@@ -242,6 +268,14 @@ export function CircuitView({
           />
         )}
       </div>
+
+      {/* View mode selector - only shown when nodes exist */}
+      {nodes.length > 0 && (
+        <ViewModeSelector
+          currentMode={viewMode}
+          onModeChange={(mode) => setViewMode({ mode })}
+        />
+      )}
 
       {/* Right detail panel */}
       <RightDetailPanel

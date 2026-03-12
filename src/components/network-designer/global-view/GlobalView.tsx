@@ -39,16 +39,6 @@ export function GlobalView({ nodes, edges, onNodeSelect, onZoomIn }: GlobalViewP
   );
   const hasGeoData = nodesWithGeoData.length > 0;
 
-  console.log(`[GlobalView Render] Received ${nodes.length} nodes, ${nodesWithGeoData.length} have geo data`);
-  if (nodes.length > 0 && nodesWithGeoData.length === 0) {
-    console.warn('[GlobalView Render] ⚠️ No nodes have geo data! This will show empty state.');
-    nodes.forEach(node => {
-      console.log(`  - ${node.name}: lat=${node.config?.latitude}, lng=${node.config?.longitude}`);
-    });
-  } else if (hasGeoData) {
-    console.log('[GlobalView Render] ✓ Nodes ready for map rendering');
-  }
-
   return (
     <div
       className="relative h-[800px] overflow-hidden rounded-lg"
@@ -66,7 +56,7 @@ export function GlobalView({ nodes, edges, onNodeSelect, onZoomIn }: GlobalViewP
           selectedNodeId={selectedLocation}
         />
       ) : (
-        <EmptyState onZoomOut={onZoomIn} />
+        <EmptyState onZoomOut={onZoomIn} hasNodes={nodes.length > 0} />
       )}
 
       {/* Action Buttons */}
