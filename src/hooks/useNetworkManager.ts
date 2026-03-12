@@ -27,17 +27,66 @@ export function useNetworkManager(
     }
   }, [nodes, edges]);
 
-  // Create a new node
+  // Smart positioning: place nodes relative to existing topology
+  const getSmartPosition = (type: NetworkNode['type'], functionType?: string) => {
+    const safe = getSafeBounds(800, CANVAS_BOUNDS.MAX_Y);
+    const center = getSafeCenter(800, CANVAS_BOUNDS.MAX_Y);
+
+    if (nodes.length === 0) {
+      return { x: center.x, y: center.y };
+    }
+
+    const allX = nodes.map(n => n.x);
+    const allY = nodes.map(n => n.y);
+    const avgX = allX.reduce((s, x) => s + x, 0) / allX.length;
+    const avgY = allY.reduce((s, y) => s + y, 0) / allY.length;
+    const maxX = Math.max(...allX);
+    const minX = Math.min(...allX);
+
+    // Cloud destinations: place to the right of Cloud Routers
+    if (type === 'destination') {
+      const rightX = Math.min(maxX + 150, safe.maxX - 64);
+      const yOffset = nodes.filter(n => n.type === 'destination').length * 100;
+      return { x: rightX, y: Math.min(center.y - 50 + yOffset, safe.maxY - 64) };
+    }
+
+    // Network/IPE nodes: place to the left
+    if (type === 'network') {
+      const leftX = Math.max(minX - 150, safe.minX);
+      return { x: leftX, y: avgY };
+    }
+
+    // Datacenter: place below and right
+    if (type === 'datacenter') {
+      const rightX = Math.min(maxX + 120, safe.maxX - 64);
+      const yOffset = nodes.filter(n => n.type === 'datacenter').length * 100;
+      return { x: rightX, y: Math.min(center.y + 50 + yOffset, safe.maxY - 64) };
+    }
+
+    // Function nodes: place between existing nodes
+    if (type === 'function') {
+      return { x: avgX, y: Math.min(avgY + 80, safe.maxY - 64) };
+    }
+
+    // Fallback: near center with offset
+    return {
+      x: Math.min(avgX + 80, safe.maxX - 64),
+      y: Math.min(avgY + 40, safe.maxY - 64)
+    };
+  };
+
+  // Create a new node with smart positioning
   const addNode = (type: NetworkNode['type'], functionType?: string, networkType?: string, provider?: string) => {
     const displayName = getNodeDisplayName(type, functionType, networkType, provider);
-    const safe = getSafeBounds(800, CANVAS_BOUNDS.MAX_Y);
+    const pos = getSmartPosition(type, functionType);
 
     const newNode: NetworkNode = {
       id: `node-${Date.now()}`,
       type,
       ...(type === 'function' && { functionType }),
-      x: Math.random() * (safe.maxX - safe.minX - 64) + safe.minX,
-      y: Math.random() * (safe.maxY - safe.minY - 64) + safe.minY,
+      ...(type === 'destination' && provider ? { cloudProvider: provider } : {}),
+      x: pos.x,
+      y: pos.y,
       name: displayName,
       icon: getNodeIcon(type, functionType, networkType),
       status: 'inactive',

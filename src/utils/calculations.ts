@@ -94,9 +94,55 @@ export function calculateNetworkScores(nodes: NetworkNode[], edges: NetworkEdge[
     (replicationLinks > 0 ? Math.min(100, replicationLinks * 25) : 0) * 0.4
   );
   
-  // For now, we'll keep security and performance at default values
-  const securityScore = 50;
-  const performanceScore = 50;
+  // Security score - based on actual topology features
+  let securityScore = 0;
+  const hasFirewall = nodes.some(n => n.type === 'function' && n.functionType === 'Firewall');
+  if (hasFirewall) securityScore += 20;
+
+  const encryptedEdges = edges.filter(e => e.config?.encrypted);
+  if (edges.length > 0 && encryptedEdges.length === edges.length) securityScore += 20;
+  else if (encryptedEdges.length > 0) securityScore += 10;
+
+  const nodesWithCompliance = nodes.filter(n => n.config?.complianceLevel && n.config.complianceLevel !== 'standard');
+  if (nodesWithCompliance.length > 0) securityScore += 20;
+
+  const nodesWithACL = nodes.filter(n => n.config?.accessControl && n.config.accessControl !== 'public');
+  if (totalNodes > 0 && nodesWithACL.length === totalNodes) securityScore += 20;
+  else if (nodesWithACL.length > 0) securityScore += 10;
+
+  const hasSegmentation = nodes.some(n => n.config?.vlanId !== undefined) || edges.some(e => e.vlan !== undefined);
+  if (hasSegmentation) securityScore += 20;
+
+  // Performance score - based on bandwidth, latency, QoS
+  let performanceScore = 0;
+
+  // Weakest link bandwidth
+  if (edges.length > 0) {
+    const bandwidths = edges.map(e => {
+      const match = e.bandwidth?.match(/(\d+)\s*(\w+)/);
+      if (!match) return 0;
+      const val = parseInt(match[1]);
+      const unit = match[2].toLowerCase();
+      return unit.includes('g') ? val : val / 1000;
+    });
+    const minBw = Math.min(...bandwidths);
+    if (minBw >= 10) performanceScore += 30;
+    else if (minBw >= 1) performanceScore += 20;
+    else if (minBw > 0) performanceScore += 10;
+  }
+
+  // QoS coverage
+  const edgesWithQoS = edges.filter(e => e.config?.qosProfile && e.config.qosProfile !== 'besteffort');
+  if (edges.length > 0 && edgesWithQoS.length === edges.length) performanceScore += 35;
+  else if (edgesWithQoS.length > 0) performanceScore += 15;
+
+  // Fast convergence / BFD
+  const fastEdges = edges.filter(e => e.config?.fastConvergence || e.config?.bfd);
+  if (fastEdges.length > 0) performanceScore += 20;
+
+  // Geographic diversity (more regions = better disaster but also shows performance investment)
+  if (uniqueRegions.size >= 2) performanceScore += 15;
+  else if (uniqueRegions.size === 1) performanceScore += 5;
   
   return {
     resiliency: resiliencyScore,
