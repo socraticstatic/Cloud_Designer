@@ -3,6 +3,7 @@ import { NetworkNode, NetworkEdge } from '../types';
 import { calculateNetworkScores } from '../utils/calculations';
 import { getNodeIcon, getNodeDisplayName } from '../utils/nodeUtils';
 import { ensureNodesHaveGeoData } from '../utils/sampleGeoData';
+import { getSafeBounds, getSafeCenter, CANVAS_BOUNDS } from '../constants';
 
 export function useNetworkManager(
   saveToHistory: (nodes: NetworkNode[], edges: NetworkEdge[]) => void
@@ -29,13 +30,14 @@ export function useNetworkManager(
   // Create a new node
   const addNode = (type: NetworkNode['type'], functionType?: string, networkType?: string, provider?: string) => {
     const displayName = getNodeDisplayName(type, functionType, networkType, provider);
-    
+    const safe = getSafeBounds(800, CANVAS_BOUNDS.MAX_Y);
+
     const newNode: NetworkNode = {
       id: `node-${Date.now()}`,
       type,
       ...(type === 'function' && { functionType }),
-      x: Math.random() * 600 + 100,
-      y: Math.min(Math.random() * 300 + 100, 800 - 64),
+      x: Math.random() * (safe.maxX - safe.minX - 64) + safe.minX,
+      y: Math.random() * (safe.maxY - safe.minY - 64) + safe.minY,
       name: displayName,
       icon: getNodeIcon(type, functionType, networkType),
       status: 'inactive',
@@ -112,13 +114,22 @@ export function useNetworkManager(
     const timestamp = Date.now();
     const idMap = new Map<string, string>();
 
-    // Create new nodes with unique IDs
+    // Compute template centroid and shift to safe center
+    const safeCenter = getSafeCenter(800, CANVAS_BOUNDS.MAX_Y);
+    const avgX = templateNodes.reduce((sum, n) => sum + n.x, 0) / templateNodes.length;
+    const avgY = templateNodes.reduce((sum, n) => sum + n.y, 0) / templateNodes.length;
+    const shiftX = safeCenter.x - avgX;
+    const shiftY = safeCenter.y - avgY;
+
+    // Create new nodes with unique IDs, centered in safe area
     const newNodes = templateNodes.map(node => {
       const newId = `${node.id}-${timestamp}`;
       idMap.set(node.id, newId);
       return {
         ...node,
-        id: newId
+        id: newId,
+        x: node.x + shiftX,
+        y: node.y + shiftY
       };
     });
 

@@ -1,11 +1,12 @@
 import { Server, Cloud, Network, Plus, Undo, Play, Check, Save, Trash2, Shield, Activity, PanelRight, Menu, Database, Globe, Lock, Feather as Ethernet, Wifi, LayoutGrid as Layout, Router, Share2 } from 'lucide-react';
 import { NetworkNode } from '../types';
 import { useState, useEffect, useRef } from 'react';
-import { 
-  CLOUD_PROVIDERS, 
-  DATACENTER_PROVIDERS, 
-  FUNCTION_TYPES, 
-  NETWORK_TYPES 
+import {
+  CLOUD_PROVIDERS,
+  DATACENTER_PROVIDERS,
+  FUNCTION_TYPES,
+  NETWORK_TYPES,
+  Z_INDEX
 } from '../../constants';
 
 interface ToolbarProps {
@@ -97,7 +98,7 @@ export function Toolbar({
     <div 
       ref={toolbarRef} 
       className="absolute bottom-6 left-1/2 transform -translate-x-1/2 bg-white rounded-lg shadow-sm border border-gray-200 p-2 flex items-center space-x-1 min-w-max" 
-      style={{ zIndex: 100 }}
+      style={{ zIndex: Z_INDEX.CHROME }}
     >
       {/* Choose Button - Added before Function */}
       <button

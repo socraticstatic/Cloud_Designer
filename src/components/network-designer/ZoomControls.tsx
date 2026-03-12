@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react';
 import { ZoomIn, ZoomOut, Rotate3D as RotateLeft, Maximize2 } from 'lucide-react';
+import { Z_INDEX } from '../../constants';
 
 interface ZoomControlsProps {
   onZoomIn: () => void;
@@ -21,7 +22,7 @@ export function ZoomControls({
   step = 0.1
 }: ZoomControlsProps) {
   return (
-    <div className="absolute top-20 right-4 z-50 bg-white/80 backdrop-blur-sm rounded-lg shadow-md flex flex-col">
+    <div className="absolute top-20 right-4 bg-white/80 backdrop-blur-sm rounded-lg shadow-md flex flex-col" style={{ zIndex: Z_INDEX.CHROME }}>
       <button 
         onClick={(e) => {
           e.stopPropagation();

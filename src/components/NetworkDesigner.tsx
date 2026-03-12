@@ -17,7 +17,7 @@ import {
 } from '../hooks';
 import { getNodeIcon } from '../utils/nodeUtils';
 import { ensureNodesHaveGeoData } from '../utils/sampleGeoData';
-import { DEFAULT_NETWORK_CONFIG } from '../constants';
+import { DEFAULT_NETWORK_CONFIG, Z_INDEX, getSafeCenter, CANVAS_BOUNDS } from '../constants';
 import { NetworkNode, NetworkEdge } from './types';
 import { DefaultNetworkSetup } from './network-designer/DefaultNetworkSetup';
 
@@ -208,13 +208,14 @@ export function NetworkDesigner({
   
   // Handle default network setup completion
   const handleDefaultNetworkSetup = (cloudRouterName: string) => {
+    const center = getSafeCenter(800, CANVAS_BOUNDS.MAX_Y);
     // Create default nodes
     const cloudRouter: NetworkNode = {
       id: `node-${Date.now()}-cloud-router`,
       type: 'function',
       functionType: 'Router',
-      x: 550,
-      y: 350,
+      x: center.x + 100,
+      y: center.y,
       name: cloudRouterName,
       icon: getNodeIcon('function', 'Router', undefined, { routerType: 'cloud' }),
       status: 'inactive',
@@ -227,8 +228,8 @@ export function NetworkDesigner({
     const attCore: NetworkNode = {
       id: `node-${Date.now()}-att-core`,
       type: 'network',
-      x: 350,
-      y: 350,
+      x: center.x - 100,
+      y: center.y,
       name: 'AT&T Core',
       icon: getNodeIcon('network', undefined, 'at&t core'),
       status: 'inactive',
@@ -600,9 +601,9 @@ export function NetworkDesigner({
     <div className="flex flex-col bg-gray-50 rounded-xl border-2 border-gray-200 relative">
       {/* Main Content Area */}
       <div className="relative h-[800px]" style={{ zIndex: 1 }}>
-        {/* Abstraction Level Selector with History - Highest z-index */}
+        {/* Abstraction Level Selector with History */}
         {!isReadOnly && (
-          <div style={{ zIndex: 100 }}>
+          <div style={{ zIndex: Z_INDEX.CHROME }}>
             <AbstractionLevelSelector
               currentLevel={abstractionLevel}
               onLevelChange={setAbstractionLevel}
@@ -613,7 +614,7 @@ export function NetworkDesigner({
 
         {/* Status Bar - Only shown in network view */}
         {abstractionLevel === 'network' && (
-          <div style={{ zIndex: 90 }}>
+          <div style={{ zIndex: Z_INDEX.CHROME }}>
             <StatusBar
               nodes={nodes}
               edges={edges}
@@ -635,7 +636,7 @@ export function NetworkDesigner({
         
         {/* Toolbar - Only show in network view with highest z-index */}
         {abstractionLevel === 'network' && !isReadOnly && (
-          <div style={{ zIndex: 100, pointerEvents: 'auto' }}>
+          <div style={{ zIndex: Z_INDEX.CHROME, pointerEvents: 'auto' }}>
             <Toolbar
               onAddNode={addNode}
               onToggleEdgeCreation={toggleEdgeCreation}

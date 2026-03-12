@@ -1,4 +1,5 @@
 import { Layers, Globe, Network, BrainCircuit as Circuit, FolderClock } from 'lucide-react';
+import { Z_INDEX } from '../../constants';
 
 type AbstractionLevel = 'global' | 'network' | 'circuit';
 
@@ -14,7 +15,7 @@ export function AbstractionLevelSelector({
   onHistoryClick
 }: AbstractionLevelSelectorProps) {
   return (
-    <div className="absolute top-1/2 left-4 transform -translate-y-1/2 flex flex-col space-y-4 z-50">
+    <div className="absolute top-1/2 left-4 transform -translate-y-1/2 flex flex-col space-y-4" style={{ zIndex: Z_INDEX.CHROME }}>
       {/* View Level Selector */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 py-3 px-2 flex flex-col items-center space-y-4">
         <div className="text-xs text-gray-500 font-medium whitespace-nowrap px-2">View Level</div>

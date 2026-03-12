@@ -1,5 +1,6 @@
 import { ReactNode, useEffect, useRef, useState } from 'react';
 import { X } from 'lucide-react';
+import { Z_INDEX, CANVAS_SAFE_AREA } from '../../constants';
 
 interface FloatingPanelProps {
   title: string;
@@ -73,42 +74,45 @@ export function FloatingPanel({
       let x = anchorPosition.x + 70; // Node width + some spacing
       let y = anchorPosition.y;
 
-      // Check if panel would go off the right edge
-      if (x + panelWidth > containerRect.width) {
+      // Check if panel would go off the right edge or overlap zoom controls
+      const rightBound = containerRect.width - CANVAS_SAFE_AREA.RIGHT;
+      if (x + panelWidth > rightBound) {
         // Position to the left of the node
-        x = Math.max(20, anchorPosition.x - panelWidth - 20);
+        x = Math.max(CANVAS_SAFE_AREA.LEFT, anchorPosition.x - panelWidth - 20);
       }
 
-      // Get the available height in the viewport
+      // Get the available height in the viewport, respecting chrome safe areas
       const viewportHeight = window.innerHeight;
-      const availableHeight = Math.min(containerRect.height, viewportHeight) - 40; // 20px padding top and bottom
-      
-      // Maximum height for panel
-      const maxPanelHeight = Math.min(contentHeight, availableHeight);
-      
+      const safeTop = CANVAS_SAFE_AREA.TOP;
+      const safeBottom = CANVAS_SAFE_AREA.BOTTOM;
+      const availableHeight = Math.min(containerRect.height, viewportHeight) - safeTop - safeBottom;
+
       // If content is too tall, add scrolling
       if (contentHeight > availableHeight) {
         panel.style.maxHeight = `${availableHeight}px`;
         panel.style.overflowY = 'auto';
-        
+
         // Center the panel vertically as much as possible
         let centerY = anchorPosition.y - (availableHeight / 2);
-        
-        // Ensure the panel doesn't go off the top or bottom of the screen
-        centerY = Math.max(20, Math.min(viewportHeight - availableHeight - 20, centerY));
+
+        // Clamp within safe area
+        centerY = Math.max(safeTop, Math.min(containerRect.height - safeBottom - availableHeight, centerY));
         y = centerY;
       } else {
         panel.style.maxHeight = '';
         panel.style.overflowY = '';
-        
-        // Position panel to avoid going off screen
-        if (y + contentHeight > containerRect.height - 20) {
-          y = Math.max(20, containerRect.height - contentHeight - 20);
+
+        // Position panel to avoid overlapping toolbar at bottom
+        if (y + contentHeight > containerRect.height - safeBottom) {
+          y = Math.max(safeTop, containerRect.height - safeBottom - contentHeight);
         }
-        
+
+        // Ensure panel doesn't overlap status bar at top
+        y = Math.max(safeTop, y);
+
         // Also check against viewport
-        if (y + contentHeight > viewportHeight - 20) {
-          y = Math.max(20, viewportHeight - contentHeight - 20);
+        if (y + contentHeight > viewportHeight - safeBottom) {
+          y = Math.max(safeTop, viewportHeight - safeBottom - contentHeight);
         }
       }
       
@@ -170,7 +174,7 @@ export function FloatingPanel({
         left: `${position.x}px`,
         top: `${position.y}px`,
         width: '380px',
-        zIndex: 1000,
+        zIndex: Z_INDEX.FLOATING_PANEL,
         transition: 'left 150ms ease, top 150ms ease'
       }}
     >

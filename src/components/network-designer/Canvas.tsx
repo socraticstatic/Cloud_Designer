@@ -3,7 +3,7 @@ import { NetworkNode, NetworkEdge } from '../types';
 import { Node } from './Node';
 import { Edge } from './Edge';
 import { EdgeControls } from './EdgeControls';
-import { CANVAS_BOUNDS, Z_INDEX } from '../../constants';
+import { CANVAS_BOUNDS, Z_INDEX, CANVAS_SAFE_AREA } from '../../constants';
 
 interface CanvasProps {
   nodes: NetworkNode[];
@@ -219,21 +219,27 @@ export const Canvas = forwardRef<HTMLDivElement, CanvasProps>(({
     const padding = 50;
     const canvasWidth = canvasRef.current?.clientWidth || 800;
     const canvasHeight = canvasRef.current?.clientHeight || 600;
-    
+
+    // Available area after accounting for chrome overlays
+    const safeWidth = canvasWidth - CANVAS_SAFE_AREA.LEFT - CANVAS_SAFE_AREA.RIGHT;
+    const safeHeight = canvasHeight - CANVAS_SAFE_AREA.TOP - CANVAS_SAFE_AREA.BOTTOM;
+    const safeCenterX = CANVAS_SAFE_AREA.LEFT + safeWidth / 2;
+    const safeCenterY = CANVAS_SAFE_AREA.TOP + safeHeight / 2;
+
     const contentWidth = contentBounds.maxX - contentBounds.minX + padding * 2;
     const contentHeight = contentBounds.maxY - contentBounds.minY + padding * 2;
-    
-    // Calculate zoom level to fit content
-    const widthRatio = canvasWidth / contentWidth;
-    const heightRatio = canvasHeight / contentHeight;
+
+    // Calculate zoom level to fit content within safe area
+    const widthRatio = safeWidth / contentWidth;
+    const heightRatio = safeHeight / contentHeight;
     const newZoom = Math.min(widthRatio, heightRatio, 1.5);
-    
-    // Calculate pan to center content
+
+    // Calculate pan to center content within the safe area
     const centerX = (contentBounds.minX + contentBounds.maxX) / 2;
     const centerY = (contentBounds.minY + contentBounds.maxY) / 2;
-    
-    const panX = (canvasWidth / 2) - (centerX * newZoom);
-    const panY = (canvasHeight / 2) - (centerY * newZoom);
+
+    const panX = safeCenterX - (centerX * newZoom);
+    const panY = safeCenterY - (centerY * newZoom);
     
     setZoomLevel(newZoom);
     setPanOffset({ x: panX, y: panY });

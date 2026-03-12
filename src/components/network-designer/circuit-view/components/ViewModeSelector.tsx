@@ -15,7 +15,7 @@ const MODES = [
 
 export function ViewModeSelector({ currentMode, onModeChange }: ViewModeSelectorProps) {
   return (
-    <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 z-50 bg-white rounded-lg shadow-lg border border-gray-200 p-1 flex space-x-1">
+    <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 z-10 bg-white rounded-lg shadow-lg border border-gray-200 p-1 flex space-x-1">
       {MODES.map(({ mode, label, Icon }) => (
         <button
           key={mode}

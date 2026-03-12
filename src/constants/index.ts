@@ -19,15 +19,40 @@ export const ANIMATION_DURATIONS = {
   SLOW: 500
 } as const;
 
+export const CANVAS_SAFE_AREA = {
+  TOP: 56,      // StatusBar height + gap
+  BOTTOM: 64,   // Toolbar height + bottom-6 gap
+  LEFT: 72,     // AbstractionLevelSelector width + gap
+  RIGHT: 56,    // ZoomControls width + gap
+} as const;
+
+export function getSafeCenter(canvasWidth: number, canvasHeight: number) {
+  return {
+    x: (canvasWidth - CANVAS_SAFE_AREA.LEFT - CANVAS_SAFE_AREA.RIGHT) / 2 + CANVAS_SAFE_AREA.LEFT,
+    y: (canvasHeight - CANVAS_SAFE_AREA.TOP - CANVAS_SAFE_AREA.BOTTOM) / 2 + CANVAS_SAFE_AREA.TOP,
+  };
+}
+
+export function getSafeBounds(canvasWidth: number, canvasHeight: number) {
+  return {
+    minX: CANVAS_SAFE_AREA.LEFT,
+    minY: CANVAS_SAFE_AREA.TOP,
+    maxX: canvasWidth - CANVAS_SAFE_AREA.RIGHT,
+    maxY: canvasHeight - CANVAS_SAFE_AREA.BOTTOM,
+  };
+}
+
 export const Z_INDEX = {
   BACKGROUND: 1,
   GRID: 2,
+  CANVAS_CONTENT: 5,
   EDGES: 10,
   EDGE_CONTROLS: 15,
   NODES: 20,
-  UI_PANELS: 50,
-  MODALS: 100,
-  NOTIFICATIONS: 200
+  CHROME: 80,            // Toolbar, StatusBar, AbstractionLevelSelector, ZoomControls
+  FLOATING_PANEL: 90,    // NodeConfigPanel, EdgeConfigPanel
+  MODAL: 100,            // DefaultNetworkSetup, SaveTemplate
+  NOTIFICATIONS: 200,
 } as const;
 
 export const DEFAULT_NETWORK_CONFIG = {

@@ -282,9 +282,9 @@ export function CircuitView({
   const hasDetail = !!(selectedDevice || selectedPort || selectedCircuit);
 
   return (
-    <div className="relative w-full h-full bg-gray-50">
+    <div className="flex flex-col w-full h-full bg-gray-50">
       {/* Top bar: breadcrumb */}
-      <div className="absolute top-0 left-0 right-0 bg-white border-b border-gray-200 px-6 py-4 z-40">
+      <div className="flex-shrink-0 bg-white border-b border-gray-200 px-6 py-4">
         <Breadcrumb
           selectedDevice={selectedDevice}
           selectedPort={selectedPort}
@@ -293,71 +293,75 @@ export function CircuitView({
         />
       </div>
 
-      {/* Main content */}
-      <div
-        className="absolute inset-0 top-16 overflow-auto"
-        style={{ right: hasDetail ? '384px' : '0' }}
-      >
-        {nodes.length === 0 ? (
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="bg-white rounded-xl shadow-lg p-8 max-w-md text-center">
-              <CircuitIcon className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">No Network to Visualize</h3>
-              <p className="text-gray-600 mb-6">
-                Create your network in the Topo View first, then switch to Infra View to see detailed hardware information.
-              </p>
-              <button
-                onClick={onZoomOut}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                type="button"
-              >
-                Switch to Topo View
-              </button>
+      {/* Content row: main + drawer */}
+      <div className="flex flex-1 min-h-0">
+        {/* Main content */}
+        <div className="flex-1 overflow-auto relative">
+          {nodes.length === 0 ? (
+            <div className="flex items-center justify-center h-full">
+              <div className="bg-white rounded-xl shadow-lg p-8 max-w-md text-center">
+                <CircuitIcon className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+                <h3 className="text-xl font-semibold text-gray-900 mb-2">No Network to Visualize</h3>
+                <p className="text-gray-600 mb-6">
+                  Create your network in the Topo View first, then switch to Infra View to see detailed hardware information.
+                </p>
+                <button
+                  onClick={onZoomOut}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                  type="button"
+                >
+                  Switch to Topo View
+                </button>
+              </div>
             </div>
+          ) : viewMode.mode === 'rack' ? (
+            <PhysicalRackView
+              nodes={nodes}
+              selectedDeviceId={selectedDevice}
+              onSelectDevice={handleDeviceSelect}
+              devicePorts={devicePorts}
+              selectedPort={selectedPort}
+              onSelectPort={handlePortSelect}
+              circuits={circuits}
+            />
+          ) : viewMode.mode === 'physical' ? (
+            <CircuitsTable circuits={circuits} nodes={nodes} />
+          ) : (
+            <CleanLogicalView
+              nodes={nodes}
+              circuits={circuits}
+              devicePorts={devicePorts}
+              selectedDevice={selectedDevice}
+              onSelectDevice={handleDeviceSelect}
+            />
+          )}
+
+          {/* View mode selector - scoped inside main content */}
+          {nodes.length > 0 && (
+            <ViewModeSelector
+              currentMode={viewMode}
+              onModeChange={(mode) => setViewMode({ mode })}
+            />
+          )}
+        </div>
+
+        {/* Right detail drawer - pushes content via flex, animated width */}
+        <div className={`transition-all duration-300 ease-in-out overflow-hidden flex-shrink-0 ${hasDetail ? 'w-96' : 'w-0'}`}>
+          <div className="w-96 h-full">
+            <RightDetailPanel
+              selectedDevice={selectedNodeData}
+              selectedPort={selectedPortData}
+              selectedCircuit={selectedCircuitData}
+              devicePorts={devicePorts}
+              circuits={circuits}
+              nodes={nodes}
+              onClose={handleCloseDetail}
+              onSelectDevice={handleDeviceSelect}
+              onSelectPort={handlePortSelect}
+            />
           </div>
-        ) : viewMode.mode === 'rack' ? (
-          <PhysicalRackView
-            nodes={nodes}
-            selectedDeviceId={selectedDevice}
-            onSelectDevice={handleDeviceSelect}
-            devicePorts={devicePorts}
-            selectedPort={selectedPort}
-            onSelectPort={handlePortSelect}
-            circuits={circuits}
-          />
-        ) : viewMode.mode === 'physical' ? (
-          <CircuitsTable circuits={circuits} nodes={nodes} />
-        ) : (
-          <CleanLogicalView
-            nodes={nodes}
-            circuits={circuits}
-            devicePorts={devicePorts}
-            selectedDevice={selectedDevice}
-            onSelectDevice={handleDeviceSelect}
-          />
-        )}
+        </div>
       </div>
-
-      {/* View mode selector */}
-      {nodes.length > 0 && (
-        <ViewModeSelector
-          currentMode={viewMode}
-          onModeChange={(mode) => setViewMode({ mode })}
-        />
-      )}
-
-      {/* Right detail panel */}
-      <RightDetailPanel
-        selectedDevice={selectedNodeData}
-        selectedPort={selectedPortData}
-        selectedCircuit={selectedCircuitData}
-        devicePorts={devicePorts}
-        circuits={circuits}
-        nodes={nodes}
-        onClose={handleCloseDetail}
-        onSelectDevice={handleDeviceSelect}
-        onSelectPort={handlePortSelect}
-      />
     </div>
   );
 }

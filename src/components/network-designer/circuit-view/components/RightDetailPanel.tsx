@@ -31,7 +31,7 @@ export function RightDetailPanel({
   }
 
   return (
-    <div className="absolute right-0 top-0 bottom-0 w-96 bg-white border-l border-gray-200 shadow-xl overflow-y-auto z-50">
+    <div className="h-full bg-white border-l border-gray-200 shadow-xl overflow-y-auto">
       <div className="sticky top-0 bg-white border-b border-gray-200 p-4 flex items-center justify-between">
         <h3 className="text-lg font-semibold text-gray-900">Details</h3>
         <button
