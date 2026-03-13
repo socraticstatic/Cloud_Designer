@@ -8,6 +8,7 @@ import { NodeConfigPanel } from './network-designer/NodeConfigPanel';
 import { EdgeConfigPanel } from './network-designer/EdgeConfigPanel';
 import { AbstractionLevelSelector } from './network-designer/AbstractionLevelSelector';
 import { HistoryDrawer } from './network-designer/HistoryDrawer';
+import { getAutoConnectTarget } from '../data/connectionDefaults';
 import {
   useNetworkHistory,
   useNetworkManager,

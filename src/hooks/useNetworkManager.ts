@@ -36,6 +36,9 @@ export function useNetworkManager(
       return { x: center.x, y: center.y };
     }
 
+    // Find existing node positions by role
+    const cloudRouters = nodes.filter(n => n.type === 'function' && (n.functionType === 'Router' || n.functionType === 'Cloud Router'));
+    const ipeNodes = nodes.filter(n => n.type === 'network' && n.config?.networkType === 'at&t core');
     const allX = nodes.map(n => n.x);
     const allY = nodes.map(n => n.y);
     const avgX = allX.reduce((s, x) => s + x, 0) / allX.length;
