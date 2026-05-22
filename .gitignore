@@ -22,3 +22,15 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Claude Code / agent directories
+.agents/
+.claude/
+
+# IDE / tools
+.windsurf/
+
+# Secrets
+.env
+.env.*
+!.env.example
