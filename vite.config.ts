@@ -37,10 +37,6 @@ export default defineConfig(({ command, mode }) => {
             return 'state-management';
           }
 
-          // Supabase
-          if (id.includes('node_modules/@supabase')) {
-            return 'supabase';
-          }
 
           // Lazy-loaded views (already lazy loaded, but ensure they're chunked separately)
           if (id.includes('/global-view/')) {
