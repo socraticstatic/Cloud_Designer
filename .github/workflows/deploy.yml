@@ -9,6 +9,7 @@ permissions:
   contents: read
   pages: write
   id-token: write
+  statuses: write
 
 concurrency:
   group: "pages"
@@ -61,19 +62,6 @@ jobs:
           script: |
             const deploymentUrl = 'https://socraticstatic.github.io/Cloud_Designer/';
             console.log(`🚀 Cloud Designer deployed to: ${deploymentUrl}`);
-            
-            // Create a commit status with the deployment URL
-            await github.rest.repos.createCommitStatus({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              sha: context.sha,
-              state: 'success',
-              target_url: deploymentUrl,
-              description: 'Successfully deployed to GitHub Pages',
-              context: 'deployment/github-pages'
-            });
-            
-            // Create a commit status with the deployment URL
             await github.rest.repos.createCommitStatus({
               owner: context.repo.owner,
               repo: context.repo.repo,
