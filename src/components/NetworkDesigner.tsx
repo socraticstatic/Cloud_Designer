@@ -18,6 +18,7 @@ import {
 } from '../hooks';
 import { getNodeIcon } from '../utils/nodeUtils';
 import { ensureNodesHaveGeoData } from '../utils/sampleGeoData';
+import { seedAllEdgeMetrics } from '../utils/mockTelemetry';
 import { Z_INDEX, getSafeCenter, CANVAS_BOUNDS } from '../constants';
 import { NetworkNode, NetworkEdge } from './types';
 import { DefaultNetworkSetup } from './network-designer/DefaultNetworkSetup';
@@ -202,7 +203,7 @@ export function NetworkDesigner({
     if (savedTopology && savedTopology.nodes?.length) {
       restoredRef.current = true;
       setNodes(rehydrateIcons(savedTopology.nodes));
-      setEdges(savedTopology.edges || []);
+      setEdges(seedAllEdgeMetrics(savedTopology.edges || []));
       if (savedTopology.name) setDesignName(savedTopology.name);
     }
     const savedTemplates = readStorage<CustomTemplate[]>(STORAGE_TEMPLATES);
@@ -461,7 +462,7 @@ export function NetworkDesigner({
     const design = savedDesigns.find(d => d.name === name);
     if (!design) return;
     setNodes(rehydrateIcons(design.nodes as NetworkNode[]));
-    setEdges(design.edges);
+    setEdges(seedAllEdgeMetrics(design.edges));
     setDesignName(name);
     setAssessment(null);
     setFocusedFinding(null);

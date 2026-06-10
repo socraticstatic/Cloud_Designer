@@ -4,6 +4,7 @@
 
 import { NetworkNode, NetworkEdge } from '../../../types';
 import { getNodeIcon, getNodeDisplayName } from '../../../utils/nodeUtils';
+import { seedEdgeMetrics } from '../../../utils/mockTelemetry';
 import { getSafeBounds, CANVAS_BOUNDS } from '../../../constants';
 
 export interface ParseResult {
@@ -154,7 +155,7 @@ function buildEdges(rawEdges: RawEdge[], idMap: Map<string, string>, warnings: s
       warnings.push(`Connection ${i + 1}: endpoint "${!source ? sourceKey : targetKey}" not found - skipped.`);
       return;
     }
-    edges.push({
+    edges.push(seedEdgeMetrics({
       id: `edge-import-${stamp}-${i}`,
       source,
       target,
@@ -168,7 +169,7 @@ function buildEdges(rawEdges: RawEdge[], idMap: Map<string, string>, warnings: s
           : {}),
         ...(raw.qosProfile ? { qosProfile: raw.qosProfile } : {})
       }
-    });
+    }));
   });
   return edges;
 }

@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import type { NetworkNode, NetworkEdge } from '../../../types';
@@ -21,6 +21,7 @@ interface NodeLocation {
 
 export function LeafletMap({ nodes, edges, onNodeSelect, selectedNodeId }: LeafletMapProps) {
   const mapRef = useRef<L.Map | null>(null);
+  const [zoomPct, setZoomPct] = useState(100);
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const markersRef = useRef<Map<string, L.Marker>>(new Map());
   const linesRef = useRef<L.Polyline[]>([]);
@@ -31,9 +32,15 @@ export function LeafletMap({ nodes, edges, onNodeSelect, selectedNodeId }: Leafl
     const map = L.map(mapContainerRef.current, {
       center: [20, 0],
       zoom: 2,
-      zoomControl: true,
+      zoomControl: false,
       attributionControl: true,
     });
+
+    // Right-rail zoom control + percentage readout per the Figma Pano frame
+    L.control.zoom({ position: 'topright' }).addTo(map);
+    const updateZoom = () => setZoomPct(Math.round(Math.pow(2, map.getZoom() - 4) * 100));
+    map.on('zoomend', updateZoom);
+    updateZoom();
 
     // Flat light-gray basemap per the SDCI Figma Pano frame
     L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
@@ -277,13 +284,19 @@ export function LeafletMap({ nodes, edges, onNodeSelect, selectedNodeId }: Leafl
   }, [selectedNodeId, nodes]);
 
   return (
-    <div
-      ref={mapContainerRef}
-      className="absolute inset-0 z-0"
-      style={{
-        width: '100%',
-        height: '100%',
-      }}
-    />
+    <>
+      <div
+        ref={mapContainerRef}
+        className="absolute inset-0 z-0"
+        style={{
+          width: '100%',
+          height: '100%',
+        }}
+      />
+      {/* Zoom percentage readout - per Figma Pano right rail */}
+      <div className="absolute right-[11px] top-[150px] z-[800] bg-white border border-gray-200 rounded-lg shadow-sm px-2 py-1 text-xs font-medium text-fw-bodyLight tabular-nums">
+        {zoomPct}%
+      </div>
+    </>
   );
 }

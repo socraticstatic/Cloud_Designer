@@ -83,7 +83,7 @@ export function RegionalPerformance({ nodes, edges, onClose }: RegionalPerforman
       
       edgesInRegion.forEach(edge => {
         if (edge.metrics?.bandwidthUtilization !== undefined) {
-          totalUtilization += edge.metrics.bandwidthUtilization;
+          totalUtilization += Math.max(0, Math.min(100, edge.metrics.bandwidthUtilization));
           utilizationCount++;
         }
       });
@@ -145,9 +145,19 @@ export function RegionalPerformance({ nodes, edges, onClose }: RegionalPerforman
         complianceStatus = 'non-compliant';
       }
       
-      // Generate packet loss based on link quality
-      const packetLoss = riskLevel === 'low' ? 0.01 : 
-                         riskLevel === 'medium' ? 0.1 : 0.5;
+      // Packet loss: average the per-link telemetry; fall back to risk-derived
+      let lossTotal = 0;
+      let lossCount = 0;
+      edgesInRegion.forEach(edge => {
+        const raw = edge.metrics?.packetLoss;
+        if (raw) {
+          const v = parseFloat(String(raw).replace('%', ''));
+          if (!isNaN(v)) { lossTotal += v; lossCount++; }
+        }
+      });
+      const packetLoss = lossCount > 0
+        ? lossTotal / lossCount
+        : riskLevel === 'low' ? 0.01 : riskLevel === 'medium' ? 0.1 : 0.5;
       
       return {
         region,
@@ -212,7 +222,7 @@ export function RegionalPerformance({ nodes, edges, onClose }: RegionalPerforman
       case 'latency':
         return `${value.toFixed(1)} ms`;
       case 'packetLoss':
-        return `${(value * 100).toFixed(2)}%`;
+        return `${value.toFixed(2)}%`;
       case 'availability':
         return `${value.toFixed(2)}%`;
       case 'utilizationAvg':
