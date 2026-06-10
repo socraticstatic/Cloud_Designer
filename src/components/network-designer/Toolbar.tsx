@@ -107,7 +107,7 @@ export function Toolbar({
   return (
     <div 
       ref={toolbarRef} 
-      className="absolute bottom-6 left-1/2 transform -translate-x-1/2 bg-white rounded-2xl shadow-md border border-gray-200 p-2 flex items-center space-x-1 max-w-[calc(100%-3rem)] overflow-x-auto scrollbar-hidden"
+      className="absolute bottom-6 left-1/2 transform -translate-x-1/2 bg-white rounded-2xl shadow-md border border-gray-200 p-2 flex items-center space-x-1 max-w-[calc(100%-3rem)]"
       style={{ zIndex: Z_INDEX.CHROME }}
     >
       {/* Choose Button - Added before Function */}
