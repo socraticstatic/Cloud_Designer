@@ -24,7 +24,7 @@ export interface NetworkNode {
     facilityCode?: string;
     
     // Network type properties
-    networkType?: 'internet' | 'vpn' | 'ethernet' | 'iot' | 'private';
+    networkType?: 'internet' | 'vpn' | 'ethernet' | 'iot' | 'private' | 'at&t core';
     subnet?: string;
     vlanId?: number;
     
@@ -107,7 +107,7 @@ export interface NetworkEdge {
     bandwidthUtilization?: number;
   };
   config?: {
-    resilience?: 'single' | 'redundant' | 'ha' | 'dualdiverse';
+    resilience?: 'single' | 'redundant' | 'ha' | 'dualdiverse' | 'standard';
     recoveryTime?: 'standard' | 'fast' | 'ultrafast' | 'none';
     encrypted?: boolean;
     bfd?: boolean;

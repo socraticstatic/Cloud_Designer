@@ -214,14 +214,14 @@ export function CircuitDetails({ port, circuit, onClose }: CircuitDetailsProps) 
               <p className="text-xs text-gray-500 mb-1">Status</p>
               <p className={`text-sm font-medium flex items-center ${
                 circuit.status === 'active' ? 'text-green-600' :
-                circuit.status === 'degraded' ? 'text-yellow-600' : 'text-gray-500'
+                (circuit.status as string) === 'degraded' ? 'text-yellow-600' : 'text-gray-500'
               }`}>
                 <span className={`w-2 h-2 rounded-full mr-1.5 ${
                   circuit.status === 'active' ? 'bg-green-500' :
-                  circuit.status === 'degraded' ? 'bg-yellow-500' : 'bg-gray-400'
+                  (circuit.status as string) === 'degraded' ? 'bg-yellow-500' : 'bg-gray-400'
                 }`}></span>
                 {circuit.status === 'active' ? 'Active' :
-                 circuit.status === 'degraded' ? 'Degraded' : 'Inactive'}
+                 (circuit.status as string) === 'degraded' ? 'Degraded' : 'Inactive'}
               </p>
             </div>
           </div>
@@ -331,7 +331,7 @@ export function CircuitDetails({ port, circuit, onClose }: CircuitDetailsProps) 
                       </div>
                     </div>
                     
-                    {circuit.status === 'degraded' && (
+                    {(circuit.status as string) === 'degraded' && (
                       <div className="absolute right-4 bottom-0">
                         <AlertTriangle className="h-5 w-5 text-yellow-500" />
                       </div>

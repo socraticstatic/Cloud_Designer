@@ -21,7 +21,7 @@ function isCloudRouter(node: NetworkNode): boolean {
 
 function isIPE(node: NetworkNode): boolean {
   return node.type === 'network' &&
-    (node.config?.networkType === 'at&t core' || node.config?.networkType === 'AT&T Core');
+    (node.config?.networkType === 'at&t core' || (node.config?.networkType as string) === 'AT&T Core');
 }
 
 function getConnectedEdges(nodeId: string, edges: NetworkEdge[]): NetworkEdge[] {

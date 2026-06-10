@@ -1,9 +1,9 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
-export default defineConfig(({ command, mode }) => {
+export default defineConfig(({ mode }) => {
   // Use the actual repository name
-  const repoName = process.env.GITHUB_REPOSITORY?.split('/')[1] || 'Cloud_Designer';
+  const repoName = (globalThis as any).process?.env?.GITHUB_REPOSITORY?.split('/')[1] || 'Cloud_Designer';
 
   return {
   base: mode === 'production' ? `/${repoName}/` : '/',

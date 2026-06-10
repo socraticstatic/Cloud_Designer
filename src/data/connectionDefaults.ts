@@ -7,7 +7,7 @@ import { NetworkNode } from '../types';
 interface EdgeDefaults {
   type: string;
   bandwidth: string;
-  resilience?: string;
+  resilience?: 'single' | 'redundant' | 'ha' | 'dualdiverse' | 'standard';
   description?: string;
 }
 

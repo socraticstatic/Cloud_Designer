@@ -11,7 +11,7 @@ import {
 } from '../../constants';
 
 interface ToolbarProps {
-  onAddNode: (type: NetworkNode['type'], functionType?: string, networkType?: string, provider?: string) => void;
+  onAddNode: (type: NetworkNode['type'], functionType?: NetworkNode['functionType'], networkType?: string, provider?: string) => void;
   onToggleEdgeCreation: () => void;
   isCreatingEdge: boolean;
   onCancel: () => void;
@@ -100,7 +100,7 @@ export function Toolbar({
   };
   
   // Handle node selection and close dropdown
-  const handleNodeSelect = (type: NetworkNode['type'], functionType?: string, networkType?: string, provider?: string) => {
+  const handleNodeSelect = (type: NetworkNode['type'], functionType?: NetworkNode['functionType'], networkType?: string, provider?: string) => {
     onAddNode(type, functionType, networkType, provider);
     setOpenDropdown(null);
   };

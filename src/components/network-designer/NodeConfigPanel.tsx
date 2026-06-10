@@ -475,7 +475,7 @@ export function NodeConfigPanel({
       case 'routing':
         return (
           <div className="form-section">
-            {node.type === 'router' && (
+            {(node.type as string) === 'router' && (
               <>
                 <div className="form-group">
                   <label htmlFor="asn">ASN</label>
@@ -543,7 +543,7 @@ export function NodeConfigPanel({
               </>
             )}
             
-            {node.type === 'source' && (
+            {(node.type as string) === 'source' && (
               <div className="form-group">
                 <label htmlFor="routeAdvertisement">Route Advertisement</label>
                 <input
@@ -561,7 +561,7 @@ export function NodeConfigPanel({
       case 'security':
         return (
           <div className="form-section">
-            {node.type === 'source' && (
+            {(node.type as string) === 'source' && (
               <>
                 <div className="form-group">
                   <label htmlFor="accessControl">Access Control</label>
@@ -629,7 +629,7 @@ export function NodeConfigPanel({
               </>
             )}
             
-            {node.type === 'router' && (
+            {(node.type as string) === 'router' && (
               <>
                 <div className="form-group">
                   <label htmlFor="accessLists">Access Lists</label>

@@ -1,7 +1,7 @@
 import { Globe, MapPin } from 'lucide-react';
 
 interface EmptyStateProps {
-  onZoomOut: () => void;
+  onZoomOut: (id?: string) => void;
   hasNodes: boolean;
 }
 

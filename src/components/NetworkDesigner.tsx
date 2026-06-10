@@ -80,9 +80,6 @@ const TemplatesManager = lazy(() => import('./network-designer/panels/TemplatesM
 const SaveTemplateModal = lazy(() => import('./network-designer/SaveTemplateModal').then(module => ({ default: module.SaveTemplateModal })));
 const NetworkSimulation = lazy(() => import('./network-designer/simulation/NetworkSimulation').then(module => ({ default: module.NetworkSimulation })));
 
-// Lazy load simulation functions
-const simulationModule = lazy(() => import('./network-designer/simulation/runSimulation'));
-
 // Loading component
 function ComponentLoader() {
   return (
@@ -340,7 +337,7 @@ export function NetworkDesigner({
   }, getNodeById);
 
   // Auto-connecting wrapper: adds node, then offers auto-connection
-  const handleAddNode = useCallback((type: NetworkNode['type'], functionType?: string, networkType?: string, provider?: string) => {
+  const handleAddNode = useCallback((type: NetworkNode['type'], functionType?: NetworkNode['functionType'], networkType?: string, provider?: string) => {
     const newNode = addNode(type, functionType, networkType, provider);
     if (!newNode) return newNode;
 

@@ -1,6 +1,6 @@
 import { X, History, Clock, Network } from 'lucide-react';
 import { NetworkNode, NetworkEdge } from '../types';
-import { formatters } from '../../utils/formatters';
+import { formatTimestamp } from '../../utils/formatters';
 
 interface HistoryItem {
   id: string;

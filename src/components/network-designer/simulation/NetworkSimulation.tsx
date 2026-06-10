@@ -730,7 +730,7 @@ export function NetworkSimulation({
                   <div className="absolute h-2 w-2 bg-amber-500 rounded-full animate-[dataFlow_3.5s_linear_infinite_1.5s]" style={{left: '50%', top: '-2px'}}></div>
                   <div className="absolute h-2 w-2 bg-indigo-500 rounded-full animate-[dataFlow_2.8s_linear_infinite_2s]" style={{left: '70%', top: '-2px'}}></div>
                   
-                  <style jsx>{`
+                  <style>{`
                     @keyframes dataFlow {
                       0% { transform: translateX(0); opacity: 0; }
                       10% { opacity: 1; }

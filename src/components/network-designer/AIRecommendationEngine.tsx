@@ -30,7 +30,7 @@ export function AIRecommendationEngine({
     // Simulate analysis delay
     setTimeout(() => {
       // Generate recommendations based on the current network
-      const generatedRecommendations = [];
+      const generatedRecommendations: typeof recommendations = [];
       
       // Check for resiliency
       const hasResiliencyMeasures = nodes.some(node => 
@@ -402,7 +402,7 @@ export function AIRecommendationEngine({
         
         // Connect to the first two routers/functions we find
         const connectableNodes = newNodes.filter(node => 
-          node.type === 'function' || node.type === 'router'
+          node.type === 'function' || (node.type as string) === 'router'
         ).slice(0, 2);
         
         connectableNodes.forEach((node, index) => {

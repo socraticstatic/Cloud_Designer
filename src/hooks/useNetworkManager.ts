@@ -105,7 +105,7 @@ export function useNetworkManager(
   };
 
   // Create a new node with smart positioning
-  const addNode = (type: NetworkNode['type'], functionType?: string, networkType?: string, provider?: string) => {
+  const addNode = (type: NetworkNode['type'], functionType?: NetworkNode['functionType'], networkType?: string, provider?: string) => {
     const displayName = getNodeDisplayName(type, functionType, networkType, provider);
     const desired = getSmartPosition(type, functionType);
     const pos = findFreeSpot(desired.x, desired.y);
@@ -121,7 +121,7 @@ export function useNetworkManager(
       icon: getNodeIcon(type, functionType, networkType, provider ? { provider } : undefined),
       status: 'inactive',
       config: {
-        ...(type === 'network' && networkType ? { networkType: networkType.toLowerCase() } : {}),
+        ...(type === 'network' && networkType ? { networkType: networkType.toLowerCase() as NetworkNode['config'] extends { networkType?: infer T } ? T : never } : {}),
         ...(type === 'datacenter' && provider ? { provider } : {}),
         ...(type === 'destination' && provider ? { provider } : {})
       }

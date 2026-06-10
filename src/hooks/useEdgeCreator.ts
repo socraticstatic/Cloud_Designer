@@ -28,7 +28,7 @@ export function useEdgeCreator(
         // Resolve service-aware defaults if we have node lookup
         let edgeType = 'Ethernet';
         let bandwidth = '1 Gbps';
-        let resilience: string | undefined;
+        let resilience: NonNullable<NetworkEdge['config']>['resilience'];
         let description: string | undefined;
 
         if (getNodeById) {

@@ -52,7 +52,7 @@ function createNode(
   x: number,
   y: number,
   config: Record<string, any> = {},
-  functionType?: string,
+  functionType?: NetworkNode['functionType'],
   cloudProvider?: string,
 ): NetworkNode {
   return {

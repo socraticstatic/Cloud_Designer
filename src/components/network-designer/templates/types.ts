@@ -1,8 +1,9 @@
+import type { ComponentType } from 'react';
 import { DivideIcon as LucideIcon } from 'lucide-react';
 import { NetworkNode, NetworkEdge } from '../../../types';
 
 interface PreviewIcon {
-  icon: LucideIcon;
+  icon: ComponentType<{ className?: string }>;
   color: string;
 }
 

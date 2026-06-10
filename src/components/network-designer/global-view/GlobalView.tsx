@@ -56,7 +56,7 @@ export function GlobalView({ nodes, edges, onNodeSelect, onZoomIn }: GlobalViewP
           selectedNodeId={selectedLocation}
         />
       ) : (
-        <EmptyState onZoomOut={onZoomIn} hasNodes={nodes.length > 0} />
+        <EmptyState onZoomOut={(id) => { if (id) onZoomIn(id); }} hasNodes={nodes.length > 0} />
       )}
 
       {/* Action Buttons */}
