@@ -62,7 +62,60 @@ interface GeoData {
   country: string;
 }
 
+// Deterministic jitter from the node id so co-located nodes spread out
+// on the map instead of stacking into a single marker.
+function jitter(node: NetworkNode, geo: GeoData, spreadDeg = 0.8): GeoData {
+  let h = 0;
+  for (let i = 0; i < node.id.length; i++) h = (h * 31 + node.id.charCodeAt(i)) >>> 0;
+  const dLat = ((h % 1000) / 1000 - 0.5) * spreadDeg;
+  const dLng = (((h >> 10) % 1000) / 1000 - 0.5) * spreadDeg;
+  return { ...geo, latitude: geo.latitude + dLat, longitude: geo.longitude + dLng };
+}
+
 function inferLocationFromNodeCharacteristics(node: NetworkNode, allNodes: NetworkNode[]): GeoData | null {
+  // Strategy 0: distinct home regions for designer-created nodes, so a
+  // network built in Topo lays out plausibly on the Pano map.
+  const cloudHomes: Record<string, GeoData> = {
+    'aws': { latitude: 39.0438, longitude: -77.4874, city: 'Ashburn', country: 'USA' },
+    'azure': { latitude: 29.4241, longitude: -98.4936, city: 'San Antonio', country: 'USA' },
+    'google': { latitude: 41.2619, longitude: -95.8608, city: 'Council Bluffs', country: 'USA' },
+    'oracle': { latitude: 33.4484, longitude: -112.0740, city: 'Phoenix', country: 'USA' }
+  };
+  const datacenterHomes: Record<string, GeoData> = {
+    'equinix': { latitude: 39.0438, longitude: -77.4874, city: 'Ashburn', country: 'USA' },
+    'digital realty': { latitude: 32.7767, longitude: -96.7970, city: 'Dallas', country: 'USA' },
+    'cyrusone': { latitude: 29.7604, longitude: -95.3698, city: 'Houston', country: 'USA' },
+    'coresite': { latitude: 39.7392, longitude: -104.9903, city: 'Denver', country: 'USA' },
+    'databank': { latitude: 44.9778, longitude: -93.2650, city: 'Minneapolis', country: 'USA' }
+  };
+  const providerKey = (node.config?.provider || node.cloudProvider || '').toLowerCase();
+
+  if (node.type === 'destination') {
+    const home = Object.entries(cloudHomes).find(([key]) => providerKey.includes(key))?.[1]
+      ?? cloudHomes['aws'];
+    return jitter(node, home, 0.6);
+  }
+  if (node.type === 'datacenter') {
+    const home = Object.entries(datacenterHomes).find(([key]) => providerKey.includes(key))?.[1]
+      ?? datacenterHomes['digital realty'];
+    return jitter(node, home, 0.6);
+  }
+  if (node.type === 'network') {
+    const networkType = (node.config?.networkType || '').toLowerCase();
+    if (networkType.includes('at&t') || networkType.includes('core')) {
+      // AT&T Core anchors at AT&T HQ
+      return { latitude: 32.7767, longitude: -96.7970, city: 'Dallas', country: 'USA' };
+    }
+    if (networkType.includes('internet')) {
+      return jitter(node, { latitude: 39.0438, longitude: -77.4874, city: 'Ashburn IX', country: 'USA' }, 0.5);
+    }
+    return jitter(node, { latitude: 41.8781, longitude: -87.6298, city: 'Chicago', country: 'USA' }, 0.8);
+  }
+  if (node.type === 'function') {
+    // Functions ride alongside the core: spread around Dallas
+    return jitter(node, { latitude: 32.7767, longitude: -96.7970, city: 'Dallas', country: 'USA' }, 1.6);
+  }
+
   // Strategy 1: Infer from provider
   if (node.config?.provider) {
     const provider = node.config.provider.toLowerCase();

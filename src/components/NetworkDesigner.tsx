@@ -357,9 +357,10 @@ export function NetworkDesigner({
     return newNode;
   }, [addNode, nodes, edges, setEdges, saveToHistory]);
   
-  // Enrich nodes with geo data when switching to global view
+  // Enrich nodes with geo data as soon as they exist - the Pano view is
+  // always ready and coordinates persist to browser cache immediately
   useEffect(() => {
-    if (abstractionLevel === 'global' && nodes.length > 0) {
+    if (nodes.length > 0) {
       const nodesNeedingGeo = nodes.filter(
         n => !n.config?.latitude || !n.config?.longitude
       );
@@ -371,7 +372,7 @@ export function NetworkDesigner({
         if (anyAdded) setNodes(enriched);
       }
     }
-  }, [abstractionLevel]);
+  }, [abstractionLevel, nodes, setNodes]);
 
   // Check if we need to show the default network setup
   // (skipped when a persisted topology exists in browser cache)
