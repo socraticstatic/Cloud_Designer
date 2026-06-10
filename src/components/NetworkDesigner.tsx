@@ -888,7 +888,7 @@ export function NetworkDesigner({
         )}
 
         {/* Back + design name pill with connection switcher - per Figma top-left chrome */}
-        {abstractionLevel === 'network' && (
+        {(
           <div className="absolute top-4 left-4" style={{ zIndex: Z_INDEX.FLOATING_PANEL }}>
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 flex items-center px-3 py-2 gap-2">
               <button
@@ -976,7 +976,7 @@ export function NetworkDesigner({
         )}
 
         {/* Read / Edit mode pill - per Figma top-right chrome */}
-        {abstractionLevel === 'network' && onToggleReadOnly && (
+        {onToggleReadOnly && (
           <div
             className="absolute top-4 right-4 bg-white rounded-xl shadow-sm border border-gray-200 flex items-center p-1"
             style={{ zIndex: Z_INDEX.CHROME }}
@@ -1020,7 +1020,7 @@ export function NetworkDesigner({
         {abstractionLevel === 'network' && <Legend />}
 
         {/* Network Advisor panel */}
-        {abstractionLevel === 'network' && (
+        {(
           <AdvisorPanel
             assessment={assessment}
             isOpen={showAdvisor}

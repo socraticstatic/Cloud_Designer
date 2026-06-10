@@ -35,8 +35,9 @@ export function LeafletMap({ nodes, edges, onNodeSelect, selectedNodeId }: Leafl
       attributionControl: true,
     });
 
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+    // Flat light-gray basemap per the SDCI Figma Pano frame
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
       maxZoom: 19,
       minZoom: 2,
     }).addTo(map);
@@ -96,30 +97,42 @@ export function LeafletMap({ nodes, edges, onNodeSelect, selectedNodeId }: Leafl
       }
     };
 
-    const getMarkerIcon = (status: string, isSelected: boolean) => {
+    const getMarkerIcon = (status: string, isSelected: boolean, label: string) => {
       return L.divIcon({
         className: 'custom-marker',
         html: `
-          <div style="
-            width: ${isSelected ? '24px' : '16px'};
-            height: ${isSelected ? '24px' : '16px'};
-            background-color: ${getMarkerColor(status)};
-            border: ${isSelected ? '3px solid #1e40af' : '2px solid white'};
-            border-radius: 50%;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-            transition: all 0.2s ease;
-            cursor: pointer;
-          "></div>
+          <div style="display:flex;align-items:center;gap:6px;cursor:pointer;">
+            <div style="
+              width: ${isSelected ? '18px' : '12px'};
+              height: ${isSelected ? '18px' : '12px'};
+              background-color: ${getMarkerColor(status)};
+              border: 2px solid white;
+              border-radius: 50%;
+              box-shadow: 0 1px 4px rgba(0,0,0,0.35);
+              flex-shrink: 0;
+            "></div>
+            <div style="
+              background: white;
+              border: 1px solid ${isSelected ? '#0057B8' : '#DCDFE3'};
+              border-radius: 6px;
+              padding: 2px 7px;
+              font-size: 11px;
+              font-weight: 500;
+              color: #1d2329;
+              white-space: nowrap;
+              box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+            ">${label}</div>
+          </div>
         `,
-        iconSize: [isSelected ? 24 : 16, isSelected ? 24 : 16],
-        iconAnchor: [isSelected ? 12 : 8, isSelected ? 12 : 8],
+        iconSize: [120, 20],
+        iconAnchor: [isSelected ? 9 : 6, 10],
       });
     };
 
     nodeLocations.forEach(location => {
       const isSelected = location.id === selectedNodeId;
       const marker = L.marker([location.lat, location.lng], {
-        icon: getMarkerIcon(location.status, isSelected),
+        icon: getMarkerIcon(location.status, isSelected, location.name),
       });
 
       marker.on('click', () => {
@@ -158,9 +171,9 @@ export function LeafletMap({ nodes, edges, onNodeSelect, selectedNodeId }: Leafl
       const targetNode = nodeLocations.find(loc => loc.id === edge.target);
 
       if (sourceNode && targetNode) {
-        const lineColor = edge.status === 'active' ? '#3b82f6' : '#94a3b8';
-        const lineWeight = edge.status === 'active' ? 2 : 1;
-        const lineOpacity = edge.status === 'active' ? 0.6 : 0.3;
+        const lineColor = edge.status === 'active' ? '#686E74' : '#BDC2C7';
+        const lineWeight = 1.5;
+        const lineOpacity = edge.status === 'active' ? 0.8 : 0.4;
 
         const line = L.polyline(
           [
@@ -216,23 +229,35 @@ export function LeafletMap({ nodes, edges, onNodeSelect, selectedNodeId }: Leafl
       }
     };
 
-    const getMarkerIcon = (status: string, isSelected: boolean) => {
+    const getMarkerIcon = (status: string, isSelected: boolean, label: string) => {
       return L.divIcon({
         className: 'custom-marker',
         html: `
-          <div style="
-            width: ${isSelected ? '24px' : '16px'};
-            height: ${isSelected ? '24px' : '16px'};
-            background-color: ${getMarkerColor(status)};
-            border: ${isSelected ? '3px solid #1e40af' : '2px solid white'};
-            border-radius: 50%;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-            transition: all 0.2s ease;
-            cursor: pointer;
-          "></div>
+          <div style="display:flex;align-items:center;gap:6px;cursor:pointer;">
+            <div style="
+              width: ${isSelected ? '18px' : '12px'};
+              height: ${isSelected ? '18px' : '12px'};
+              background-color: ${getMarkerColor(status)};
+              border: 2px solid white;
+              border-radius: 50%;
+              box-shadow: 0 1px 4px rgba(0,0,0,0.35);
+              flex-shrink: 0;
+            "></div>
+            <div style="
+              background: white;
+              border: 1px solid ${isSelected ? '#0057B8' : '#DCDFE3'};
+              border-radius: 6px;
+              padding: 2px 7px;
+              font-size: 11px;
+              font-weight: 500;
+              color: #1d2329;
+              white-space: nowrap;
+              box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+            ">${label}</div>
+          </div>
         `,
-        iconSize: [isSelected ? 24 : 16, isSelected ? 24 : 16],
-        iconAnchor: [isSelected ? 12 : 8, isSelected ? 12 : 8],
+        iconSize: [120, 20],
+        iconAnchor: [isSelected ? 9 : 6, 10],
       });
     };
 
@@ -240,7 +265,7 @@ export function LeafletMap({ nodes, edges, onNodeSelect, selectedNodeId }: Leafl
       const marker = markers.get(node.id);
       if (marker) {
         const isSelected = node.id === selectedNodeId;
-        marker.setIcon(getMarkerIcon(node.status, isSelected));
+        marker.setIcon(getMarkerIcon(node.status, isSelected, node.name));
 
         if (isSelected) {
           marker.openPopup();
