@@ -179,6 +179,16 @@ export function NetworkDesigner({
   const [isApplyingAll, setIsApplyingAll] = useState(false);
   const [applyingStep, setApplyingStep] = useState(0);
   const applyAllActiveRef = useRef(false);
+  const [fitSignal, setFitSignal] = useState(0);
+
+  // Re-fit the canvas whenever the advisor dock changes the viewport width
+  const advisorWasOpen = useRef(false);
+  useEffect(() => {
+    if (advisorWasOpen.current !== showAdvisor) {
+      advisorWasOpen.current = showAdvisor;
+      setFitSignal(s => s + 1);
+    }
+  }, [showAdvisor]);
   const [designName, setDesignName] = useState('AWS Connectivity Environment');
   const [designStatus, setDesignStatus] = useState<'draft' | 'saved'>('draft');
   const [displayMode, setDisplayMode] = useState<'icon' | 'card'>('icon');
@@ -1233,6 +1243,7 @@ export function NetworkDesigner({
             ghostEdges={fixPreviewState?.preview.ghostEdges}
             changedEdgeIds={fixPreviewState?.preview.changedEdgeIds}
             issueBadges={issueBadges}
+            fitSignal={fitSignal}
             ref={canvasRef}
           />
         );

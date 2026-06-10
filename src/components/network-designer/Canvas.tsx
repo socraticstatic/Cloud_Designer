@@ -42,6 +42,8 @@ interface CanvasProps {
   changedEdgeIds?: string[];
   // Advisor finding badges drawn on affected nodes while the panel is open
   issueBadges?: Record<string, 'error' | 'warning' | 'recommendation'>;
+  // Bump to request a fit-to-screen (e.g. after the advisor dock resizes the canvas)
+  fitSignal?: number;
 }
 
 // Memoized Edge renderer for better performance
@@ -80,7 +82,8 @@ export const Canvas = forwardRef<HTMLDivElement, CanvasProps>(({
   ghostNodes = [],
   ghostEdges = [],
   changedEdgeIds = [],
-  issueBadges = {}
+  issueBadges = {},
+  fitSignal = 0
 }, ref) => {
   const internalCanvasRef = useRef<HTMLDivElement>(null);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
@@ -316,6 +319,15 @@ export const Canvas = forwardRef<HTMLDivElement, CanvasProps>(({
   };
 
   // Handle fit to screen function
+  // Auto-fit when the viewport changes shape (advisor dock open/close).
+  // Wait out the 300ms width transition so clientWidth is final.
+  const handleFitToScreenRef = useRef<() => void>(() => {});
+  useEffect(() => {
+    if (fitSignal === 0) return;
+    const timer = setTimeout(() => handleFitToScreenRef.current(), 350);
+    return () => clearTimeout(timer);
+  }, [fitSignal]);
+
   const handleFitToScreen = () => {
     if (nodes.length === 0) {
       setZoomLevel(1);
@@ -352,6 +364,7 @@ export const Canvas = forwardRef<HTMLDivElement, CanvasProps>(({
     setZoomLevel(newZoom);
     setPanOffset({ x: panX, y: panY });
   };
+  handleFitToScreenRef.current = handleFitToScreen;
 
   return (
     <div
