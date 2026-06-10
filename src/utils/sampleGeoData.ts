@@ -2,8 +2,12 @@ import type { NetworkNode } from '../types';
 
 export function addSampleGeoDataToNodes(nodes: NetworkNode[]): NetworkNode[] {
   return nodes.map(node => {
-    // Skip if already has coordinates
-    if (node.config?.latitude && node.config?.longitude) {
+    // Skip if already has coordinates - unless they're the old center-of-US
+    // fallback, which means a previous lookup failed; re-enrich those.
+    const isStaleFallback =
+      node.config?.country === 'Unknown' ||
+      (node.config?.latitude === 39.8283 && node.config?.longitude === -98.5795);
+    if (node.config?.latitude && node.config?.longitude && !isStaleFallback) {
       return node;
     }
 
@@ -24,7 +28,8 @@ export function addSampleGeoDataToNodes(nodes: NetworkNode[]): NetworkNode[] {
             ...node.config,
             latitude: geoData.latitude,
             longitude: geoData.longitude,
-            city: geoData.city || node.config?.city,
+            // Keep the user's site name; geo city is only a fallback
+            city: node.config?.city || geoData.city,
             country: geoData.country || node.config?.country,
           },
         };
@@ -43,7 +48,7 @@ export function addSampleGeoDataToNodes(nodes: NetworkNode[]): NetworkNode[] {
           ...node.config,
           latitude: fallbackGeoData.latitude,
           longitude: fallbackGeoData.longitude,
-          city: fallbackGeoData.city || node.config?.city || node.name,
+          city: node.config?.city || fallbackGeoData.city || node.name,
           country: fallbackGeoData.country || node.config?.country || 'USA',
         },
       };
@@ -309,9 +314,10 @@ function getSampleGeoCoordinates(location: string, provider?: string): GeoData |
     }
   }
 
-  // Default fallback for unknown locations (center of US)
-  console.warn(`No geo coordinates found for location: "${location}". Using default coordinates.`);
-  return { latitude: 39.8283, longitude: -98.5795, city: location, country: 'Unknown' };
+  // Unknown location name (e.g. a renamed site like "DFWMetro") - return
+  // null so the caller's node-characteristic inference can place it sensibly.
+  console.warn(`No geo coordinates found for location: "${location}".`);
+  return null;
 }
 
 export function ensureNodesHaveGeoData(nodes: NetworkNode[]): NetworkNode[] {

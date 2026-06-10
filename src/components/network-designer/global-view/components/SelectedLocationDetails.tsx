@@ -19,7 +19,7 @@ export function SelectedLocationDetails({
   if (!selectedNodeData) return null;
 
   return (
-    <div className="absolute bottom-20 left-4 right-4 bg-white rounded-lg shadow-lg border border-gray-200 p-4" style={{ zIndex: 50 }}>
+    <div className="absolute bottom-20 left-28 right-4 bg-white rounded-lg shadow-lg border border-gray-200 p-4" style={{ zIndex: 50 }}>
       <GlobalNodeDetails 
         node={selectedNodeData} 
         onZoomIn={() => onZoomIn(selectedLocation)}

@@ -43,7 +43,7 @@ export function GlobalNodeDetails({ node, onZoomIn }: GlobalNodeDetailsProps) {
         <div className="bg-gray-50 p-3 rounded-lg">
           <p className="text-xs text-gray-500 mb-1">Location</p>
           <p className="text-sm font-medium text-gray-900">
-            {node.config?.location || node.config?.region || 
+            {node.config?.location || node.config?.region || node.config?.city ||
              (isFunction ? (node.functionType || 'Router') : 'Unknown location')}
           </p>
         </div>

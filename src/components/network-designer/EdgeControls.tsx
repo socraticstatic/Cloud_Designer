@@ -39,13 +39,29 @@ export function EdgeControls({ edges, nodes, selectedEdge, isReadOnly = false, o
           return null;
         }
         
-        // Calculate midpoint for the control
+        // Place the control along the edge at the first point clear of any
+        // node card, so pills never hide behind or sit on top of nodes.
         const sourceX = sourceNode.x + 32;
         const sourceY = sourceNode.y + 32;
         const targetX = targetNode.x + 32;
         const targetY = targetNode.y + 32;
-        const midX = (sourceX + targetX) / 2;
-        const midY = (sourceY + targetY) / 2;
+        const collides = (px: number, py: number) =>
+          nodes.some(n =>
+            px > n.x - 28 && px < n.x + 92 &&
+            py > n.y - 28 && py < n.y + 116
+          );
+        const T_CANDIDATES = [0.5, 0.42, 0.58, 0.34, 0.66, 0.26, 0.74];
+        let midX = (sourceX + targetX) / 2;
+        let midY = (sourceY + targetY) / 2;
+        for (const t of T_CANDIDATES) {
+          const px = sourceX + (targetX - sourceX) * t;
+          const py = sourceY + (targetY - sourceY) * t;
+          if (!collides(px, py)) {
+            midX = px;
+            midY = py;
+            break;
+          }
+        }
         
         const isSelected = selectedEdge === edge.id;
         

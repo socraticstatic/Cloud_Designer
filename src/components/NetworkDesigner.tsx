@@ -378,7 +378,10 @@ export function NetworkDesigner({
   useEffect(() => {
     if (nodes.length > 0) {
       const nodesNeedingGeo = nodes.filter(
-        n => !n.config?.latitude || !n.config?.longitude
+        n => !n.config?.latitude || !n.config?.longitude ||
+          // legacy center-of-US fallback from a failed lookup - re-resolve
+          n.config?.country === 'Unknown' ||
+          (n.config?.latitude === 39.8283 && n.config?.longitude === -98.5795)
       );
       if (nodesNeedingGeo.length > 0) {
         const enriched = ensureNodesHaveGeoData(nodes);
