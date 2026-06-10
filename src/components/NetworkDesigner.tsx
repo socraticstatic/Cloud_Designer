@@ -9,7 +9,7 @@ import { EdgeConfigPanel } from './network-designer/EdgeConfigPanel';
 import { AbstractionLevelSelector } from './network-designer/AbstractionLevelSelector';
 import { HistoryDrawer } from './network-designer/HistoryDrawer';
 import { ExportButton } from './network-designer/components/ExportButton';
-import { getAutoConnectTarget } from '../data/connectionDefaults';
+import { getAutoConnectTarget, getEdgeDefaults } from '../data/connectionDefaults';
 import {
   useNetworkHistory,
   useNetworkManager,
@@ -29,7 +29,7 @@ import { TopologyImportModal } from './network-designer/advisor/TopologyImportMo
 import { AdvisorPanel } from './network-designer/advisor/AdvisorPanel';
 import { runAdvisor, applyFix, Assessment, Finding } from './network-designer/advisor/advisorEngine';
 import { ParseResult } from './network-designer/advisor/topologyParser';
-import { ArrowLeft, ChevronDown, ChevronUp, Eye, Pencil, Plus, Search, LayoutList, LayoutGrid } from 'lucide-react';
+import { ArrowLeft, ChevronDown, ChevronUp, Eye, Pencil, Plus, Search, LayoutList, LayoutGrid, X } from 'lucide-react';
 
 // Browser-cache persistence keys (proof of concept storage layer)
 const STORAGE_TOPOLOGY = 'cloud-designer:topology';
@@ -55,7 +55,9 @@ function stripIcons(nodes: NetworkNode[]) {
 function rehydrateIcons(nodes: NetworkNode[]): NetworkNode[] {
   return nodes.map(node => ({
     ...node,
-    icon: getNodeIcon(node.type, node.functionType, node.config?.networkType, node.config)
+    icon: getNodeIcon(node.type, node.functionType, node.config?.networkType, node.config),
+    // legacy nodes predate the configured flag - treat them as configured
+    config: { ...node.config, configured: node.config?.configured ?? true }
   }));
 }
 
@@ -125,7 +127,7 @@ export function NetworkDesigner({
   const [showSaveTemplateModal, setShowSaveTemplateModal] = useState(false);
   
   // Network history management
-  const { saveToHistory, undo, canUndo } = useNetworkHistory();
+  const { saveToHistory, undo, redo, canUndo, canRedo } = useNetworkHistory();
   
   // Network state management
   const {
@@ -173,6 +175,11 @@ export function NetworkDesigner({
   const [designName, setDesignName] = useState('AWS Connectivity Environment');
   const [designStatus, setDesignStatus] = useState<'draft' | 'saved'>('draft');
   const [displayMode, setDisplayMode] = useState<'icon' | 'card'>('icon');
+  const [multiSelected, setMultiSelected] = useState<string[]>([]);
+  const [filterQuery, setFilterQuery] = useState('');
+  const [canvasHeight, setCanvasHeight] = useState(() =>
+    Math.max(600, Math.min(1000, (typeof window !== 'undefined' ? window.innerHeight : 940) - 150))
+  );
   const [groupColors, setGroupColors] = useState<Record<string, number>>(
     () => readStorage<Record<string, number>>('cloud-designer:groupColors') ?? {}
   );
@@ -569,17 +576,56 @@ export function NetworkDesigner({
     }
   };
 
-  // Escape closes transient surfaces (switcher, import modal, finding focus)
+  // Keyboard: Escape closes surfaces; Delete removes selection;
+  // cmd+Z / cmd+shift+Z undo-redo; cmd+D duplicates
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key !== 'Escape') return;
-      setShowSwitcher(false);
-      setShowImportModal(false);
-      setFocusedFinding(null);
+      const target = e.target as HTMLElement;
+      const typing = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable;
+      if (e.key === 'Escape') {
+        setShowSwitcher(false);
+        setShowImportModal(false);
+        setFocusedFinding(null);
+        setMultiSelected([]);
+        return;
+      }
+      if (typing || isReadOnly) return;
+      if ((e.key === 'Delete' || e.key === 'Backspace')) {
+        if (multiSelected.length > 0) {
+          e.preventDefault();
+          const remaining = nodes.filter(n => !multiSelected.includes(n.id));
+          const remainingEdges = edges.filter(ed => !multiSelected.includes(ed.source) && !multiSelected.includes(ed.target));
+          setNodes(remaining);
+          setEdges(remainingEdges);
+          saveToHistory(remaining, remainingEdges);
+          setMultiSelected([]);
+          clearSelection();
+        } else if (selectedNode) {
+          e.preventDefault();
+          deleteNode(selectedNode);
+          clearSelection();
+        } else if (selectedEdge) {
+          e.preventDefault();
+          deleteEdge(selectedEdge);
+          clearSelection();
+        }
+        return;
+      }
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'z') {
+        e.preventDefault();
+        if (e.shiftKey) handleRedo(); else handleUndo();
+        return;
+      }
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'd') {
+        if (selectedNode) {
+          e.preventDefault();
+          handleDuplicateNode(selectedNode);
+        }
+      }
     };
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
-  }, []);
+  });
 
   // Highlight maps fed to the canvas, derived from the focused finding
   const highlightedNodes = focusedFinding
@@ -707,14 +753,99 @@ export function NetworkDesigner({
     }
   };
 
-  // Handle node drag
+  // Canvas fills the viewport (clamped) instead of a fixed 800px strip
+  useEffect(() => {
+    const onResize = () => setCanvasHeight(Math.max(600, Math.min(1000, window.innerHeight - 150)));
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
+
+  // Handle redo - restore next state from history
+  const handleRedo = () => {
+    const nextState = redo();
+    if (nextState) {
+      setNodes(rehydrateIcons(nextState.nodes));
+      setEdges(nextState.edges);
+    }
+  };
+
+  // Duplicate the selected node (cmd+D)
+  const handleDuplicateNode = (nodeId: string) => {
+    const node = nodes.find(n => n.id === nodeId);
+    if (!node) return;
+    const clone: NetworkNode = {
+      ...node,
+      id: `node-${Date.now()}-copy`,
+      name: `${node.name} copy`,
+      x: Math.min(node.x + 90, 1000),
+      y: Math.min(node.y + 40, canvasHeight - 100),
+      config: { ...node.config }
+    };
+    const next = [...nodes, clone];
+    setNodes(next);
+    saveToHistory(next, edges);
+    handleNodeSelection(clone);
+  };
+
+  // Drag-to-connect: create a service-aware edge between two nodes
+  const handleConnectNodes = (sourceId: string, targetId: string) => {
+    if (sourceId === targetId) return;
+    if (edges.some(e =>
+      (e.source === sourceId && e.target === targetId) ||
+      (e.source === targetId && e.target === sourceId)
+    )) return;
+    const source = nodes.find(n => n.id === sourceId);
+    const target = nodes.find(n => n.id === targetId);
+    if (!source || !target) return;
+    const defaults = getEdgeDefaults(source, target);
+    const newEdge: NetworkEdge = {
+      id: `edge-${Date.now()}`,
+      source: sourceId,
+      target: targetId,
+      type: defaults.type,
+      bandwidth: defaults.bandwidth,
+      status: 'inactive',
+      config: defaults.resilience ? { resilience: defaults.resilience as 'single' | 'redundant' | 'ha' | 'dualdiverse' } : {}
+    };
+    const next = [...edges, newEdge];
+    setEdges(next);
+    saveToHistory(nodes, next);
+    window.addToast({
+      type: 'success',
+      title: 'Connected',
+      message: `${source.name} to ${target.name} via ${defaults.type}`,
+      duration: 2500
+    });
+  };
+
+  // Filter: nodes not matching the query get dimmed on the canvas
+  const dimmedNodeIds = filterQuery.trim()
+    ? nodes
+        .filter(n => {
+          const q = filterQuery.toLowerCase();
+          return !(
+            n.name.toLowerCase().includes(q) ||
+            n.type.includes(q) ||
+            (n.functionType ?? '').toLowerCase().includes(q) ||
+            (n.config?.provider ?? '').toLowerCase().includes(q) ||
+            (n.config?.city ?? '').toLowerCase().includes(q)
+          );
+        })
+        .map(n => n.id)
+    : [];
+
+  // Handle node drag - multi-selected nodes move together
   const handleNodeDrag = (nodeId: string, x: number, y: number) => {
     const node = nodes.find(n => n.id === nodeId);
     if (!node) return;
-    
-    // Update node position
-    setNodes(prev => 
-      prev.map(n => n.id === nodeId ? { ...n, x, y: Math.min(y, 800 - 64) } : n)
+    const dx = x - node.x;
+    const dy = y - node.y;
+    const moveIds = multiSelected.includes(nodeId) ? multiSelected : [nodeId];
+    setNodes(prev =>
+      prev.map(n => moveIds.includes(n.id)
+        ? { ...n, x: n.x + dx, y: Math.min(n.y + dy, canvasHeight - 84) }
+        : n
+      )
     );
   };
   
@@ -959,11 +1090,15 @@ export function NetworkDesigner({
             onNodeDrag={handleNodeDrag}
             onNodeDragEnd={handleNodeDragEnd}
             onEdgeClick={handleEdgeSelection}
-            maxY={800}
+            maxY={canvasHeight}
             highlightedNodes={highlightedNodes}
             highlightedEdges={highlightedEdges}
             displayMode={displayMode}
             groupColorOverrides={groupColors}
+            multiSelectedIds={multiSelected}
+            onMarqueeSelect={setMultiSelected}
+            dimmedNodeIds={dimmedNodeIds}
+            onConnectNodes={handleConnectNodes}
             onMoveGroup={handleMoveGroup}
             onMoveGroupEnd={handleMoveGroupEnd}
             onRenameGroup={handleRenameGroup}
@@ -994,17 +1129,16 @@ export function NetworkDesigner({
   return (
     <div className="flex flex-col bg-gray-50 rounded-xl border-2 border-gray-200 relative">
       {/* Main Content Area */}
-      <div className="relative h-[800px]" style={{ zIndex: 1 }}>
-        {/* Abstraction Level Selector with History */}
-        {!isReadOnly && (
-          <div style={{ zIndex: Z_INDEX.CHROME }}>
-            <AbstractionLevelSelector
-              currentLevel={abstractionLevel}
-              onLevelChange={setAbstractionLevel}
-              onHistoryClick={() => setShowHistoryDrawer(true)}
-            />
-          </div>
-        )}
+      <div className="relative" style={{ zIndex: 1, height: canvasHeight }}>
+        {/* Abstraction Level Selector - navigation works in read mode too */}
+        <div style={{ zIndex: Z_INDEX.CHROME }}>
+          <AbstractionLevelSelector
+            currentLevel={abstractionLevel}
+            onLevelChange={setAbstractionLevel}
+            onHistoryClick={() => setShowHistoryDrawer(true)}
+            hideHistory={isReadOnly}
+          />
+        </div>
 
         {/* Status Bar - Only shown in network view */}
         {abstractionLevel === 'network' && (
@@ -1100,7 +1234,9 @@ export function NetworkDesigner({
                         }`}
                         type="button"
                       >
-                        <span className="mt-1.5 h-2 w-2 rounded-full bg-green-600 flex-shrink-0" />
+                        <span className={`mt-1.5 h-2 w-2 rounded-full flex-shrink-0 ${
+                          design.name === designName && designStatus === 'saved' ? 'bg-green-600' : 'bg-gray-300'
+                        }`} />
                         <span className="min-w-0">
                           <span className="flex items-center gap-2">
                             <span className="text-sm font-medium text-fw-heading truncate">{design.name}</span>
@@ -1119,6 +1255,27 @@ export function NetworkDesigner({
                   )}
                 </div>
               </div>
+            )}
+          </div>
+        )}
+
+        {/* Filter pill - dims non-matching nodes (Figma: Filter exploration) */}
+        {abstractionLevel === 'network' && (
+          <div
+            className="absolute top-16 left-4 bg-white rounded-full shadow-sm border border-gray-200 flex items-center px-3 py-1.5 gap-2"
+            style={{ zIndex: Z_INDEX.CHROME }}
+          >
+            <Search className="h-3.5 w-3.5 text-fw-bodyLight" />
+            <input
+              value={filterQuery}
+              onChange={e => setFilterQuery(e.target.value)}
+              placeholder="Filter nodes"
+              className="w-28 text-xs bg-transparent outline-none text-fw-body placeholder:text-fw-disabled"
+            />
+            {filterQuery && (
+              <button onClick={() => setFilterQuery('')} className="text-fw-bodyLight hover:text-fw-body" type="button" aria-label="Clear filter">
+                <X className="h-3 w-3" />
+              </button>
             )}
           </div>
         )}

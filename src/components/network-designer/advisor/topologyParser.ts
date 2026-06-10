@@ -127,14 +127,15 @@ function buildNodes(rawNodes: RawNode[], warnings: string[]): { nodes: NetworkNo
       status: raw.status === 'active' ? 'active' : 'inactive',
       config: {
         ...(provider ? { provider: String(provider) } : {}),
-        ...(networkType ? { networkType } : {}),
+        ...(networkType ? { networkType: networkType as any } : {}),
         ...(raw.region ? { region: String(raw.region) } : {}),
         ...(raw.city ? { city: String(raw.city) } : {}),
         ...(raw.location ? { location: String(raw.location) } : {}),
         ...(typeof raw.latitude === 'number' ? { latitude: raw.latitude } : {}),
         ...(typeof raw.longitude === 'number' ? { longitude: raw.longitude } : {}),
         ...(raw.routerType ? { routerType: raw.routerType } : {}),
-        imported: true
+        imported: true,
+        configured: true
       }
     };
   });

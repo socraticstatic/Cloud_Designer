@@ -7,12 +7,14 @@ interface AbstractionLevelSelectorProps {
   currentLevel: AbstractionLevel;
   onLevelChange: (level: AbstractionLevel) => void;
   onHistoryClick: () => void;
+  hideHistory?: boolean;
 }
 
 export function AbstractionLevelSelector({
   currentLevel,
   onLevelChange,
-  onHistoryClick
+  onHistoryClick,
+  hideHistory = false
 }: AbstractionLevelSelectorProps) {
   return (
     <div className="absolute top-1/2 left-4 transform -translate-y-1/2 flex flex-col space-y-4" style={{ zIndex: Z_INDEX.CHROME }}>
@@ -72,7 +74,7 @@ export function AbstractionLevelSelector({
       </div>
 
       {/* History Button - Separated */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 py-1.5 px-1.5">
+      {!hideHistory && <div className="bg-white rounded-xl shadow-sm border border-gray-200 py-1.5 px-1.5">
         <button
           onClick={(e) => {
             e.stopPropagation();
@@ -85,7 +87,7 @@ export function AbstractionLevelSelector({
           <FolderClock className="h-5 w-5" />
           <span className="text-xs mt-1">History</span>
         </button>
-      </div>
+      </div>}
     </div>
   );
 }

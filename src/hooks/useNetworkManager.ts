@@ -141,7 +141,8 @@ export function useNetworkManager(
     const updatedNode = {
       ...node,
       ...updates,
-      config: updates.config ? { ...node.config, ...updates.config } : node.config
+      // touching configuration marks the node configured (Figma state machine)
+      config: updates.config ? { ...node.config, ...updates.config, configured: true } : node.config
     };
 
     if (typeof updatedNode.y === 'number') {

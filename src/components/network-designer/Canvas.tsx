@@ -27,6 +27,10 @@ interface CanvasProps {
   highlightedEdges?: Record<string, 'error' | 'warning' | 'recommendation' | 'positive'>;
   displayMode?: 'icon' | 'card';
   groupColorOverrides?: Record<string, number>;
+  multiSelectedIds?: string[];
+  onMarqueeSelect?: (ids: string[]) => void;
+  dimmedNodeIds?: string[];
+  onConnectNodes?: (sourceId: string, targetId: string) => void;
   onMoveGroup?: (memberIds: string[], dx: number, dy: number) => void;
   onMoveGroupEnd?: () => void;
   onRenameGroup?: (oldCity: string, newCity: string) => void;
@@ -58,6 +62,10 @@ export const Canvas = forwardRef<HTMLDivElement, CanvasProps>(({
   highlightedEdges = {},
   displayMode = 'icon',
   groupColorOverrides = {},
+  multiSelectedIds = [],
+  onMarqueeSelect,
+  dimmedNodeIds = [],
+  onConnectNodes,
   onMoveGroup,
   onMoveGroupEnd,
   onRenameGroup,
@@ -73,6 +81,9 @@ export const Canvas = forwardRef<HTMLDivElement, CanvasProps>(({
   const [snapToGrid] = useState(true);
   const [zoomLevel, setZoomLevel] = useState(1);
   const [contentBounds, setContentBounds] = useState({ minX: 0, minY: 0, maxX: 0, maxY: 0 });
+  const [marquee, setMarquee] = useState<{ x1: number; y1: number; x2: number; y2: number } | null>(null);
+  const [connectFrom, setConnectFrom] = useState<string | null>(null);
+  const [connectPos, setConnectPos] = useState({ x: 0, y: 0 });
   const gridSize = CANVAS_BOUNDS.GRID_SIZE;
 
   // Use provided ref or internal ref
@@ -217,6 +228,74 @@ export const Canvas = forwardRef<HTMLDivElement, CanvasProps>(({
     };
   }, [canvasRef, isPanning, startPanPosition, panOffset, zoomLevel]);
   
+  // Convert a client point into canvas (content) coordinates
+  const toCanvasPoint = (clientX: number, clientY: number) => {
+    const rect = canvasRef.current?.getBoundingClientRect();
+    if (!rect) return { x: 0, y: 0 };
+    return {
+      x: (clientX - rect.left - panOffset.x) / zoomLevel,
+      y: (clientY - rect.top - panOffset.y) / zoomLevel
+    };
+  };
+
+  // Marquee selection: drag on empty canvas sweeps a selection rectangle
+  const handleMarqueeStart = (e: React.MouseEvent) => {
+    // start only on empty canvas: not on a node, chip, control, or button
+    const el = e.target as HTMLElement;
+    const onInteractive = el.closest('.pointer-events-auto, button, input, .edge-control');
+    if (onInteractive || isReadOnly || isCreatingEdge || e.button !== 0 || e.altKey) return;
+    const start = toCanvasPoint(e.clientX, e.clientY);
+    setMarquee({ x1: start.x, y1: start.y, x2: start.x, y2: start.y });
+
+    const handleMove = (me: MouseEvent) => {
+      const point = toCanvasPoint(me.clientX, me.clientY);
+      setMarquee(prev => prev ? { ...prev, x2: point.x, y2: point.y } : prev);
+    };
+    const handleUp = (me: MouseEvent) => {
+      document.removeEventListener('mousemove', handleMove);
+      document.removeEventListener('mouseup', handleUp);
+      const end = toCanvasPoint(me.clientX, me.clientY);
+      const minX = Math.min(start.x, end.x);
+      const maxX = Math.max(start.x, end.x);
+      const minY = Math.min(start.y, end.y);
+      const maxY2 = Math.max(start.y, end.y);
+      if (maxX - minX > 8 || maxY2 - minY > 8) {
+        const hit = nodes
+          .filter(n => n.x + 32 > minX && n.x + 32 < maxX && n.y + 32 > minY && n.y + 32 < maxY2)
+          .map(n => n.id);
+        onMarqueeSelect?.(hit);
+      } else {
+        onMarqueeSelect?.([]);
+      }
+      setMarquee(null);
+    };
+    document.addEventListener('mousemove', handleMove);
+    document.addEventListener('mouseup', handleUp);
+  };
+
+  // Drag-to-connect: anchor mousedown on a node starts a live connector
+  const handleAnchorDown = (nodeId: string, e: React.MouseEvent) => {
+    if (isReadOnly) return;
+    e.preventDefault();
+    e.stopPropagation();
+    setConnectFrom(nodeId);
+    setConnectPos(toCanvasPoint(e.clientX, e.clientY));
+
+    const handleMove = (me: MouseEvent) => setConnectPos(toCanvasPoint(me.clientX, me.clientY));
+    const handleUp = (me: MouseEvent) => {
+      document.removeEventListener('mousemove', handleMove);
+      document.removeEventListener('mouseup', handleUp);
+      const point = toCanvasPoint(me.clientX, me.clientY);
+      const target = nodes.find(n =>
+        n.id !== nodeId && Math.hypot(n.x + 32 - point.x, n.y + 32 - point.y) < 56
+      );
+      if (target) onConnectNodes?.(nodeId, target.id);
+      setConnectFrom(null);
+    };
+    document.addEventListener('mousemove', handleMove);
+    document.addEventListener('mouseup', handleUp);
+  };
+
   // Handle canvas click - clear selections if clicking on empty space
   const handleCanvasClick = (e: React.MouseEvent) => {
     // Only handle clicks directly on the canvas background
@@ -275,6 +354,7 @@ export const Canvas = forwardRef<HTMLDivElement, CanvasProps>(({
         cursor: isPanning ? 'grabbing' : 'default'
       }}
       onClick={handleCanvasClick}
+      onMouseDown={handleMarqueeStart}
     >
       {/* Canvas wash background - per Figma concept frames */}
       <div className="absolute inset-0 bg-fw-wash" style={{ zIndex: 1 }}></div>
@@ -334,12 +414,41 @@ export const Canvas = forwardRef<HTMLDivElement, CanvasProps>(({
             />
           ))}
 
+          {/* Drag-to-connect live preview */}
+          {connectFrom && (() => {
+            const src = nodes.find(n => n.id === connectFrom);
+            if (!src) return null;
+            return (
+              <path
+                d={`M ${src.x + 32} ${src.y + 32} L ${connectPos.x} ${connectPos.y}`}
+                stroke="#0057B8"
+                strokeWidth={2}
+                strokeDasharray="5,5"
+                fill="none"
+              />
+            );
+          })()}
+
+          {/* Marquee selection rectangle */}
+          {marquee && (
+            <rect
+              x={Math.min(marquee.x1, marquee.x2)}
+              y={Math.min(marquee.y1, marquee.y2)}
+              width={Math.abs(marquee.x2 - marquee.x1)}
+              height={Math.abs(marquee.y2 - marquee.y1)}
+              fill="rgba(0, 87, 184, 0.08)"
+              stroke="#0057B8"
+              strokeWidth={1}
+              strokeDasharray="4,4"
+            />
+          )}
+
           {/* Edge Creation Preview */}
           {isCreatingEdge && edgeStart && (
             <g>
               <path
                 d={`
-                  M ${nodes.find(n => n.id === edgeStart)?.x + 32 || 0} ${nodes.find(n => n.id === edgeStart)?.y + 32 || 0}
+                  M ${(nodes.find(n => n.id === edgeStart)?.x ?? 0) + 32} ${(nodes.find(n => n.id === edgeStart)?.y ?? 0) + 32}
                   L ${mousePosition.x} ${mousePosition.y}
                 `}
                 className="stroke-blue-500 stroke-2 fill-none"
@@ -389,6 +498,9 @@ export const Canvas = forwardRef<HTMLDivElement, CanvasProps>(({
               isReadOnly={isReadOnly}
               highlight={highlightedNodes[node.id] ?? null}
               displayMode={displayMode}
+              isMultiSelected={multiSelectedIds.includes(node.id)}
+              dimmed={dimmedNodeIds.includes(node.id)}
+              onAnchorDown={(e) => handleAnchorDown(node.id, e)}
               onClick={() => onNodeClick(node)}
               onDragStart={() => setIsDragging(true)}
               onDragEnd={() => {
@@ -425,6 +537,29 @@ export const Canvas = forwardRef<HTMLDivElement, CanvasProps>(({
           ))}
         </div>
       </div>
+
+      {/* Zoom controls + fit (right rail, Figma parity with Pano) */}
+      {!isReadOnly && (
+        <div className="absolute right-4 top-1/2 -translate-y-1/2 flex flex-col gap-1 bg-white rounded-xl shadow-sm border border-gray-200 p-1" style={{ zIndex: 80 }}>
+          <button
+            onClick={() => setZoomLevel(z => Math.min(2, +(z + 0.2).toFixed(2)))}
+            className="p-1.5 rounded-lg text-gray-500 hover:bg-gray-50 hover:text-gray-800 text-sm font-semibold leading-none"
+            title="Zoom in" type="button"
+          >+</button>
+          <button
+            onClick={() => setZoomLevel(z => Math.max(0.5, +(z - 0.2).toFixed(2)))}
+            className="p-1.5 rounded-lg text-gray-500 hover:bg-gray-50 hover:text-gray-800 text-sm font-semibold leading-none"
+            title="Zoom out" type="button"
+          >&minus;</button>
+          <div className="h-px bg-gray-200 mx-1" />
+          <button
+            onClick={handleFitToScreen}
+            className="p-1.5 rounded-lg text-gray-500 hover:bg-gray-50 hover:text-gray-800 text-[10px] font-medium leading-none"
+            title="Fit to screen" type="button"
+          >FIT</button>
+          <div className="text-[10px] text-gray-400 text-center tabular-nums pb-0.5">{Math.round(zoomLevel * 100)}%</div>
+        </div>
+      )}
     </div>
   );
 });

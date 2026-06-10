@@ -305,6 +305,41 @@ export function runAdvisor(nodes: NetworkNode[], edges: NetworkEdge[]): Assessme
     });
   }
 
+  // --- Routing hygiene: BGP ASN + VLAN collisions ---
+  routers.forEach(router => {
+    if (!router.config?.asn) {
+      add({
+        severity: 'recommendation',
+        category: 'Architecture',
+        title: `${router.name} has no BGP ASN`,
+        detail: `${router.name} routes between domains but carries no autonomous system number. Peering cannot be provisioned without one.`,
+        recommendation: 'Assign a private ASN (64512-65534) in the router configuration panel.',
+        nodeIds: [router.id],
+        edgeIds: []
+      });
+    }
+  });
+  const vlanSeen = new Map<number, string[]>();
+  edges.forEach(e => {
+    const vlan = e.config?.vlanId ?? e.vlan;
+    if (typeof vlan === 'number') {
+      vlanSeen.set(vlan, [...(vlanSeen.get(vlan) ?? []), e.id]);
+    }
+  });
+  vlanSeen.forEach((ids, vlan) => {
+    if (ids.length > 1) {
+      add({
+        severity: 'warning',
+        category: 'Architecture',
+        title: `VLAN ${vlan} assigned to ${ids.length} links`,
+        detail: 'Duplicate VLAN IDs across links in the same domain cause provisioning conflicts.',
+        recommendation: 'Give each link a unique VLAN ID (1-4094).',
+        nodeIds: [],
+        edgeIds: ids
+      });
+    }
+  });
+
   // --- Cost advisory ---
   const monthlyCost = edges.reduce((sum, e) => sum + estimateEdgeCost(e), 0);
   edges.forEach(edge => {
@@ -388,7 +423,7 @@ export function applyFix(
         name: `${original.name} (Secondary)`,
         x: original.x + 40,
         y: Math.min(original.y + 120, 700),
-        config: { ...original.config }
+        config: { ...original.config, routerRole: 'secondary' }
       };
       const twinEdges: NetworkEdge[] = neighborEdgesLocal(original.id, edges).map((e, i) => ({
         ...e,
@@ -397,8 +432,11 @@ export function applyFix(
         target: e.target === original.id ? twin.id : e.target,
         config: { ...e.config, resilience: 'redundant' }
       }));
+      const withRole = nodes.map(n =>
+        n.id === original.id ? { ...n, config: { ...n.config, routerRole: 'primary' } } : n
+      );
       return {
-        nodes: [...nodes, twin],
+        nodes: [...withRole, twin],
         edges: [...edges, ...twinEdges],
         summary: `Added ${twin.name} and dual-homed ${twinEdges.length} connection${twinEdges.length > 1 ? 's' : ''}.`
       };

@@ -65,6 +65,7 @@ export function EdgeControls({ edges, nodes, selectedEdge, isReadOnly = false, o
                 pointerEvents: isReadOnly ? 'none' : 'auto', // Disable clicking in read-only mode
                 transition: 'all 0.2s ease'
               }}
+              title={`${edge.type} \u00b7 ${edge.bandwidth}${edge.metrics?.latency ? ` \u00b7 ${edge.metrics.latency}` : ''}`}
               onClick={(e) => {
                 if (!isReadOnly) {
                   e.stopPropagation();

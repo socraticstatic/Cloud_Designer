@@ -12,6 +12,9 @@ interface NodeProps {
   isReadOnly?: boolean;
   highlight?: NodeHighlight | null;
   displayMode?: 'icon' | 'card';
+  isMultiSelected?: boolean;
+  dimmed?: boolean;
+  onAnchorDown?: (e: React.MouseEvent) => void;
   onClick: () => void;
   onDragStart: () => void;
   onDragEnd: () => void;
@@ -36,6 +39,9 @@ export const Node = memo(function Node({
   isReadOnly = false,
   highlight = null,
   displayMode = 'icon',
+  isMultiSelected = false,
+  dimmed = false,
+  onAnchorDown,
   onClick,
   onDragStart,
   onDragEnd,
@@ -71,6 +77,8 @@ export const Node = memo(function Node({
   }, [isEditingName]);
 
   const Icon = node.icon;
+  const isConfigured = node.config?.configured === true;
+  const needsConfig = !isConfigured && !isReadOnly;
 
   // Get node colors
   const colors = getNodeColors(node);
@@ -99,11 +107,12 @@ export const Node = memo(function Node({
         ref={nodeRef}
         className={`
           absolute flex items-center justify-center node-enter pointer-events-auto
+          ${dimmed ? 'opacity-25' : 'opacity-100'}
           ${displayMode === 'card' ? 'h-16 px-3 gap-2.5 bg-white' : `w-16 h-16 ${background}`}
           rounded-lg transition-all duration-200 select-none
           ${isReadOnly ? 'cursor-default' : isCreatingEdge ? 'cursor-crosshair' : isDragging ? 'cursor-grabbing' : 'cursor-grab'}
           ${isDragging ? 'shadow-lg scale-105' : 'shadow-sm hover:shadow-md'}
-          border-2 ${highlight ? HIGHLIGHT_RING[highlight] : isSelected ? 'border-fw-border-active' : isCreatingEdge ? 'border-blue-400 border-dashed' : 'border-gray-200'}
+          border-2 ${highlight ? HIGHLIGHT_RING[highlight] : isSelected ? 'border-fw-border-active' : isMultiSelected ? 'border-blue-400 ring-2 ring-blue-300/50' : isCreatingEdge ? 'border-blue-400 border-dashed' : needsConfig ? 'border-orange-400' : 'border-gray-200'}
         `}
         style={{
           transform: `translate(${position.x}px, ${position.y}px)`,
@@ -253,6 +262,38 @@ export const Node = memo(function Node({
           </div>
         )}
 
+        {/* Configured check badge - per Figma nodes spec */}
+        {isConfigured && displayMode === 'icon' && (
+          <div className="absolute -bottom-1 -right-1 h-4 w-4 rounded-full bg-white border border-green-600 flex items-center justify-center">
+            <svg viewBox="0 0 24 24" className="h-2.5 w-2.5 text-green-700" fill="none" stroke="currentColor" strokeWidth="4"><path d="M5 13l4 4L19 7" /></svg>
+          </div>
+        )}
+
+        {/* Primary/secondary router role - NetBond redundancy pairing */}
+        {node.config?.routerRole && displayMode === 'icon' && (
+          <div className={`absolute -top-1 -left-1 px-1 rounded text-[8px] font-bold tracking-wide ${
+            node.config.routerRole === 'primary' ? 'bg-fuchsia-600 text-white' : 'bg-fuchsia-100 text-fuchsia-700'
+          }`}>
+            {node.config.routerRole === 'primary' ? 'PRI' : 'SEC'}
+          </div>
+        )}
+
+        {/* Connect anchors - drag from either side to wire a connection */}
+        {!isReadOnly && !isCreatingEdge && showTooltip && onAnchorDown && (
+          <>
+            <div
+              className="absolute top-1/2 -translate-y-1/2 -left-2.5 w-4 h-4 rounded-full bg-white border-2 border-fw-border-active cursor-crosshair hover:scale-125 transition-transform"
+              onMouseDown={onAnchorDown}
+              title="Drag to connect"
+            />
+            <div
+              className="absolute top-1/2 -translate-y-1/2 -right-2.5 w-4 h-4 rounded-full bg-white border-2 border-fw-border-active cursor-crosshair hover:scale-125 transition-transform"
+              onMouseDown={onAnchorDown}
+              title="Drag to connect"
+            />
+          </>
+        )}
+
         {/* Region sublabel - per Figma node spec */}
         {displayMode === 'icon' && (node.config?.region || node.config?.city) &&
           (node.config?.region || node.config?.city)?.toLowerCase() !== node.name.toLowerCase() && !isEditingName && (
@@ -261,6 +302,18 @@ export const Node = memo(function Node({
           >
             {node.config?.region || node.config?.city}
           </div>
+        )}
+
+        {/* Configure link - per Figma unconfigured state */}
+        {needsConfig && displayMode === 'icon' && !isEditingName && (
+          <button
+            className="absolute -bottom-10 left-1/2 -translate-x-1/2 text-[10px] font-medium text-orange-500 hover:text-orange-600 whitespace-nowrap"
+            style={{ marginTop: 2 }}
+            onClick={(e) => { e.stopPropagation(); onClick(); }}
+            type="button"
+          >
+            Configure
+          </button>
         )}
 
         {/* Connection Points */}
@@ -272,16 +325,24 @@ export const Node = memo(function Node({
           </>
         )}
 
-        {/* Tooltip */}
-        {showTooltip && !isEditingName && !isCreatingEdge && node.name !== 'AT&T Core' && (
+        {/* Hover detail card - per Figma nodes spec */}
+        {showTooltip && !isEditingName && !isCreatingEdge && (
           <div
-            className="absolute -top-12 left-1/2 transform -translate-x-1/2 px-3 py-1.5 bg-gray-900 text-white text-xs rounded-lg whitespace-nowrap pointer-events-none z-50 shadow-lg"
-            style={{ fontSize: `${Math.max(11, 11 / zoomLevel)}px` }}
+            className="absolute -top-14 left-1/2 transform -translate-x-1/2 px-3 py-1.5 bg-white border border-gray-200 shadow-lg rounded-lg whitespace-nowrap pointer-events-none z-50 flex items-center gap-2"
           >
-            Double-click to configure
-            <div className="absolute top-full left-1/2 transform -translate-x-1/2 -mt-px">
-              <div className="border-4 border-transparent border-t-gray-900"></div>
-            </div>
+            <span className="text-xs font-semibold text-gray-900">{node.name}</span>
+            {(node.config?.region || node.config?.city) && (
+              <>
+                <span className="text-gray-300 text-xs">|</span>
+                <span className="text-[11px] text-gray-500">{node.config?.region || node.config?.city}</span>
+              </>
+            )}
+            <span className="text-gray-300 text-xs">|</span>
+            <span className={`inline-flex h-1.5 w-1.5 rounded-full ${node.status === 'active' ? 'bg-green-600' : 'bg-gray-400'}`} />
+            <span className="text-[11px] text-gray-500">{node.status === 'active' ? 'Active' : 'Inactive'}</span>
+            {needsConfig && (
+              <span className="text-[11px] font-medium text-orange-500">Not configured</span>
+            )}
           </div>
         )}
       </div>
