@@ -16,7 +16,7 @@ interface CanvasProps {
   isReadOnly?: boolean;
   onNodeClick: (node: NetworkNode | null) => void;
   onNodeDrag: (nodeId: string, x: number, y: number) => void;
-  onNodeDragEnd: () => void;
+  onNodeDragEnd: (nodeId?: string) => void;
   onEdgeClick: (edge: NetworkEdge | null) => void;
   maxY: number;
   onUpdateNode?: (nodeId: string, updates: Partial<NetworkNode>) => void;
@@ -26,6 +26,12 @@ interface CanvasProps {
   highlightedNodes?: Record<string, 'error' | 'warning' | 'recommendation' | 'positive'>;
   highlightedEdges?: Record<string, 'error' | 'warning' | 'recommendation' | 'positive'>;
   displayMode?: 'icon' | 'card';
+  groupColorOverrides?: Record<string, number>;
+  onMoveGroup?: (memberIds: string[], dx: number, dy: number) => void;
+  onMoveGroupEnd?: () => void;
+  onRenameGroup?: (oldCity: string, newCity: string) => void;
+  onUngroup?: (city: string) => void;
+  onRecolorGroup?: (city: string, paletteIndex: number) => void;
 }
 
 // Memoized Edge renderer for better performance
@@ -50,7 +56,13 @@ export const Canvas = forwardRef<HTMLDivElement, CanvasProps>(({
   onDeleteEdge,
   highlightedNodes = {},
   highlightedEdges = {},
-  displayMode = 'icon'
+  displayMode = 'icon',
+  groupColorOverrides = {},
+  onMoveGroup,
+  onMoveGroupEnd,
+  onRenameGroup,
+  onUngroup,
+  onRecolorGroup
 }, ref) => {
   const internalCanvasRef = useRef<HTMLDivElement>(null);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
@@ -290,8 +302,18 @@ export const Canvas = forwardRef<HTMLDivElement, CanvasProps>(({
           zIndex: 10
         }}
       >
-        {/* Location group containers - behind edges and nodes */}
-        <LocationGroups nodes={nodes} />
+        {/* Location group containers - interactive site objects */}
+        <LocationGroups
+          nodes={nodes}
+          zoomLevel={zoomLevel}
+          isReadOnly={isReadOnly}
+          colorOverrides={groupColorOverrides}
+          onMoveGroup={onMoveGroup}
+          onMoveGroupEnd={onMoveGroupEnd}
+          onRenameGroup={onRenameGroup}
+          onUngroup={onUngroup}
+          onRecolorGroup={onRecolorGroup}
+        />
 
         {/* SVG Layer for Edges - Only visual representation */}
         <svg 
@@ -356,8 +378,8 @@ export const Canvas = forwardRef<HTMLDivElement, CanvasProps>(({
           onEdgeClick={(edge) => onEdgeClick(edge)} 
         />
 
-        {/* Nodes Layer */}
-        <div className="absolute inset-0" style={{ zIndex: 20 }}>
+        {/* Nodes Layer - transparent to events so group chips beneath stay clickable */}
+        <div className="absolute inset-0 pointer-events-none" style={{ zIndex: 20 }}>
           {nodes.map((node) => (
             <Node
               key={node.id}
@@ -371,7 +393,7 @@ export const Canvas = forwardRef<HTMLDivElement, CanvasProps>(({
               onDragStart={() => setIsDragging(true)}
               onDragEnd={() => {
                 setIsDragging(false);
-                onNodeDragEnd();
+                onNodeDragEnd(node.id);
               }}
               onDrag={(x, y) => {
                 // Ensure we have valid numbers

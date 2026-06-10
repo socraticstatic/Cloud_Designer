@@ -24,6 +24,7 @@ import { Z_INDEX, getSafeCenter, CANVAS_BOUNDS } from '../constants';
 import { NetworkNode, NetworkEdge } from './types';
 import { DefaultNetworkSetup } from './network-designer/DefaultNetworkSetup';
 import { Legend } from './network-designer/Legend';
+import { computeLocationGroups } from './network-designer/LocationGroups';
 import { TopologyImportModal } from './network-designer/advisor/TopologyImportModal';
 import { AdvisorPanel } from './network-designer/advisor/AdvisorPanel';
 import { runAdvisor, applyFix, Assessment, Finding } from './network-designer/advisor/advisorEngine';
@@ -172,6 +173,9 @@ export function NetworkDesigner({
   const [designName, setDesignName] = useState('AWS Connectivity Environment');
   const [designStatus, setDesignStatus] = useState<'draft' | 'saved'>('draft');
   const [displayMode, setDisplayMode] = useState<'icon' | 'card'>('icon');
+  const [groupColors, setGroupColors] = useState<Record<string, number>>(
+    () => readStorage<Record<string, number>>('cloud-designer:groupColors') ?? {}
+  );
   const [showSwitcher, setShowSwitcher] = useState(false);
   const [switcherQuery, setSwitcherQuery] = useState('');
   const [savedDesigns, setSavedDesigns] = useState<SavedDesign[]>(() => {
@@ -491,6 +495,80 @@ export function NetworkDesigner({
     setShowDefaultSetup(true);
   };
 
+  // --- Interactive location groups (sites) ---
+
+  const handleMoveGroup = useCallback((memberIds: string[], dx: number, dy: number) => {
+    setNodes(prev => prev.map(n =>
+      memberIds.includes(n.id)
+        ? { ...n, x: n.x + dx, y: Math.min(Math.max(n.y + dy, 20), CANVAS_BOUNDS.MAX_Y - 84) }
+        : n
+    ));
+  }, [setNodes]);
+
+  const handleMoveGroupEnd = useCallback(() => {
+    saveToHistory(nodes, edges);
+  }, [nodes, edges, saveToHistory]);
+
+  const handleRenameGroup = (oldCity: string, newCity: string) => {
+    setNodes(prev => prev.map(n => {
+      if (n.config?.city !== oldCity) return n;
+      const config = { ...n.config, city: newCity };
+      // drop coordinates so geo enrichment re-resolves the new site name
+      delete config.latitude;
+      delete config.longitude;
+      return { ...n, config };
+    }));
+    setGroupColors(prev => {
+      const next = { ...prev };
+      if (next[oldCity] !== undefined) { next[newCity] = next[oldCity]; delete next[oldCity]; }
+      try { localStorage.setItem('cloud-designer:groupColors', JSON.stringify(next)); } catch { /* ignore */ }
+      return next;
+    });
+    window.addToast({ type: 'success', title: 'Site Renamed', message: `${oldCity} is now ${newCity}`, duration: 2500 });
+  };
+
+  const handleUngroup = (city: string) => {
+    setNodes(prev => prev.map(n => {
+      if (n.config?.city !== city) return n;
+      const config = { ...n.config };
+      delete config.city;
+      return { ...n, config };
+    }));
+    window.addToast({ type: 'info', title: 'Site Ungrouped', message: `${city} dissolved - nodes keep their positions`, duration: 2500 });
+  };
+
+  const handleRecolorGroup = (city: string, paletteIndex: number) => {
+    setGroupColors(prev => {
+      const next = { ...prev, [city]: paletteIndex };
+      try { localStorage.setItem('cloud-designer:groupColors', JSON.stringify(next)); } catch { /* ignore */ }
+      return next;
+    });
+  };
+
+  // Drop-to-adopt: releasing a node inside a site's container joins it
+  const handleNodeDropMembership = (nodeId: string) => {
+    const node = nodes.find(n => n.id === nodeId);
+    if (!node) return;
+    const groups = computeLocationGroups(nodes, groupColors);
+    const cx = node.x + 32;
+    const cy = node.y + 32;
+    const target = groups.find(g =>
+      g.city !== node.config?.city &&
+      cx > g.x && cx < g.x + g.width && cy > g.y && cy < g.y + g.height
+    );
+    if (target) {
+      const anchor = nodes.find(n => n.id !== nodeId && n.config?.city === target.city && n.config?.latitude);
+      updateNode(nodeId, {
+        config: {
+          ...node.config,
+          city: target.city,
+          ...(anchor ? { latitude: anchor.config!.latitude, longitude: anchor.config!.longitude } : {})
+        }
+      });
+      window.addToast({ type: 'success', title: 'Joined Site', message: `${node.name} is now part of ${target.city}`, duration: 2500 });
+    }
+  };
+
   // Escape closes transient surfaces (switcher, import modal, finding focus)
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -640,9 +718,10 @@ export function NetworkDesigner({
     );
   };
   
-  // Handle node drag end
-  const handleNodeDragEnd = () => {
+  // Handle node drag end - commit history, then membership adoption
+  const handleNodeDragEnd = (nodeId?: string) => {
     saveToHistory(nodes, edges);
+    if (nodeId) handleNodeDropMembership(nodeId);
   };
   
   // Handle running simulation
@@ -884,6 +963,12 @@ export function NetworkDesigner({
             highlightedNodes={highlightedNodes}
             highlightedEdges={highlightedEdges}
             displayMode={displayMode}
+            groupColorOverrides={groupColors}
+            onMoveGroup={handleMoveGroup}
+            onMoveGroupEnd={handleMoveGroupEnd}
+            onRenameGroup={handleRenameGroup}
+            onUngroup={handleUngroup}
+            onRecolorGroup={handleRecolorGroup}
             ref={canvasRef}
           />
         );
