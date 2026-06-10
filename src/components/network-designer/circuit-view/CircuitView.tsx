@@ -142,7 +142,7 @@ export function CircuitView({
   const [selectedDevice, setSelectedDevice] = useState<string | null>(selectedNode);
   const [selectedPort, setSelectedPort] = useState<string | null>(null);
   const [selectedCircuit, setSelectedCircuit] = useState<string | null>(null);
-  const [viewMode, setViewMode] = useState<ViewMode>({ mode: 'logical' });
+  const [viewMode, setViewMode] = useState<ViewMode>({ mode: 'rack' });
 
   useEffect(() => {
     if (selectedNode) setSelectedDevice(selectedNode);

@@ -73,215 +73,122 @@ export function LeafletMap({ nodes, edges, onNodeSelect, selectedNodeId }: Leafl
     linesRef.current.forEach(line => map.removeLayer(line));
     linesRef.current = [];
 
-    const nodeLocations: NodeLocation[] = nodes
-      .filter(node => {
-        const hasGeoData =
-          node.config?.latitude !== undefined &&
-          node.config?.longitude !== undefined;
-        if (!hasGeoData) {
-          console.log(`[LeafletMap] ✗ Skipping ${node.name}: no geo data (lat=${node.config?.latitude}, lng=${node.config?.longitude})`);
-        }
-        return hasGeoData;
-      })
-      .map(node => ({
-        id: node.id,
-        name: node.name,
-        lat: node.config!.latitude as number,
-        lng: node.config!.longitude as number,
-        type: node.type,
-        status: node.status,
-      }));
+    // --- Site-centric rendering ---
+    // The map draws SITES (the same objects as canvas location groups),
+    // not individual node dots: one readable card-marker per site with a
+    // node count, plus aggregated site-to-site links.
+    interface Site {
+      key: string;
+      name: string;
+      lat: number;
+      lng: number;
+      nodeIds: string[];
+      anyActive: boolean;
+    }
 
-    console.log(`[LeafletMap] Filtered to ${nodeLocations.length} nodes with valid coordinates`);
-
-    const getMarkerColor = (status: string) => {
-      switch (status) {
-        case 'active': return '#10b981';
-        case 'inactive': return '#94a3b8';
-        case 'warning': return '#f59e0b';
-        case 'error': return '#ef4444';
-        default: return '#3b82f6';
+    const located = nodes.filter(n => n.config?.latitude !== undefined && n.config?.longitude !== undefined);
+    const siteMap = new Map<string, Site>();
+    located.forEach(node => {
+      const key = node.config?.city || `solo:${node.id}`;
+      const existing = siteMap.get(key);
+      if (existing) {
+        existing.nodeIds.push(node.id);
+        existing.anyActive = existing.anyActive || node.status === 'active';
+        // anchor the site at the average of member coordinates
+        existing.lat = (existing.lat * (existing.nodeIds.length - 1) + (node.config!.latitude as number)) / existing.nodeIds.length;
+        existing.lng = (existing.lng * (existing.nodeIds.length - 1) + (node.config!.longitude as number)) / existing.nodeIds.length;
+      } else {
+        siteMap.set(key, {
+          key,
+          name: node.config?.city || node.name,
+          lat: node.config!.latitude as number,
+          lng: node.config!.longitude as number,
+          nodeIds: [node.id],
+          anyActive: node.status === 'active'
+        });
       }
-    };
+    });
+    const sites = [...siteMap.values()];
+    const siteOfNode = new Map<string, Site>();
+    sites.forEach(site => site.nodeIds.forEach(id => siteOfNode.set(id, site)));
 
-    const getMarkerIcon = (status: string, isSelected: boolean, label: string) => {
+    const makeSiteIcon = (site: Site, isSelected: boolean) => {
+      const dot = site.anyActive ? '#2D7E24' : '#9CA3AF';
+      const count = site.nodeIds.length > 1
+        ? `<span style="background:#00388F;color:white;border-radius:9999px;padding:1px 7px;font-size:11px;font-weight:600;">${site.nodeIds.length}</span>`
+        : '';
       return L.divIcon({
-        className: 'custom-marker',
+        className: 'site-marker',
         html: `
-          <div style="display:flex;align-items:center;gap:6px;cursor:pointer;">
-            <div style="
-              width: ${isSelected ? '18px' : '12px'};
-              height: ${isSelected ? '18px' : '12px'};
-              background-color: ${getMarkerColor(status)};
-              border: 2px solid white;
-              border-radius: 50%;
-              box-shadow: 0 1px 4px rgba(0,0,0,0.35);
-              flex-shrink: 0;
-            "></div>
-            <div style="
-              background: white;
-              border: 1px solid ${isSelected ? '#0057B8' : '#DCDFE3'};
-              border-radius: 6px;
-              padding: 2px 7px;
-              font-size: 11px;
-              font-weight: 500;
-              color: #1d2329;
-              white-space: nowrap;
-              box-shadow: 0 1px 3px rgba(0,0,0,0.12);
-            ">${label}</div>
+          <div style="
+            display:flex;align-items:center;gap:7px;
+            background:white;
+            border:1.5px solid ${isSelected ? '#00388F' : '#DCDFE3'};
+            border-radius:10px;
+            padding:6px 10px;
+            box-shadow:0 2px 8px rgba(0,0,0,0.18);
+            cursor:pointer;white-space:nowrap;
+          ">
+            <span style="width:10px;height:10px;border-radius:50%;background:${dot};flex-shrink:0;"></span>
+            <span style="font-size:13px;font-weight:600;color:#13171b;">${site.name}</span>
+            ${count}
           </div>
         `,
-        iconSize: [120, 20],
-        iconAnchor: [isSelected ? 9 : 6, 10],
+        iconSize: [140, 32],
+        iconAnchor: [10, 16]
       });
     };
 
-    nodeLocations.forEach(location => {
-      const isSelected = location.id === selectedNodeId;
-      const marker = L.marker([location.lat, location.lng], {
-        icon: getMarkerIcon(location.status, isSelected, location.name),
-      });
-
-      marker.on('click', () => {
-        onNodeSelect(location.id);
-      });
-
-      const popupContent = `
-        <div style="padding: 8px; min-width: 150px;">
-          <div style="font-weight: 600; font-size: 14px; margin-bottom: 4px; color: #1e293b;">
-            ${location.name}
-          </div>
-          <div style="font-size: 12px; color: #64748b; margin-bottom: 2px;">
-            Type: ${location.type}
-          </div>
-          <div style="font-size: 12px; color: #64748b;">
-            Status: <span style="color: ${getMarkerColor(location.status)}; font-weight: 500;">${location.status}</span>
-          </div>
-        </div>
-      `;
-
-      marker.bindPopup(popupContent);
-
-      if (isSelected) {
-        marker.openPopup();
-      }
-
+    sites.forEach(site => {
+      const isSelected = selectedNodeId !== null && site.nodeIds.includes(selectedNodeId);
+      const marker = L.marker([site.lat, site.lng], { icon: makeSiteIcon(site, isSelected) });
+      marker.on('click', () => onNodeSelect(site.nodeIds[0]));
       marker.addTo(map);
-      markers.set(location.id, marker);
-      console.log(`[LeafletMap] ✓ Added marker for ${location.name} at [${location.lat}, ${location.lng}]`);
+      markers.set(site.key, marker);
     });
 
-    console.log(`[LeafletMap] Total markers rendered: ${markers.size}`);
-
+    // Aggregated site-to-site links: one line per site pair, weighted by link count
+    const pairMap = new Map<string, { a: Site; b: Site; count: number; anyActive: boolean }>();
     edges.forEach(edge => {
-      const sourceNode = nodeLocations.find(loc => loc.id === edge.source);
-      const targetNode = nodeLocations.find(loc => loc.id === edge.target);
-
-      if (sourceNode && targetNode) {
-        const lineColor = edge.status === 'active' ? '#686E74' : '#BDC2C7';
-        const lineWeight = 1.5;
-        const lineOpacity = edge.status === 'active' ? 0.8 : 0.4;
-
-        const line = L.polyline(
-          [
-            [sourceNode.lat, sourceNode.lng],
-            [targetNode.lat, targetNode.lng],
-          ],
-          {
-            color: lineColor,
-            weight: lineWeight,
-            opacity: lineOpacity,
-            dashArray: edge.status === 'active' ? undefined : '5, 10',
-          }
-        );
-
-        line.bindPopup(`
-          <div style="padding: 8px;">
-            <div style="font-weight: 600; font-size: 13px; margin-bottom: 4px;">
-              ${sourceNode.name} → ${targetNode.name}
-            </div>
-            <div style="font-size: 11px; color: #64748b; margin-bottom: 2px;">
-              Type: ${edge.type}
-            </div>
-            <div style="font-size: 11px; color: #64748b;">
-              Bandwidth: ${edge.bandwidth}
-            </div>
-          </div>
-        `);
-
-        line.addTo(map);
-        linesRef.current.push(line);
+      const sa = siteOfNode.get(edge.source);
+      const sb = siteOfNode.get(edge.target);
+      if (!sa || !sb || sa.key === sb.key) return;
+      const pairKey = [sa.key, sb.key].sort().join('::');
+      const existing = pairMap.get(pairKey);
+      if (existing) {
+        existing.count += 1;
+        existing.anyActive = existing.anyActive || edge.status === 'active';
+      } else {
+        pairMap.set(pairKey, { a: sa, b: sb, count: 1, anyActive: edge.status === 'active' });
       }
     });
 
-    if (nodeLocations.length > 0) {
-      const bounds = L.latLngBounds(
-        nodeLocations.map(loc => [loc.lat, loc.lng])
+    pairMap.forEach(pair => {
+      const line = L.polyline(
+        [[pair.a.lat, pair.a.lng], [pair.b.lat, pair.b.lng]],
+        {
+          color: pair.anyActive ? '#2D7E24' : '#BDC2C7',
+          weight: Math.min(1.5 + pair.count * 0.75, 4),
+          opacity: pair.anyActive ? 0.75 : 0.45,
+          dashArray: pair.anyActive ? undefined : '6, 8'
+        }
       );
-      map.fitBounds(bounds, { padding: [50, 50], maxZoom: 10 });
+      line.bindPopup(`
+        <div style="padding: 6px 8px;">
+          <div style="font-weight:600;font-size:13px;">${pair.a.name} &harr; ${pair.b.name}</div>
+          <div style="font-size:11px;color:#64748b;margin-top:2px;">${pair.count} connection${pair.count > 1 ? 's' : ''}</div>
+        </div>
+      `);
+      line.addTo(map);
+      linesRef.current.push(line);
+    });
+
+    if (sites.length > 0) {
+      const bounds = L.latLngBounds(sites.map(site => [site.lat, site.lng]));
+      map.fitBounds(bounds, { padding: [80, 80], maxZoom: 8 });
     }
   }, [nodes, edges, onNodeSelect, selectedNodeId]);
 
-  useEffect(() => {
-    if (!mapRef.current) return;
-
-    const markers = markersRef.current;
-    const getMarkerColor = (status: string) => {
-      switch (status) {
-        case 'active': return '#10b981';
-        case 'inactive': return '#94a3b8';
-        case 'warning': return '#f59e0b';
-        case 'error': return '#ef4444';
-        default: return '#3b82f6';
-      }
-    };
-
-    const getMarkerIcon = (status: string, isSelected: boolean, label: string) => {
-      return L.divIcon({
-        className: 'custom-marker',
-        html: `
-          <div style="display:flex;align-items:center;gap:6px;cursor:pointer;">
-            <div style="
-              width: ${isSelected ? '18px' : '12px'};
-              height: ${isSelected ? '18px' : '12px'};
-              background-color: ${getMarkerColor(status)};
-              border: 2px solid white;
-              border-radius: 50%;
-              box-shadow: 0 1px 4px rgba(0,0,0,0.35);
-              flex-shrink: 0;
-            "></div>
-            <div style="
-              background: white;
-              border: 1px solid ${isSelected ? '#0057B8' : '#DCDFE3'};
-              border-radius: 6px;
-              padding: 2px 7px;
-              font-size: 11px;
-              font-weight: 500;
-              color: #1d2329;
-              white-space: nowrap;
-              box-shadow: 0 1px 3px rgba(0,0,0,0.12);
-            ">${label}</div>
-          </div>
-        `,
-        iconSize: [120, 20],
-        iconAnchor: [isSelected ? 9 : 6, 10],
-      });
-    };
-
-    nodes.forEach(node => {
-      const marker = markers.get(node.id);
-      if (marker) {
-        const isSelected = node.id === selectedNodeId;
-        marker.setIcon(getMarkerIcon(node.status, isSelected, node.name));
-
-        if (isSelected) {
-          marker.openPopup();
-        } else {
-          marker.closePopup();
-        }
-      }
-    });
-  }, [selectedNodeId, nodes]);
 
   return (
     <>
