@@ -486,7 +486,7 @@ export function Toolbar({
             }}
             disabled={!hasConnections}
             className={`
-              flex items-center gap-2 px-5 py-2 rounded-full text-sm font-medium transition-colors whitespace-nowrap flex-shrink-0
+              flex items-center p-2.5 rounded-full transition-colors flex-shrink-0
               ${!hasConnections
                 ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
                 : 'bg-fw-ctaPrimary text-white hover:bg-fw-ctaPrimaryHover'
@@ -495,8 +495,7 @@ export function Toolbar({
             title="Save updates"
             type="button"
           >
-            <Check className="h-4 w-4" />
-            Save updates
+            <Check className="h-5 w-5" />
           </button>
         </>
       )}

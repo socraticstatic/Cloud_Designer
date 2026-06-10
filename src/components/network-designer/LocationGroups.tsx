@@ -35,15 +35,23 @@ export function LocationGroups({ nodes }: LocationGroupsProps) {
       .map(([city, members], i) => {
         const xs = members.map(n => n.x);
         const ys = members.map(n => n.y);
-        return {
-          city,
-          palette: GROUP_PALETTES[i % GROUP_PALETTES.length],
+        const box = {
           x: Math.min(...xs) - PADDING,
           y: Math.min(...ys) - PADDING,
           width: Math.max(...xs) - Math.min(...xs) + NODE_SIZE + PADDING * 2,
           height: Math.max(...ys) - Math.min(...ys) + NODE_SIZE + PADDING * 2 + 24
         };
-      });
+        // A bounding box that swallows a node from another city reads as
+        // false membership - skip drawing that container.
+        const containsForeign = nodes.some(n =>
+          n.config?.city !== city &&
+          n.x + NODE_SIZE > box.x && n.x < box.x + box.width &&
+          n.y + NODE_SIZE > box.y && n.y < box.y + box.height
+        );
+        if (containsForeign) return null;
+        return { city, palette: GROUP_PALETTES[i % GROUP_PALETTES.length], ...box };
+      })
+      .filter((g): g is NonNullable<typeof g> => g !== null);
   }, [nodes]);
 
   if (groups.length === 0) return null;

@@ -118,7 +118,7 @@ export function useNetworkManager(
       x: pos.x,
       y: pos.y,
       name: displayName,
-      icon: getNodeIcon(type, functionType, networkType),
+      icon: getNodeIcon(type, functionType, networkType, provider ? { provider } : undefined),
       status: 'inactive',
       config: {
         ...(type === 'network' && networkType ? { networkType: networkType.toLowerCase() } : {}),

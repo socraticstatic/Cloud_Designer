@@ -123,7 +123,7 @@ function buildNodes(rawNodes: RawNode[], warnings: string[]): { nodes: NetworkNo
       x: typeof raw.x === 'number' ? raw.x : 0,
       y: typeof raw.y === 'number' ? raw.y : 0,
       name: name || getNodeDisplayName(type, functionType, networkType, provider),
-      icon: getNodeIcon(type, functionType, networkType, raw.routerType ? { routerType: raw.routerType } : undefined),
+      icon: getNodeIcon(type, functionType, networkType, { ...(provider ? { provider: String(provider) } : {}), ...(raw.routerType ? { routerType: raw.routerType } : {}) }),
       status: raw.status === 'active' ? 'active' : 'inactive',
       config: {
         ...(provider ? { provider: String(provider) } : {}),

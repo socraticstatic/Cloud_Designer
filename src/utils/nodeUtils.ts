@@ -1,5 +1,6 @@
 import { Server, Cloud, Router, Network, Shield, Activity, PanelRight, Menu, Database, Globe, Lock, Feather as Ethernet, Wifi } from 'lucide-react';
 import { CloudRouterIcon } from '../components/icons/CloudRouterIcon';
+import { getProviderIcon } from '../components/icons/ProviderIcons';
 import { NetworkNode } from '../types';
 
 export const getFunctionIcon = (functionType: string, config?: any) => {
@@ -30,7 +31,7 @@ export const getNodeIcon = (type: NetworkNode['type'], functionType?: string, ne
     case 'function':
       return functionType ? getFunctionIcon(functionType, config) : Server;
     case 'destination':
-      return Cloud;
+      return getProviderIcon(config?.provider ?? config?.cloudProvider) ?? Cloud;
     case 'datacenter':
       return Database;
     case 'network':
@@ -70,7 +71,14 @@ export const getNodeColors = (node: NetworkNode) => {
   const getIconColor = () => {
     if (isCloudRouter) return 'text-fuchsia-600';
     if (node.type === 'network') return 'text-cobalt-700';
-    if (node.type === 'destination') return 'text-functional-blue';
+    if (node.type === 'destination') {
+      const p = (node.config?.provider || node.cloudProvider || '').toLowerCase();
+      if (p.includes('aws') || p.includes('amazon')) return 'text-[#FF9900]';
+      if (p.includes('azure') || p.includes('microsoft')) return 'text-[#0078D4]';
+      if (p.includes('google') || p.includes('gcp')) return 'text-[#4285F4]';
+      if (p.includes('oracle')) return 'text-[#C74634]';
+      return 'text-functional-blue';
+    }
     if (node.type === 'datacenter') return 'text-cobalt-600';
     return 'text-gray-700';
   };
