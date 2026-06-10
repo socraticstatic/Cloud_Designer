@@ -9,15 +9,23 @@ import { calculateNetworkScores } from '../../../utils/calculations';
 
 export type FindingSeverity = 'error' | 'warning' | 'recommendation' | 'positive';
 
+// One-click remediation descriptors - serializable so assessments persist
+export type FixAction =
+  | { type: 'encrypt-edges'; edgeIds: string[] }
+  | { type: 'set-resilience'; edgeIds: string[]; value: 'redundant' | 'ha' | 'dualdiverse' }
+  | { type: 'add-redundant-node'; nodeId: string }
+  | { type: 'add-firewall' };
+
 export interface Finding {
   id: string;
   severity: FindingSeverity;
-  category: 'Resiliency' | 'Security' | 'Performance' | 'Architecture' | 'Geography';
+  category: 'Resiliency' | 'Security' | 'Performance' | 'Architecture' | 'Geography' | 'Cost';
   title: string;
   detail: string;
   recommendation?: string;
   nodeIds: string[];
   edgeIds: string[];
+  fix?: { label: string; action: FixAction };
 }
 
 export interface Assessment {
@@ -25,7 +33,32 @@ export interface Assessment {
   scores: { resiliency: number; redundancy: number; disaster: number; security: number; performance: number };
   grade: 'A' | 'B' | 'C' | 'D' | 'F';
   summary: string;
+  monthlyCost: number;
   generatedAt: number;
+}
+
+// Mock transport pricing for the POC cost model ($/Gbps/month)
+const TRANSPORT_PRICE_PER_GBPS: Record<string, number> = {
+  'MPLS': 180,
+  'Internet': 30,
+  'Ethernet': 90,
+  'Direct Connect': 110,
+  'ExpressRoute': 110,
+  'Cloud Interconnect': 110,
+  'FastConnect': 110,
+  'Wavelength': 250,
+  'Dark Fiber': 250,
+  'VPN': 40
+};
+
+export function estimateEdgeCost(edge: NetworkEdge): number {
+  const gbps = parseGbps(edge.bandwidth);
+  const rate = TRANSPORT_PRICE_PER_GBPS[edge.type] ?? 80;
+  const resilienceMultiplier =
+    edge.config?.resilience === 'dualdiverse' ? 1.9 :
+    edge.config?.resilience === 'ha' ? 1.6 :
+    edge.config?.resilience === 'redundant' ? 1.4 : 1;
+  return Math.round(gbps * rate * resilienceMultiplier);
 }
 
 function parseGbps(bandwidth: string): number {
@@ -100,7 +133,8 @@ export function runAdvisor(nodes: NetworkNode[], edges: NetworkEdge[]): Assessme
       detail: `If ${node.name} fails, the topology splits and traffic between the segments it joins is lost. No alternate path exists around this node.`,
       recommendation: `Deploy a redundant ${node.functionType || node.type} and dual-home the adjacent connections so no single device isolates part of the network.`,
       nodeIds: [id],
-      edgeIds: neighborEdges(id, edges).map(e => e.id)
+      edgeIds: neighborEdges(id, edges).map(e => e.id),
+      fix: { label: `Add redundant ${node.functionType || 'node'}`, action: { type: 'add-redundant-node', nodeId: id } }
     });
   });
 
@@ -115,7 +149,8 @@ export function runAdvisor(nodes: NetworkNode[], edges: NetworkEdge[]): Assessme
         detail: `${dest.name} has one non-redundant connection. A circuit fault or maintenance window takes this workload offline.`,
         recommendation: 'Upgrade the link to a redundant or dual-diverse resilience profile, or add a second connection through a different path.',
         nodeIds: [dest.id],
-        edgeIds: links.map(e => e.id)
+        edgeIds: links.map(e => e.id),
+        fix: { label: 'Upgrade to dual-diverse', action: { type: 'set-resilience', edgeIds: links.map(e => e.id), value: 'dualdiverse' } }
       });
     }
   });
@@ -133,7 +168,8 @@ export function runAdvisor(nodes: NetworkNode[], edges: NetworkEdge[]): Assessme
         detail: 'Traffic on this internet transport is not encrypted. Anything crossing it is exposed in transit.',
         recommendation: 'Enable IPsec encryption on this link or move the workload to a private transport (AVPN, ASE, dedicated interconnect).',
         nodeIds: [edge.source, edge.target],
-        edgeIds: [edge.id]
+        edgeIds: [edge.id],
+        fix: { label: 'Enable encryption', action: { type: 'encrypt-edges', edgeIds: [edge.id] } }
       });
     }
   });
@@ -147,7 +183,8 @@ export function runAdvisor(nodes: NetworkNode[], edges: NetworkEdge[]): Assessme
       detail: 'Internet transport reaches cloud workloads with no inspection point anywhere in the path.',
       recommendation: 'Insert a firewall function (NGFW or cloud-native equivalent) between the internet edge and your cloud routers.',
       nodeIds: internetNodes.map(n => n.id),
-      edgeIds: []
+      edgeIds: [],
+      fix: { label: 'Add firewall', action: { type: 'add-firewall' } }
     });
   }
 
@@ -163,7 +200,8 @@ export function runAdvisor(nodes: NetworkNode[], edges: NetworkEdge[]): Assessme
         detail: 'Encryption is applied inconsistently. Mixed posture usually means a compliance audit finding later.',
         recommendation: 'Standardize: encrypt every link that leaves a trusted facility boundary.',
         nodeIds: [],
-        edgeIds: edges.filter(e => e.config?.encrypted !== true).map(e => e.id)
+        edgeIds: edges.filter(e => e.config?.encrypted !== true).map(e => e.id),
+        fix: { label: 'Encrypt all links', action: { type: 'encrypt-edges', edgeIds: edges.filter(e => e.config?.encrypted !== true).map(e => e.id) } }
       });
     }
   }
@@ -267,6 +305,38 @@ export function runAdvisor(nodes: NetworkNode[], edges: NetworkEdge[]): Assessme
     });
   }
 
+  // --- Cost advisory ---
+  const monthlyCost = edges.reduce((sum, e) => sum + estimateEdgeCost(e), 0);
+  edges.forEach(edge => {
+    const gbps = parseGbps(edge.bandwidth);
+    if (gbps >= 40) {
+      const src = nodes.find(n => n.id === edge.source);
+      const tgt = nodes.find(n => n.id === edge.target);
+      add({
+        severity: 'recommendation',
+        category: 'Cost',
+        title: `Premium capacity: ${src?.name} to ${tgt?.name} (${edge.bandwidth})`,
+        detail: `This ${edge.type} link runs ~$${estimateEdgeCost(edge).toLocaleString()}/mo at ${edge.bandwidth}. Capacity above 40 Gbps is premium transport.`,
+        recommendation: 'Verify forecast utilization justifies the tier, or step down and scale with demand.',
+        nodeIds: [],
+        edgeIds: [edge.id]
+      });
+    }
+  });
+  const internetCapacity = edges.filter(e => e.type.toLowerCase().includes('internet')).reduce((s2, e) => s2 + parseGbps(e.bandwidth), 0);
+  const totalCapacity = edges.reduce((s2, e) => s2 + parseGbps(e.bandwidth), 0);
+  if (totalCapacity > 0 && internetCapacity / totalCapacity > 0.5 && destinations.length > 0) {
+    add({
+      severity: 'recommendation',
+      category: 'Cost',
+      title: 'Majority of capacity rides public internet',
+      detail: `${Math.round((internetCapacity / totalCapacity) * 100)}% of provisioned bandwidth is internet transport. Cheap per Gbps, but SLA-free - outage cost usually exceeds the transport savings.`,
+      recommendation: 'Move critical workloads to dedicated interconnects; keep internet as the burst/backup tier.',
+      nodeIds: [],
+      edgeIds: edges.filter(e => e.type.toLowerCase().includes('internet')).map(e => e.id)
+    });
+  }
+
   // --- Score + grade ---
   const scores = calculateNetworkScores(nodes, edges);
   const errors = findings.filter(f => f.severity === 'error').length;
@@ -281,5 +351,106 @@ export function runAdvisor(nodes: NetworkNode[], edges: NetworkEdge[]): Assessme
         ? `Structurally sound. ${warningsCount} improvement${warningsCount > 1 ? 's' : ''} would harden the design.`
         : 'Well-architected. No critical issues found.';
 
-  return { findings, scores, grade, summary, generatedAt: Date.now() };
+  return { findings, scores, grade, summary, monthlyCost, generatedAt: Date.now() };
+}
+
+// Apply a one-click remediation to the topology. Returns the modified
+// copies plus a human summary for the toast.
+export function applyFix(
+  nodes: NetworkNode[],
+  edges: NetworkEdge[],
+  action: FixAction
+): { nodes: NetworkNode[]; edges: NetworkEdge[]; summary: string } {
+  switch (action.type) {
+    case 'encrypt-edges': {
+      const ids = new Set(action.edgeIds);
+      return {
+        nodes,
+        edges: edges.map(e => ids.has(e.id) ? { ...e, config: { ...e.config, encrypted: true } } : e),
+        summary: `Enabled encryption on ${action.edgeIds.length} link${action.edgeIds.length > 1 ? 's' : ''}.`
+      };
+    }
+    case 'set-resilience': {
+      const ids = new Set(action.edgeIds);
+      return {
+        nodes,
+        edges: edges.map(e => ids.has(e.id) ? { ...e, config: { ...e.config, resilience: action.value } } : e),
+        summary: `Upgraded ${action.edgeIds.length} link${action.edgeIds.length > 1 ? 's' : ''} to ${action.value === 'dualdiverse' ? 'dual-diverse' : action.value} resilience.`
+      };
+    }
+    case 'add-redundant-node': {
+      const original = nodes.find(n => n.id === action.nodeId);
+      if (!original) return { nodes, edges, summary: 'Node no longer exists.' };
+      const stamp = Date.now();
+      const twin: NetworkNode = {
+        ...original,
+        id: `node-fix-${stamp}`,
+        name: `${original.name} (Secondary)`,
+        x: original.x + 40,
+        y: Math.min(original.y + 120, 700),
+        config: { ...original.config }
+      };
+      const twinEdges: NetworkEdge[] = neighborEdgesLocal(original.id, edges).map((e, i) => ({
+        ...e,
+        id: `edge-fix-${stamp}-${i}`,
+        source: e.source === original.id ? twin.id : e.source,
+        target: e.target === original.id ? twin.id : e.target,
+        config: { ...e.config, resilience: 'redundant' }
+      }));
+      return {
+        nodes: [...nodes, twin],
+        edges: [...edges, ...twinEdges],
+        summary: `Added ${twin.name} and dual-homed ${twinEdges.length} connection${twinEdges.length > 1 ? 's' : ''}.`
+      };
+    }
+    case 'add-firewall': {
+      const stamp = Date.now();
+      const router = nodes.find(n => n.type === 'function' && (n.functionType === 'Router' || n.functionType === 'Cloud Router'));
+      const internet = nodes.find(n => n.type === 'network' && n.config?.networkType === 'internet');
+      const anchor = router ?? nodes[0];
+      const firewall: NetworkNode = {
+        id: `node-fix-${stamp}`,
+        type: 'function',
+        functionType: 'Firewall',
+        x: anchor ? anchor.x - 60 : 400,
+        y: anchor ? Math.min(anchor.y + 140, 700) : 400,
+        name: 'Edge Firewall',
+        icon: undefined as any, // rehydrated by the caller
+        status: 'inactive',
+        config: { firewallType: 'ngfw', deploymentMode: 'inline' }
+      };
+      const newEdges: NetworkEdge[] = [];
+      if (internet) {
+        newEdges.push({
+          id: `edge-fix-${stamp}-a`,
+          source: internet.id,
+          target: firewall.id,
+          type: 'Ethernet',
+          bandwidth: '10 Gbps',
+          status: 'inactive',
+          config: { encrypted: true }
+        });
+      }
+      if (router) {
+        newEdges.push({
+          id: `edge-fix-${stamp}-b`,
+          source: firewall.id,
+          target: router.id,
+          type: 'Ethernet',
+          bandwidth: '10 Gbps',
+          status: 'inactive',
+          config: { encrypted: true }
+        });
+      }
+      return {
+        nodes: [...nodes, firewall],
+        edges: [...edges, ...newEdges],
+        summary: 'Inserted an inline NGFW between the internet edge and your routing layer.'
+      };
+    }
+  }
+}
+
+function neighborEdgesLocal(nodeId: string, edges: NetworkEdge[]): NetworkEdge[] {
+  return edges.filter(e => e.source === nodeId || e.target === nodeId);
 }

@@ -15,6 +15,7 @@ interface AdvisorPanelProps {
   onClose: () => void;
   onRerun: () => void;
   onFocusFinding: (finding: Finding | null) => void;
+  onApplyFix?: (finding: Finding) => void;
   focusedFindingId?: string | null;
 }
 
@@ -47,6 +48,7 @@ export function AdvisorPanel({
   onClose,
   onRerun,
   onFocusFinding,
+  onApplyFix,
   focusedFindingId
 }: AdvisorPanelProps) {
   const [filter, setFilter] = useState<FindingSeverity | 'all'>('all');
@@ -112,7 +114,15 @@ export function AdvisorPanel({
               <div className={`h-12 w-12 rounded-xl border flex items-center justify-center text-xl font-bold ${GRADE_STYLE[assessment.grade]}`}>
                 {assessment.grade}
               </div>
-              <p className="text-sm text-fw-body flex-1 leading-snug">{assessment.summary}</p>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm text-fw-body leading-snug">{assessment.summary}</p>
+                {assessment.monthlyCost > 0 && (
+                  <p className="text-xs text-fw-bodyLight mt-1">
+                    Est. transport spend:{' '}
+                    <span className="font-medium text-fw-heading">${assessment.monthlyCost.toLocaleString()}/mo</span>
+                  </p>
+                )}
+              </div>
             </div>
 
             {/* Score chips */}
@@ -189,6 +199,26 @@ export function AdvisorPanel({
                         <p className="text-xs text-fw-link mt-1.5 leading-snug">
                           <span className="font-medium">Recommendation:</span> {finding.recommendation}
                         </p>
+                      )}
+                      {finding.fix && onApplyFix && (
+                        <span
+                          role="button"
+                          tabIndex={0}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onApplyFix(finding);
+                          }}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                              e.stopPropagation();
+                              onApplyFix(finding);
+                            }
+                          }}
+                          className="inline-flex items-center gap-1.5 mt-2 px-3 py-1.5 rounded-full text-xs font-medium bg-fw-ctaPrimary text-white hover:bg-fw-ctaPrimaryHover transition-colors cursor-pointer"
+                        >
+                          <Sparkles className="h-3 w-3" />
+                          {finding.fix.label}
+                        </span>
                       )}
                       {(finding.nodeIds.length > 0 || finding.edgeIds.length > 0) && (
                         <p className="text-[10px] text-fw-bodyLight mt-1.5">

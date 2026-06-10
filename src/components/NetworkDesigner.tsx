@@ -24,7 +24,7 @@ import { DefaultNetworkSetup } from './network-designer/DefaultNetworkSetup';
 import { Legend } from './network-designer/Legend';
 import { TopologyImportModal } from './network-designer/advisor/TopologyImportModal';
 import { AdvisorPanel } from './network-designer/advisor/AdvisorPanel';
-import { runAdvisor, Assessment, Finding } from './network-designer/advisor/advisorEngine';
+import { runAdvisor, applyFix, Assessment, Finding } from './network-designer/advisor/advisorEngine';
 import { ParseResult } from './network-designer/advisor/topologyParser';
 import { ArrowLeft, ChevronDown, ChevronUp, Eye, Pencil, Plus, Search, LayoutList, LayoutGrid } from 'lucide-react';
 
@@ -416,6 +416,44 @@ export function NetworkDesigner({
   const handleFocusFinding = (finding: Finding | null) => {
     setFocusedFinding(finding);
   };
+
+  // One-click remediation: mutate the topology per the finding's fix,
+  // then re-analyze so the user sees the score move immediately.
+  const handleApplyFix = (finding: Finding) => {
+    if (!finding.fix) return;
+    const result = applyFix(nodes, edges, finding.fix.action);
+    const fixedNodes = rehydrateIcons(result.nodes);
+    setNodes(fixedNodes);
+    setEdges(result.edges);
+    saveToHistory(fixedNodes, result.edges);
+    setFocusedFinding(null);
+    handleRunAdvisor(fixedNodes, result.edges);
+    window.addToast({
+      type: 'success',
+      title: 'Fix Applied',
+      message: result.summary,
+      duration: 3500
+    });
+  };
+
+  // Watchdog-style continuous analysis: once an assessment exists,
+  // quietly re-run it whenever the topology changes.
+  useEffect(() => {
+    if (!assessment || (nodes.length === 0 && edges.length === 0)) return;
+    const timer = setTimeout(() => {
+      const result = runAdvisor(nodes, edges);
+      setAssessment(result);
+      try {
+        localStorage.setItem(STORAGE_ASSESSMENT, JSON.stringify(result));
+      } catch { /* ignore */ }
+    }, 1500);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [nodes, edges]);
+
+  const openIssueCount = assessment
+    ? assessment.findings.filter(f => f.severity === 'error' || f.severity === 'warning').length
+    : 0;
 
   // --- Connection switcher (design library) ---
 
@@ -1027,6 +1065,7 @@ export function NetworkDesigner({
             onClose={() => setShowAdvisor(false)}
             onRerun={() => handleRunAdvisor()}
             onFocusFinding={handleFocusFinding}
+            onApplyFix={handleApplyFix}
             focusedFindingId={focusedFinding?.id ?? null}
           />
         )}
@@ -1056,6 +1095,7 @@ export function NetworkDesigner({
               onOpenTemplates={openTemplatesDrawer}
               onImportTopology={() => setShowImportModal(true)}
               onOpenAdvisor={() => (assessment ? setShowAdvisor(true) : handleRunAdvisor())}
+              advisorBadge={openIssueCount}
             />
           </div>
         )}

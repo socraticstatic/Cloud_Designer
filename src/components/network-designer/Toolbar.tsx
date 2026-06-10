@@ -24,6 +24,7 @@ interface ToolbarProps {
   onOpenTemplates?: () => void;
   onImportTopology?: () => void;
   onOpenAdvisor?: () => void;
+  advisorBadge?: number;
 }
 
 export function Toolbar({
@@ -40,7 +41,8 @@ export function Toolbar({
   onClearCanvas,
   onOpenTemplates,
   onImportTopology,
-  onOpenAdvisor
+  onOpenAdvisor,
+  advisorBadge = 0
 }: ToolbarProps) {
   // State to track which dropdown is open
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
@@ -443,11 +445,16 @@ export function Toolbar({
               e.stopPropagation();
               onOpenAdvisor();
             }}
-            className="p-2 rounded-lg text-fw-link hover:bg-fw-accent transition-colors"
+            className="relative p-2 rounded-lg text-fw-link hover:bg-fw-accent transition-colors"
             title="Network Advisor"
             type="button"
           >
             <Sparkles className="h-5 w-5" />
+            {advisorBadge > 0 && (
+              <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 px-1 rounded-full bg-fw-error text-white text-[10px] font-bold flex items-center justify-center leading-none">
+                {advisorBadge}
+              </span>
+            )}
           </button>
           <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 text-xs text-white bg-gray-900 rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-200">
             Get consultative feedback
