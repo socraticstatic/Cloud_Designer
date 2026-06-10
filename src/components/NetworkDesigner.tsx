@@ -8,6 +8,7 @@ import { NodeConfigPanel } from './network-designer/NodeConfigPanel';
 import { EdgeConfigPanel } from './network-designer/EdgeConfigPanel';
 import { AbstractionLevelSelector } from './network-designer/AbstractionLevelSelector';
 import { HistoryDrawer } from './network-designer/HistoryDrawer';
+import { ExportButton } from './network-designer/components/ExportButton';
 import { getAutoConnectTarget } from '../data/connectionDefaults';
 import {
   useNetworkHistory,
@@ -1108,6 +1109,7 @@ export function NetworkDesigner({
               onImportTopology={() => setShowImportModal(true)}
               onOpenAdvisor={() => (assessment ? setShowAdvisor(true) : handleRunAdvisor())}
               advisorBadge={openIssueCount}
+              exportSlot={<ExportButton nodes={nodes} edges={edges} canvasRef={canvasRef} />}
             />
           </div>
         )}

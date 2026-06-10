@@ -1,7 +1,6 @@
 import { useState, useMemo } from 'react';
 import { Activity, Shield, RefreshCw, Network, CheckCircle2, AlertTriangle, XCircle, Info, X } from 'lucide-react';
 import { NetworkNode, NetworkEdge } from '../types';
-import { ExportButton } from './components/ExportButton';
 import { calculateTotalBandwidth } from '../../utils/calculations';
 import { validateTopology, ValidationIssue } from '../../engine/validationEngine';
 import { Z_INDEX } from '../../constants';
@@ -57,23 +56,9 @@ export function StatusBar({ nodes, edges, onRefresh, canvasRef, onSelectNode, on
   return (
     <>
       <div
-        className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-white rounded-xl shadow-sm border border-gray-200 py-2 px-4 flex items-center space-x-5 whitespace-nowrap"
+        className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-white rounded-xl shadow-sm border border-gray-200 py-2 px-4 flex items-center space-x-4 whitespace-nowrap max-w-[calc(100%-32rem)] overflow-hidden"
         style={{ zIndex: Z_INDEX.CHROME }}
       >
-        {/* Validation Indicator */}
-        {nodes.length > 0 && (
-          <button
-            onClick={() => setShowValidation(!showValidation)}
-            className="flex items-center gap-1 hover:bg-gray-50 rounded px-1 -mx-1 transition-colors"
-          >
-            {getValidationIcon()}
-            <span className="text-sm text-gray-600">{getValidationLabel()}</span>
-          </button>
-        )}
-
-        {/* Separator */}
-        {nodes.length > 0 && <div className="h-4 w-px bg-gray-200"></div>}
-
         {/* Total Bandwidth */}
         <div className="flex items-center">
           <Network className="h-4 w-4 text-blue-500 mr-1 flex-shrink-0" />
@@ -83,24 +68,19 @@ export function StatusBar({ nodes, edges, onRefresh, canvasRef, onSelectNode, on
         {/* Nodes Info */}
         <div className="flex items-center">
           <Activity className="h-4 w-4 text-gray-400 mr-1 flex-shrink-0" />
-          <span className="text-sm text-gray-600">{nodes.length} Nodes</span>
+          <span className="text-sm text-gray-600">{nodes.length} nodes</span>
         </div>
 
         {/* Connections Info */}
         <div className="flex items-center">
           <Shield className="h-4 w-4 text-gray-400 mr-1 flex-shrink-0" />
-          <span className="text-sm text-gray-600">{edges.length} Connections</span>
+          <span className="text-sm text-gray-600">{edges.length} connections</span>
         </div>
 
-        {/* Active Info */}
+        {/* Active Info - single segment per Figma */}
         <div className="flex items-center">
-          <span className="inline-flex h-2 w-2 bg-green-500 rounded-full mr-1.5"></span>
-          <span className="text-sm text-gray-600">{activeNodes} Active Nodes</span>
-        </div>
-
-        <div className="flex items-center">
-          <span className="inline-flex h-2 w-2 bg-blue-500 rounded-full mr-1.5"></span>
-          <span className="text-sm text-gray-600">{activeEdges} Active Connections</span>
+          <span className={`inline-flex h-2 w-2 rounded-full mr-1.5 ${activeNodes + activeEdges > 0 ? 'bg-green-600' : 'bg-gray-300'}`}></span>
+          <span className="text-sm text-gray-600">{activeNodes + activeEdges} active</span>
         </div>
 
         {/* Refresh Button */}
@@ -111,17 +91,6 @@ export function StatusBar({ nodes, edges, onRefresh, canvasRef, onSelectNode, on
           <RefreshCw className="h-4 w-4" />
         </button>
 
-        {/* Export Button */}
-        {canvasRef && (
-          <div className="flex items-center">
-            <div className="h-6 w-px bg-gray-200 mr-3"></div>
-            <ExportButton
-              nodes={nodes}
-              edges={edges}
-              canvasRef={canvasRef}
-            />
-          </div>
-        )}
       </div>
 
       {/* Validation Panel Dropdown */}

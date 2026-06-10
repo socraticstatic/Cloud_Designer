@@ -25,6 +25,7 @@ interface ToolbarProps {
   onImportTopology?: () => void;
   onOpenAdvisor?: () => void;
   advisorBadge?: number;
+  exportSlot?: React.ReactNode;
 }
 
 export function Toolbar({
@@ -42,7 +43,8 @@ export function Toolbar({
   onOpenTemplates,
   onImportTopology,
   onOpenAdvisor,
-  advisorBadge = 0
+  advisorBadge = 0,
+  exportSlot
 }: ToolbarProps) {
   // State to track which dropdown is open
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
@@ -105,7 +107,7 @@ export function Toolbar({
   return (
     <div 
       ref={toolbarRef} 
-      className="absolute bottom-6 left-1/2 transform -translate-x-1/2 bg-white rounded-2xl shadow-md border border-gray-200 p-2 flex items-center space-x-1 min-w-max"
+      className="absolute bottom-6 left-1/2 transform -translate-x-1/2 bg-white rounded-2xl shadow-md border border-gray-200 p-2 flex items-center space-x-1 max-w-[calc(100%-3rem)] overflow-x-auto scrollbar-hidden"
       style={{ zIndex: Z_INDEX.CHROME }}
     >
       {/* Choose Button - Added before Function */}
@@ -116,7 +118,7 @@ export function Toolbar({
         type="button"
       >
         <Layout className="h-5 w-5" />
-        <span className="text-sm">Choose</span>
+        <span className="text-sm hidden xl:inline">Choose</span>
       </button>
       
       {/* Small separator line */}
@@ -133,7 +135,7 @@ export function Toolbar({
         type="button"
       >
         <Share2 className="h-5 w-5" />
-        <span className="text-sm">Cloud Router</span>
+        <span className="text-sm hidden xl:inline">Cloud Router</span>
       </button>
       
       {/* Small separator line */}
@@ -150,7 +152,7 @@ export function Toolbar({
             type="button"
           >
             <Server className="h-5 w-5" />
-            <span className="text-sm">Function</span>
+            <span className="text-sm hidden xl:inline">Function</span>
           </button>
           
           {openDropdown === 'function' && (
@@ -182,7 +184,7 @@ export function Toolbar({
             type="button"
           >
             <Cloud className="h-5 w-5" />
-            <span className="text-sm">Cloud</span>
+            <span className="text-sm hidden xl:inline">Cloud</span>
           </button>
           
           {openDropdown === 'cloud' && (
@@ -214,7 +216,7 @@ export function Toolbar({
             type="button"
           >
             <Database className="h-5 w-5" />
-            <span className="text-sm">Datacenter</span>
+            <span className="text-sm hidden xl:inline">Datacenter</span>
           </button>
           
           {openDropdown === 'datacenter' && (
@@ -246,7 +248,7 @@ export function Toolbar({
             type="button"
           >
             <Network className="h-5 w-5" />
-            <span className="text-sm">Network</span>
+            <span className="text-sm hidden xl:inline">Network</span>
           </button>
           
           {openDropdown === 'network' && (
@@ -414,6 +416,14 @@ export function Toolbar({
           </div>
       )}
 
+      {/* Export (download) - per Figma toolbar */}
+      {exportSlot && (
+        <>
+          <div className="h-8 w-px bg-gray-200"></div>
+          <div className="flex-shrink-0">{exportSlot}</div>
+        </>
+      )}
+
       {/* Import topology */}
       {onImportTopology && (
         <>
@@ -475,7 +485,7 @@ export function Toolbar({
             }}
             disabled={!hasConnections}
             className={`
-              flex items-center gap-2 px-5 py-2 rounded-full text-sm font-medium transition-colors
+              flex items-center gap-2 px-5 py-2 rounded-full text-sm font-medium transition-colors whitespace-nowrap flex-shrink-0
               ${!hasConnections
                 ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
                 : 'bg-fw-ctaPrimary text-white hover:bg-fw-ctaPrimaryHover'
