@@ -36,6 +36,12 @@ interface CanvasProps {
   onRenameGroup?: (oldCity: string, newCity: string) => void;
   onUngroup?: (city: string) => void;
   onRecolorGroup?: (city: string, paletteIndex: number) => void;
+  // Advisor fix preview: proposed additions ghost-rendered until applied
+  ghostNodes?: NetworkNode[];
+  ghostEdges?: NetworkEdge[];
+  changedEdgeIds?: string[];
+  // Advisor finding badges drawn on affected nodes while the panel is open
+  issueBadges?: Record<string, 'error' | 'warning' | 'recommendation'>;
 }
 
 // Memoized Edge renderer for better performance
@@ -70,7 +76,11 @@ export const Canvas = forwardRef<HTMLDivElement, CanvasProps>(({
   onMoveGroupEnd,
   onRenameGroup,
   onUngroup,
-  onRecolorGroup
+  onRecolorGroup,
+  ghostNodes = [],
+  ghostEdges = [],
+  changedEdgeIds = [],
+  issueBadges = {}
 }, ref) => {
   const internalCanvasRef = useRef<HTMLDivElement>(null);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
@@ -414,6 +424,48 @@ export const Canvas = forwardRef<HTMLDivElement, CanvasProps>(({
             />
           ))}
 
+          {/* Advisor fix preview: ghost edges + changed-edge pulses */}
+          {(ghostEdges.length > 0 || changedEdgeIds.length > 0) && (() => {
+            const allNodes = [...nodes, ...ghostNodes];
+            const at = (id: string) => allNodes.find(n => n.id === id);
+            return (
+              <g className="ghost-pulse">
+                {ghostEdges.map(edge => {
+                  const src = at(edge.source);
+                  const tgt = at(edge.target);
+                  if (!src || !tgt) return null;
+                  return (
+                    <path
+                      key={`ghost-${edge.id}`}
+                      d={`M ${src.x + 32} ${src.y + 32} L ${tgt.x + 32} ${tgt.y + 32}`}
+                      stroke="#2D7E24"
+                      strokeWidth={2.5}
+                      strokeDasharray="7,5"
+                      fill="none"
+                    />
+                  );
+                })}
+                {changedEdgeIds.map(id => {
+                  const edge = edges.find(e => e.id === id);
+                  const src = edge && at(edge.source);
+                  const tgt = edge && at(edge.target);
+                  if (!src || !tgt) return null;
+                  return (
+                    <path
+                      key={`changed-${id}`}
+                      d={`M ${src.x + 32} ${src.y + 32} L ${tgt.x + 32} ${tgt.y + 32}`}
+                      stroke="#2D7E24"
+                      strokeWidth={5}
+                      strokeOpacity={0.35}
+                      strokeLinecap="round"
+                      fill="none"
+                    />
+                  );
+                })}
+              </g>
+            );
+          })()}
+
           {/* Drag-to-connect live preview */}
           {connectFrom && (() => {
             const src = nodes.find(n => n.id === connectFrom);
@@ -497,6 +549,7 @@ export const Canvas = forwardRef<HTMLDivElement, CanvasProps>(({
               isCreatingEdge={isCreatingEdge}
               isReadOnly={isReadOnly}
               highlight={highlightedNodes[node.id] ?? null}
+              issueBadge={issueBadges[node.id] ?? null}
               displayMode={displayMode}
               isMultiSelected={multiSelectedIds.includes(node.id)}
               dimmed={dimmedNodeIds.includes(node.id)}
@@ -536,6 +589,28 @@ export const Canvas = forwardRef<HTMLDivElement, CanvasProps>(({
             />
           ))}
         </div>
+
+        {/* Ghost nodes - the advisor's proposed additions, dashed green */}
+        {ghostNodes.length > 0 && (
+          <div className="absolute inset-0 pointer-events-none ghost-pulse" style={{ zIndex: 21 }}>
+            {ghostNodes.map(node => (
+              <div
+                key={`ghost-${node.id}`}
+                className="absolute flex flex-col items-center"
+                style={{ transform: `translate(${node.x}px, ${node.y}px)`, width: 64 }}
+              >
+                <div className="w-16 h-16 rounded-2xl bg-green-50/80 border-2 border-dashed border-green-600 flex items-center justify-center">
+                  <svg viewBox="0 0 24 24" className="h-6 w-6 text-green-700" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M12 5v14M5 12h14" strokeLinecap="round" />
+                  </svg>
+                </div>
+                <span className="mt-1 text-[11px] font-medium text-green-700 whitespace-nowrap bg-white/80 px-1.5 rounded">
+                  {node.name}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Zoom controls + fit (right rail, Figma parity with Pano) */}

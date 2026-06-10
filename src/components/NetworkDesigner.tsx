@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { lazy, Suspense } from 'react';
 import { ConnectionConfig } from '../types';
 import { Canvas } from './network-designer/Canvas';
@@ -28,6 +28,10 @@ import { computeLocationGroups } from './network-designer/LocationGroups';
 import { TopologyImportModal } from './network-designer/advisor/TopologyImportModal';
 import { AdvisorPanel } from './network-designer/advisor/AdvisorPanel';
 import { runAdvisor, applyFix, Assessment, Finding } from './network-designer/advisor/advisorEngine';
+import { previewFix, scoreFixImpact, buildRemediationPlan, FixPreview, FixImpact } from './network-designer/advisor/fixPreview';
+import { simulateFailure, FailureResult } from './network-designer/advisor/failureSim';
+import { composeNarrative } from './network-designer/advisor/narrative';
+import { readHistory, appendHistory, HistoryPoint } from './network-designer/advisor/scoreHistory';
 import { ParseResult } from './network-designer/advisor/topologyParser';
 import { ArrowLeft, ChevronDown, ChevronUp, Eye, Pencil, Plus, Search, LayoutList, LayoutGrid, X } from 'lucide-react';
 
@@ -169,6 +173,12 @@ export function NetworkDesigner({
   const [showAdvisor, setShowAdvisor] = useState(false);
   const [assessment, setAssessment] = useState<Assessment | null>(null);
   const [focusedFinding, setFocusedFinding] = useState<Finding | null>(null);
+  const [fixPreviewState, setFixPreviewState] = useState<{ finding: Finding; preview: FixPreview; impact: FixImpact } | null>(null);
+  const [simResult, setSimResult] = useState<FailureResult | null>(null);
+  const [advisorHistory, setAdvisorHistory] = useState<HistoryPoint[]>(() => readHistory());
+  const [isApplyingAll, setIsApplyingAll] = useState(false);
+  const [applyingStep, setApplyingStep] = useState(0);
+  const applyAllActiveRef = useRef(false);
   const [designName, setDesignName] = useState('AWS Connectivity Environment');
   const [designStatus, setDesignStatus] = useState<'draft' | 'saved'>('draft');
   const [displayMode, setDisplayMode] = useState<'icon' | 'card'>('icon');
@@ -408,6 +418,7 @@ export function NetworkDesigner({
     setAssessment(result);
     setFocusedFinding(null);
     setShowAdvisor(true);
+    setAdvisorHistory(appendHistory(result));
     try {
       localStorage.setItem(STORAGE_ASSESSMENT, JSON.stringify(result));
     } catch { /* ignore */ }
@@ -448,6 +459,7 @@ export function NetworkDesigner({
     setEdges(result.edges);
     saveToHistory(fixedNodes, result.edges);
     setFocusedFinding(null);
+    setFixPreviewState(null);
     handleRunAdvisor(fixedNodes, result.edges);
     window.addToast({
       type: 'success',
@@ -457,13 +469,109 @@ export function NetworkDesigner({
     });
   };
 
+  // Fix preview: ghost-render exactly what Apply would do, with computed
+  // score and cost deltas. Esc or Cancel dismisses; Apply commits.
+  const handlePreviewFix = (finding: Finding) => {
+    if (!finding.fix || !assessment) return;
+    setSimResult(null);
+    setFocusedFinding(finding);
+    setFixPreviewState({
+      finding,
+      preview: previewFix(nodes, edges, finding.fix.action),
+      impact: scoreFixImpact(nodes, edges, finding.fix.action, assessment)
+    });
+  };
+  const handleCancelPreview = useCallback(() => setFixPreviewState(null), []);
+
+  // What-if failure simulation - blast radius painted on the canvas
+  const handleSimulate = (nodeId: string) => {
+    setFixPreviewState(null);
+    setFocusedFinding(null);
+    setSimResult(simulateFailure(nodeId, nodes, edges));
+  };
+  const handleResetSim = useCallback(() => setSimResult(null), []);
+
+  // Remediation playbook, narrative, and per-node issue badges - all
+  // recomputed from the live assessment while the advisor is open.
+  const remediationPlan = useMemo(
+    () => (showAdvisor && assessment ? buildRemediationPlan(nodes, edges, assessment) : []),
+    [showAdvisor, assessment, nodes, edges]
+  );
+  const advisorNarrative = useMemo(
+    () => (assessment ? composeNarrative(assessment, nodes, edges) : ''),
+    [assessment, nodes, edges]
+  );
+  const issueBadges = useMemo(() => {
+    if (!showAdvisor || !assessment) return {};
+    const rank = { error: 3, warning: 2, recommendation: 1 } as const;
+    const map: Record<string, 'error' | 'warning' | 'recommendation'> = {};
+    assessment.findings.forEach(f => {
+      const severity = f.severity;
+      if (severity === 'positive') return;
+      f.nodeIds.forEach(id => {
+        if (!map[id] || rank[severity] > rank[map[id]]) map[id] = severity;
+      });
+    });
+    return map;
+  }, [showAdvisor, assessment]);
+
+  // Apply-all stepper: walks the plan one fix at a time so the canvas
+  // visibly heals. Recomputes the plan each step since ids shift.
+  const handleApplyAll = async () => {
+    if (applyAllActiveRef.current) return;
+    applyAllActiveRef.current = true;
+    setIsApplyingAll(true);
+    setFixPreviewState(null);
+    setSimResult(null);
+
+    let curNodes = nodes;
+    let curEdges = edges;
+    let curAssessment = assessment ?? runAdvisor(curNodes, curEdges);
+    let step = 0;
+    while (applyAllActiveRef.current && step < 12) {
+      const planNow = buildRemediationPlan(curNodes, curEdges, curAssessment);
+      if (planNow.length === 0) break;
+      setApplyingStep(step);
+      const next = planNow[0].finding;
+      const result = applyFix(curNodes, curEdges, next.fix!.action);
+      curNodes = rehydrateIcons(result.nodes);
+      curEdges = result.edges;
+      setNodes(curNodes);
+      setEdges(curEdges);
+      setFocusedFinding(next);
+      curAssessment = runAdvisor(curNodes, curEdges);
+      setAssessment(curAssessment);
+      setAdvisorHistory(appendHistory(curAssessment));
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      step++;
+    }
+    saveToHistory(curNodes, curEdges);
+    setFocusedFinding(null);
+    setIsApplyingAll(false);
+    applyAllActiveRef.current = false;
+    try {
+      localStorage.setItem(STORAGE_ASSESSMENT, JSON.stringify(curAssessment));
+    } catch { /* ignore */ }
+    window.addToast({
+      type: 'success',
+      title: 'Remediation Complete',
+      message: `Applied ${step} fix${step === 1 ? '' : 'es'}. Grade is now ${curAssessment.grade}.`,
+      duration: 4000
+    });
+  };
+  const handleStopApplyAll = () => {
+    applyAllActiveRef.current = false;
+  };
+
   // Watchdog-style continuous analysis: once an assessment exists,
   // quietly re-run it whenever the topology changes.
   useEffect(() => {
     if (!assessment || (nodes.length === 0 && edges.length === 0)) return;
+    if (applyAllActiveRef.current) return; // stepper manages its own re-runs
     const timer = setTimeout(() => {
       const result = runAdvisor(nodes, edges);
       setAssessment(result);
+      setAdvisorHistory(appendHistory(result));
       try {
         localStorage.setItem(STORAGE_ASSESSMENT, JSON.stringify(result));
       } catch { /* ignore */ }
@@ -583,6 +691,12 @@ export function NetworkDesigner({
       const target = e.target as HTMLElement;
       const typing = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable;
       if (e.key === 'Escape') {
+        // Advisor preview/sim take priority - first Esc clears them
+        if (fixPreviewState || simResult) {
+          setFixPreviewState(null);
+          setSimResult(null);
+          return;
+        }
         setShowSwitcher(false);
         setShowImportModal(false);
         setFocusedFinding(null);
@@ -627,13 +741,19 @@ export function NetworkDesigner({
     return () => document.removeEventListener('keydown', onKey);
   });
 
-  // Highlight maps fed to the canvas, derived from the focused finding
-  const highlightedNodes = focusedFinding
-    ? Object.fromEntries(focusedFinding.nodeIds.map(id => [id, focusedFinding.severity]))
-    : {};
-  const highlightedEdges = focusedFinding
-    ? Object.fromEntries(focusedFinding.edgeIds.map(id => [id, focusedFinding.severity]))
-    : {};
+  // Highlight maps fed to the canvas. Failure simulation overrides the
+  // focused finding: the failed node and everything it strands paint red.
+  type Sev = 'error' | 'warning' | 'recommendation' | 'positive';
+  const highlightedNodes: Record<string, Sev> = simResult
+    ? Object.fromEntries([simResult.failedNodeId, ...simResult.unreachableNodeIds].map(id => [id, 'error' as Sev]))
+    : focusedFinding
+      ? Object.fromEntries(focusedFinding.nodeIds.map(id => [id, focusedFinding.severity]))
+      : {};
+  const highlightedEdges: Record<string, Sev> = simResult
+    ? Object.fromEntries(simResult.deadEdgeIds.map(id => [id, 'error' as Sev]))
+    : focusedFinding
+      ? Object.fromEntries(focusedFinding.edgeIds.map(id => [id, focusedFinding.severity]))
+      : {};
   
   // Handle default network setup completion
   const handleDefaultNetworkSetup = (cloudRouterName: string) => {
@@ -818,8 +938,11 @@ export function NetworkDesigner({
     });
   };
 
+  // Failure sim dims the stranded side of the network
+  const simDimmedIds = simResult ? simResult.unreachableNodeIds : [];
+
   // Filter: nodes not matching the query get dimmed on the canvas
-  const dimmedNodeIds = filterQuery.trim()
+  const filterDimmedIds = filterQuery.trim()
     ? nodes
         .filter(n => {
           const q = filterQuery.toLowerCase();
@@ -833,6 +956,8 @@ export function NetworkDesigner({
         })
         .map(n => n.id)
     : [];
+
+  const dimmedNodeIds = [...new Set([...filterDimmedIds, ...simDimmedIds])];
 
   // Handle node drag - multi-selected nodes move together
   const handleNodeDrag = (nodeId: string, x: number, y: number) => {
@@ -1104,6 +1229,10 @@ export function NetworkDesigner({
             onRenameGroup={handleRenameGroup}
             onUngroup={handleUngroup}
             onRecolorGroup={handleRecolorGroup}
+            ghostNodes={fixPreviewState?.preview.ghostNodes}
+            ghostEdges={fixPreviewState?.preview.ghostEdges}
+            changedEdgeIds={fixPreviewState?.preview.changedEdgeIds}
+            issueBadges={issueBadges}
             ref={canvasRef}
           />
         );
@@ -1328,13 +1457,70 @@ export function NetworkDesigner({
         {(
           <AdvisorPanel
             assessment={assessment}
+            narrative={advisorNarrative}
+            history={advisorHistory}
+            plan={remediationPlan}
+            nodes={nodes}
+            simResult={simResult}
+            previewFindingId={fixPreviewState?.finding.id ?? null}
+            isApplyingAll={isApplyingAll}
+            applyingStep={applyingStep}
             isOpen={showAdvisor}
+            focusedFindingId={focusedFinding?.id ?? null}
             onClose={() => setShowAdvisor(false)}
             onRerun={() => handleRunAdvisor()}
             onFocusFinding={handleFocusFinding}
+            onPreviewFix={handlePreviewFix}
+            onCancelPreview={handleCancelPreview}
             onApplyFix={handleApplyFix}
-            focusedFindingId={focusedFinding?.id ?? null}
+            onApplyAll={handleApplyAll}
+            onStopApplyAll={handleStopApplyAll}
+            onSimulate={handleSimulate}
+            onResetSim={handleResetSim}
+            onTabChange={() => { setFixPreviewState(null); setSimResult(null); setFocusedFinding(null); }}
           />
+        )}
+
+        {/* Fix preview banner - floats over the canvas while a ghost is live */}
+        {fixPreviewState && (
+          <div
+            className="absolute top-16 left-1/2 -translate-x-1/2 flex items-center gap-3 bg-white rounded-full shadow-lg border border-green-600/40 pl-4 pr-2 py-2"
+            style={{ zIndex: Z_INDEX.CHROME }}
+          >
+            <span className="text-xs font-medium text-fw-heading whitespace-nowrap">
+              Previewing: {fixPreviewState.finding.fix?.label}
+            </span>
+            <span className="flex items-center gap-1.5 text-[11px] whitespace-nowrap">
+              {fixPreviewState.impact.deltas.resilience > 0 && (
+                <span className="px-1.5 py-0.5 rounded bg-fw-success-bg text-fw-success font-medium">+{fixPreviewState.impact.deltas.resilience} Resilience</span>
+              )}
+              {fixPreviewState.impact.deltas.security > 0 && (
+                <span className="px-1.5 py-0.5 rounded bg-fw-success-bg text-fw-success font-medium">+{fixPreviewState.impact.deltas.security} Security</span>
+              )}
+              <span className={`px-1.5 py-0.5 rounded font-medium ${
+                fixPreviewState.impact.costDelta > 0 ? 'bg-fw-wash text-fw-bodyLight' : 'bg-fw-success-bg text-fw-success'
+              }`}>
+                {fixPreviewState.impact.costDelta > 0
+                  ? `+$${fixPreviewState.impact.costDelta.toLocaleString()}/mo`
+                  : 'no added cost'}
+              </span>
+              <span className="text-fw-bodyLight">grade {assessment?.grade} &rarr; {fixPreviewState.impact.gradeAfter}</span>
+            </span>
+            <button
+              onClick={() => handleApplyFix(fixPreviewState.finding)}
+              className="px-3 py-1 rounded-full text-xs font-medium bg-fw-success text-white hover:opacity-90"
+              type="button"
+            >
+              Apply
+            </button>
+            <button
+              onClick={handleCancelPreview}
+              className="px-3 py-1 rounded-full text-xs font-medium bg-fw-wash text-fw-body hover:bg-fw-neutral"
+              type="button"
+            >
+              Cancel
+            </button>
+          </div>
         )}
 
         {/* Topology import modal */}

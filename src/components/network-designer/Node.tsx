@@ -11,6 +11,7 @@ interface NodeProps {
   isCreatingEdge: boolean;
   isReadOnly?: boolean;
   highlight?: NodeHighlight | null;
+  issueBadge?: 'error' | 'warning' | 'recommendation' | null;
   displayMode?: 'icon' | 'card';
   isMultiSelected?: boolean;
   dimmed?: boolean;
@@ -38,6 +39,7 @@ export const Node = memo(function Node({
   isCreatingEdge,
   isReadOnly = false,
   highlight = null,
+  issueBadge = null,
   displayMode = 'icon',
   isMultiSelected = false,
   dimmed = false,
@@ -267,6 +269,16 @@ export const Node = memo(function Node({
           <div className="absolute -bottom-1 -right-1 h-4 w-4 rounded-full bg-white border border-green-600 flex items-center justify-center">
             <svg viewBox="0 0 24 24" className="h-2.5 w-2.5 text-green-700" fill="none" stroke="currentColor" strokeWidth="4"><path d="M5 13l4 4L19 7" /></svg>
           </div>
+        )}
+
+        {/* Advisor issue badge - finding severity pinned to the node */}
+        {issueBadge && !node.config?.routerRole && (
+          <div
+            className={`absolute -top-2 -left-2 h-4 w-4 rounded-full border-2 border-white shadow ${
+              issueBadge === 'error' ? 'bg-red-600' : issueBadge === 'warning' ? 'bg-orange-500' : 'bg-blue-600'
+            }`}
+            title={issueBadge === 'error' ? 'Critical finding' : issueBadge === 'warning' ? 'Warning' : 'Recommendation'}
+          />
         )}
 
         {/* Primary/secondary router role - NetBond redundancy pairing */}

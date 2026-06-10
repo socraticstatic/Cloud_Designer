@@ -389,6 +389,27 @@ export function runAdvisor(nodes: NetworkNode[], edges: NetworkEdge[]): Assessme
   return { findings, scores, grade, summary, monthlyCost, generatedAt: Date.now() };
 }
 
+// The four consultative dimensions shown in the Advisor header. Resilience
+// folds the three availability scores; cost efficiency is derived from how
+// many cost advisories the assessment raised.
+export interface Dimensions {
+  resilience: number;
+  security: number;
+  performance: number;
+  cost: number;
+}
+
+export function toDimensions(assessment: Assessment): Dimensions {
+  const { scores, findings } = assessment;
+  const costFindings = findings.filter(f => f.category === 'Cost').length;
+  return {
+    resilience: Math.round((scores.resiliency + scores.redundancy + scores.disaster) / 3),
+    security: Math.round(scores.security),
+    performance: Math.round(scores.performance),
+    cost: Math.max(25, Math.min(95, 95 - costFindings * 18))
+  };
+}
+
 // Apply a one-click remediation to the topology. Returns the modified
 // copies plus a human summary for the toast.
 export function applyFix(
@@ -417,12 +438,13 @@ export function applyFix(
       const original = nodes.find(n => n.id === action.nodeId);
       if (!original) return { nodes, edges, summary: 'Node no longer exists.' };
       const stamp = Date.now();
+      const spot = findClearSpot(original.x + 40, Math.min(original.y + 120, 700), nodes);
       const twin: NetworkNode = {
         ...original,
         id: `node-fix-${stamp}`,
         name: `${original.name} (Secondary)`,
-        x: original.x + 40,
-        y: Math.min(original.y + 120, 700),
+        x: spot.x,
+        y: spot.y,
         config: { ...original.config, routerRole: 'secondary' }
       };
       const twinEdges: NetworkEdge[] = neighborEdgesLocal(original.id, edges).map((e, i) => ({
@@ -446,12 +468,17 @@ export function applyFix(
       const router = nodes.find(n => n.type === 'function' && (n.functionType === 'Router' || n.functionType === 'Cloud Router'));
       const internet = nodes.find(n => n.type === 'network' && n.config?.networkType === 'internet');
       const anchor = router ?? nodes[0];
+      const fwSpot = findClearSpot(
+        anchor ? anchor.x - 60 : 400,
+        anchor ? Math.min(anchor.y + 140, 700) : 400,
+        nodes
+      );
       const firewall: NetworkNode = {
         id: `node-fix-${stamp}`,
         type: 'function',
         functionType: 'Firewall',
-        x: anchor ? anchor.x - 60 : 400,
-        y: anchor ? Math.min(anchor.y + 140, 700) : 400,
+        x: fwSpot.x,
+        y: fwSpot.y,
         name: 'Edge Firewall',
         icon: undefined as any, // rehydrated by the caller
         status: 'inactive',
@@ -491,4 +518,21 @@ export function applyFix(
 
 function neighborEdgesLocal(nodeId: string, edges: NetworkEdge[]): NetworkEdge[] {
   return edges.filter(e => e.source === nodeId || e.target === nodeId);
+}
+
+// Spiral out from the desired position until the spot is clear of every
+// existing node card (including its label zone below).
+function findClearSpot(x: number, y: number, nodes: NetworkNode[]): { x: number; y: number } {
+  const collides = (px: number, py: number) =>
+    nodes.some(n => Math.abs(n.x - px) < 96 && Math.abs(n.y - py) < 116);
+  if (!collides(x, y)) return { x, y };
+  for (let radius = 110; radius <= 440; radius += 110) {
+    for (let i = 0; i < 8; i++) {
+      const angle = (Math.PI / 4) * i;
+      const px = Math.max(20, x + Math.cos(angle) * radius);
+      const py = Math.max(20, Math.min(700, y + Math.sin(angle) * radius));
+      if (!collides(px, py)) return { x: px, y: py };
+    }
+  }
+  return { x: x + 160, y };
 }
