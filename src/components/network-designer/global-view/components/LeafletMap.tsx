@@ -112,7 +112,9 @@ export function LeafletMap({ nodes, edges, onNodeSelect, selectedNodeId }: Leafl
     const siteOfNode = new Map<string, Site>();
     sites.forEach(site => site.nodeIds.forEach(id => siteOfNode.set(id, site)));
 
-    const makeSiteIcon = (site: Site, isSelected: boolean) => {
+    // chipDy: vertical pixel offset applied by the declutter pass so
+    // overlapping site chips stack into rows instead of covering each other
+    const makeSiteIcon = (site: Site, isSelected: boolean, chipDy = 0) => {
       const dot = site.anyActive ? '#2D7E24' : '#9CA3AF';
       const count = site.nodeIds.length > 1
         ? `<span style="background:#00388F;color:white;border-radius:9999px;padding:1px 7px;font-size:11px;font-weight:600;">${site.nodeIds.length}</span>`
@@ -135,7 +137,42 @@ export function LeafletMap({ nodes, edges, onNodeSelect, selectedNodeId }: Leafl
           </div>
         `,
         iconSize: [140, 32],
-        iconAnchor: [10, 16]
+        iconAnchor: [10, 16 - chipDy]
+      });
+    };
+
+    // Collision-avoiding placement: project each chip to screen pixels and
+    // push overlapping ones down in 38px rows. Re-runs on every zoom since
+    // overlap is zoom-dependent. Geographic anchors stay put - only the
+    // icon's pixel anchor shifts.
+    const isSelectedSite = (site: Site) =>
+      selectedNodeId !== null && site.nodeIds.includes(selectedNodeId);
+    const chipOffsets = new Map<string, number>();
+    const declutterChips = () => {
+      const placed: { x: number; y: number; w: number; h: number }[] = [];
+      const items = sites
+        .map(site => ({
+          site,
+          marker: markers.get(site.key),
+          pt: map.latLngToContainerPoint([site.lat, site.lng])
+        }))
+        .filter(item => item.marker)
+        .sort((a, b) => a.pt.y - b.pt.y || a.pt.x - b.pt.x);
+
+      items.forEach(({ site, marker, pt }) => {
+        const w = Math.min(37 + site.name.length * 7.2 + (site.nodeIds.length > 1 ? 30 : 0), 240);
+        const h = 32;
+        const x = pt.x - 10;
+        let dy = 0;
+        const collides = () =>
+          placed.some(r => x < r.x + r.w && x + w > r.x && pt.y - 16 + dy < r.y + r.h && pt.y - 16 + dy + h > r.y);
+        let guard = 0;
+        while (collides() && guard++ < 12) dy += 38;
+        placed.push({ x, y: pt.y - 16 + dy, w, h });
+        if (chipOffsets.get(site.key) !== dy) {
+          chipOffsets.set(site.key, dy);
+          marker!.setIcon(makeSiteIcon(site, isSelectedSite(site), dy));
+        }
       });
     };
 
@@ -187,6 +224,12 @@ export function LeafletMap({ nodes, edges, onNodeSelect, selectedNodeId }: Leafl
       const bounds = L.latLngBounds(sites.map(site => [site.lat, site.lng]));
       map.fitBounds(bounds, { padding: [80, 80], maxZoom: 8 });
     }
+
+    declutterChips();
+    map.on('zoomend moveend', declutterChips);
+    return () => {
+      map.off('zoomend moveend', declutterChips);
+    };
   }, [nodes, edges, onNodeSelect, selectedNodeId]);
 
 
