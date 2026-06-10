@@ -98,7 +98,7 @@ export const Node = memo(function Node({
       <div
         ref={nodeRef}
         className={`
-          absolute flex items-center justify-center
+          absolute flex items-center justify-center node-enter
           ${displayMode === 'card' ? 'h-16 px-3 gap-2.5 bg-white' : `w-16 h-16 ${background}`}
           rounded-lg transition-all duration-200 select-none
           ${isReadOnly ? 'cursor-default' : isCreatingEdge ? 'cursor-crosshair' : isDragging ? 'cursor-grabbing' : 'cursor-grab'}

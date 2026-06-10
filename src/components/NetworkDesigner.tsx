@@ -169,6 +169,7 @@ export function NetworkDesigner({
   const [assessment, setAssessment] = useState<Assessment | null>(null);
   const [focusedFinding, setFocusedFinding] = useState<Finding | null>(null);
   const [designName, setDesignName] = useState('AWS Connectivity Environment');
+  const [designStatus, setDesignStatus] = useState<'draft' | 'saved'>('draft');
   const [displayMode, setDisplayMode] = useState<'icon' | 'card'>('icon');
   const [showSwitcher, setShowSwitcher] = useState(false);
   const [switcherQuery, setSwitcherQuery] = useState('');
@@ -214,6 +215,12 @@ export function NetworkDesigner({
     if (savedAssessment) setAssessment(savedAssessment);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Any topology change reverts a saved design to draft
+  useEffect(() => {
+    setDesignStatus('draft');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [nodes, edges]);
 
   // Persist topology to browser cache whenever it changes
   useEffect(() => {
@@ -707,7 +714,8 @@ export function NetworkDesigner({
       nodes,
       edges,
     };
-    
+
+    setDesignStatus('saved');
     onComplete(config);
   };
   
@@ -837,7 +845,7 @@ export function NetworkDesigner({
             <GlobalView
               nodes={nodes}
               edges={edges}
-              onNodeSelect={handleZoomToNode}
+              onNodeSelect={(nodeId) => handleNodeSelection(nodes.find(n => n.id === nodeId) || null)}
               onZoomIn={(datacenterId) => {
                 handleNodeSelection(nodes.find(n => n.id === datacenterId) || null);
                 setAbstractionLevel('network');
@@ -948,8 +956,10 @@ export function NetworkDesigner({
                 <span className="text-sm font-medium text-fw-heading max-w-[180px] truncate" title={designName}>
                   {designName}
                 </span>
-                <span className="px-1.5 py-0.5 rounded text-[10px] font-medium tracking-wide bg-fw-neutral text-fw-bodyLight uppercase">
-                  Draft
+                <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium tracking-wide uppercase ${
+                  designStatus === 'saved' ? 'bg-fw-success-bg text-fw-success' : 'bg-fw-neutral text-fw-bodyLight'
+                }`}>
+                  {designStatus === 'saved' ? 'Saved' : 'Draft'}
                 </span>
                 {showSwitcher
                   ? <ChevronUp className="h-4 w-4 text-fw-bodyLight group-hover:text-fw-body" />

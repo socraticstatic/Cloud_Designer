@@ -159,6 +159,15 @@
   }
 }
 
+/* Node entrance - subtle fade+settle when nodes mount */
+@keyframes nodeEnter {
+  0% { opacity: 0; }
+  100% { opacity: 1; }
+}
+.node-enter {
+  animation: nodeEnter 0.35s ease-out;
+}
+
 /* Make edges clickable */
 .edge-container {
   pointer-events: all !important;
