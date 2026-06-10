@@ -94,7 +94,7 @@ function CircuitsTable({
                     <td className="px-4 py-3">
                       {circuit.metrics ? (
                         <span className={`font-mono text-xs ${
-                          circuit.metrics.latency > 2 ? 'text-amber-600' : 'text-gray-700'
+                          circuit.metrics.latency > 15 ? 'text-amber-600' : 'text-gray-700'
                         }`}>
                           {circuit.metrics.latency.toFixed(1)}ms
                         </span>
@@ -226,10 +226,14 @@ export function CircuitView({
           const latBase =
             edge.type.includes('MPLS') ? 1.2 :
             edge.type.includes('Direct') ? 0.6 : 0.9;
+          // Latency comes from the shared edge telemetry so Topo, Pano,
+          // and Infra all report the same number for the same link.
+          // Optical light/loss are physical-layer detail unique to this view.
+          const sharedLatency = parseFloat(String(edge.metrics?.latency ?? ''));
           return {
             light: lightBase - v * 4,
             loss: 0.18 + v * 0.28,
-            latency: edge.metrics?.latency ? edge.metrics.latency / 1000 : latBase + v * 0.3
+            latency: !isNaN(sharedLatency) ? sharedLatency : latBase + v * 0.3
           };
         })() : undefined
       } as CircuitType;
