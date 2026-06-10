@@ -1257,8 +1257,9 @@ export function NetworkDesigner({
 
   return (
     <div className="flex flex-col bg-gray-50 rounded-xl border-2 border-gray-200 relative">
-      {/* Main Content Area */}
-      <div className="relative" style={{ zIndex: 1, height: canvasHeight }}>
+      {/* Main Content Area - canvas + docked advisor side by side */}
+      <div className="relative flex" style={{ zIndex: 1, height: canvasHeight }}>
+        <div className="relative flex-1 min-w-0">
         {/* Abstraction Level Selector - navigation works in read mode too */}
         <div style={{ zIndex: Z_INDEX.CHROME }}>
           <AbstractionLevelSelector
@@ -1453,34 +1454,6 @@ export function NetworkDesigner({
         {/* Canvas legend - per Figma state legend */}
         {abstractionLevel === 'network' && <Legend />}
 
-        {/* Network Advisor panel */}
-        {(
-          <AdvisorPanel
-            assessment={assessment}
-            narrative={advisorNarrative}
-            history={advisorHistory}
-            plan={remediationPlan}
-            nodes={nodes}
-            simResult={simResult}
-            previewFindingId={fixPreviewState?.finding.id ?? null}
-            isApplyingAll={isApplyingAll}
-            applyingStep={applyingStep}
-            isOpen={showAdvisor}
-            focusedFindingId={focusedFinding?.id ?? null}
-            onClose={() => setShowAdvisor(false)}
-            onRerun={() => handleRunAdvisor()}
-            onFocusFinding={handleFocusFinding}
-            onPreviewFix={handlePreviewFix}
-            onCancelPreview={handleCancelPreview}
-            onApplyFix={handleApplyFix}
-            onApplyAll={handleApplyAll}
-            onStopApplyAll={handleStopApplyAll}
-            onSimulate={handleSimulate}
-            onResetSim={handleResetSim}
-            onTabChange={() => { setFixPreviewState(null); setSimResult(null); setFocusedFinding(null); }}
-          />
-        )}
-
         {/* Fix preview banner - floats over the canvas while a ghost is live */}
         {fixPreviewState && (
           <div
@@ -1622,6 +1595,38 @@ export function NetworkDesigner({
             });
           }}
         />
+        </div>
+
+        {/* Network Advisor - docked column; the canvas reflows beside it */}
+        <div
+          className="flex-shrink-0 overflow-hidden transition-[width] duration-300 ease-out"
+          style={{ width: showAdvisor ? 400 : 0 }}
+        >
+          <AdvisorPanel
+            assessment={assessment}
+            narrative={advisorNarrative}
+            history={advisorHistory}
+            plan={remediationPlan}
+            nodes={nodes}
+            simResult={simResult}
+            previewFindingId={fixPreviewState?.finding.id ?? null}
+            isApplyingAll={isApplyingAll}
+            applyingStep={applyingStep}
+            isOpen={showAdvisor}
+            focusedFindingId={focusedFinding?.id ?? null}
+            onClose={() => setShowAdvisor(false)}
+            onRerun={() => handleRunAdvisor()}
+            onFocusFinding={handleFocusFinding}
+            onPreviewFix={handlePreviewFix}
+            onCancelPreview={handleCancelPreview}
+            onApplyFix={handleApplyFix}
+            onApplyAll={handleApplyAll}
+            onStopApplyAll={handleStopApplyAll}
+            onSimulate={handleSimulate}
+            onResetSim={handleResetSim}
+            onTabChange={() => { setFixPreviewState(null); setSimResult(null); setFocusedFinding(null); }}
+          />
+        </div>
       </div>
 
       {/* Templates Manager */}

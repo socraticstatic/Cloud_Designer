@@ -7,7 +7,6 @@ import { useState } from 'react';
 import {
   X, RefreshCw, AlertOctagon, AlertCircle, Lightbulb, CheckCircle2, Sparkles, Eye
 } from 'lucide-react';
-import { Z_INDEX } from '../../../constants';
 import { NetworkNode } from '../../../types';
 import { Assessment, Finding, FindingSeverity, toDimensions } from './advisorEngine';
 import { PlanStep } from './fixPreview';
@@ -102,8 +101,7 @@ export function AdvisorPanel({
 
   return (
     <div
-      className="absolute top-4 right-4 bottom-4 w-[400px] bg-fw-base rounded-2xl shadow-xl border border-fw-border-secondary flex flex-col"
-      style={{ zIndex: Z_INDEX.FLOATING_PANEL }}
+      className="h-full w-[400px] bg-fw-base border-l border-fw-border-secondary rounded-r-xl flex flex-col"
       role="complementary"
       aria-label="Network Advisor"
     >
