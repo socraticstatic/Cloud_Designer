@@ -301,7 +301,7 @@ export function CircuitView({
       {/* Content row: main + drawer */}
       <div className="flex flex-1 min-h-0 relative">
         {/* Main content */}
-        <div className="flex-1 overflow-auto relative">
+        <div className="flex-1 overflow-auto relative pb-24">
           {nodes.length === 0 ? (
             <div className="flex items-center justify-center h-full">
               <div className="bg-white rounded-xl shadow-lg p-8 max-w-md text-center">

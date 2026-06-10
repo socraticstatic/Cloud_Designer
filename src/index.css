@@ -405,6 +405,11 @@
   border: none;
 }
 
+/* Clear the Read/Edit pill that floats over the map's top-right corner */
+.leaflet-top.leaflet-right {
+  margin-top: 52px;
+}
+
 .leaflet-control-zoom {
   border: none;
   border-radius: 0.5rem;
