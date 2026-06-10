@@ -46,7 +46,7 @@ export function ToastContainer() {
   return (
     <div 
       className="fixed bottom-0 right-0 p-6 space-y-4 pointer-events-none" 
-      style={{ zIndex: 9999 }} // Highest z-index in the application
+      style={{ zIndex: 200 }} // Z_INDEX.NOTIFICATIONS - above modals (100)
     >
       {toasts.map(toast => (
         <div key={toast.id} className="pointer-events-auto">

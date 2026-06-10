@@ -31,7 +31,7 @@ export function TemplatesManager({
   };
   
   return (
-    <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-[150]">
+    <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-[100]">
       <div className="bg-white rounded-lg shadow-xl p-6 m-6 max-w-4xl w-full">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-bold text-gray-900">Network Templates</h2>

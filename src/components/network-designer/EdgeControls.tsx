@@ -1,6 +1,7 @@
 import React from 'react';
 import { Settings } from 'lucide-react';
 import { NetworkEdge, NetworkNode } from '../types';
+import { Z_INDEX } from '../../constants';
 
 interface EdgeControlsProps {
   edges: NetworkEdge[];
@@ -60,7 +61,7 @@ export function EdgeControls({ edges, nodes, selectedEdge, isReadOnly = false, o
                 height: '40px',
                 backgroundColor: isSelected ? '#00388F' : 'white',
                 border: `1.5px solid ${isSelected ? '#00388F' : '#E3E5E8'}`,
-                zIndex: isSelected ? 1001 : 1000,
+                zIndex: isSelected ? Z_INDEX.EDGE_CONTROLS + 1 : Z_INDEX.EDGE_CONTROLS,
                 pointerEvents: isReadOnly ? 'none' : 'auto', // Disable clicking in read-only mode
                 transition: 'all 0.2s ease'
               }}
@@ -86,7 +87,7 @@ export function EdgeControls({ edges, nodes, selectedEdge, isReadOnly = false, o
                 width: '16px',
                 height: '16px',
                 backgroundColor: edge.status === 'active' ? getBandwidthColor(edge) : '#9ca3af',
-                zIndex: 1000,
+                zIndex: Z_INDEX.EDGE_CONTROLS,
                 pointerEvents: 'none'
               }}
             />

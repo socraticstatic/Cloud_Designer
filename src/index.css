@@ -177,9 +177,9 @@
   pointer-events: all !important;
 }
 
-/* Set high z-index for connection control points */
+/* Connection control points sit on the EDGE_CONTROLS layer (see constants Z_INDEX) */
 .edge-control {
-  z-index: 1000 !important;
+  z-index: 15 !important;
 }
 
 /* Draggable panel styles */

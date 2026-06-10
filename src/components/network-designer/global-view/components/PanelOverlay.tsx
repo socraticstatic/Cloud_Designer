@@ -28,7 +28,7 @@ export function PanelOverlay({
   if (activePanel === 'none') return null;
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center z-[200] bg-black/30 backdrop-blur-sm">
+    <div className="fixed inset-0 flex items-center justify-center z-[100] bg-black/30 backdrop-blur-sm">
       <div className={`max-w-${activePanel === 'metrics' ? '3xl' : '4xl'} w-full mx-4 max-h-[90vh] overflow-auto`}>
         <React.Suspense fallback={<LoadingFallback />}>
           {activePanel === 'metrics' && (

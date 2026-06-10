@@ -867,7 +867,7 @@ export function DefaultNetworkSetup({ isOpen, onComplete, onApplyTemplate }: Def
   };
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-[200]">
+    <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-[100]">
       <div className="bg-white rounded-xl shadow-2xl w-full max-w-5xl mx-4 max-h-[80vh] overflow-hidden flex flex-col">
         {/* Header */}
         <div className="bg-gradient-to-r from-slate-600 to-slate-700 text-white p-4 flex-shrink-0">

@@ -491,6 +491,18 @@ export function NetworkDesigner({
     setShowDefaultSetup(true);
   };
 
+  // Escape closes transient surfaces (switcher, import modal, finding focus)
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return;
+      setShowSwitcher(false);
+      setShowImportModal(false);
+      setFocusedFinding(null);
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, []);
+
   // Highlight maps fed to the canvas, derived from the focused finding
   const highlightedNodes = focusedFinding
     ? Object.fromEntries(focusedFinding.nodeIds.map(id => [id, focusedFinding.severity]))

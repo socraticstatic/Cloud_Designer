@@ -294,7 +294,7 @@ export function LeafletMap({ nodes, edges, onNodeSelect, selectedNodeId }: Leafl
         }}
       />
       {/* Zoom percentage readout - per Figma Pano right rail */}
-      <div className="absolute right-[11px] top-[150px] z-[800] bg-white border border-gray-200 rounded-lg shadow-sm px-2 py-1 text-xs font-medium text-fw-bodyLight tabular-nums">
+      <div className="absolute right-[11px] top-[150px] z-50 bg-white border border-gray-200 rounded-lg shadow-sm px-2 py-1 text-xs font-medium text-fw-bodyLight tabular-nums">
         {zoomPct}%
       </div>
     </>
