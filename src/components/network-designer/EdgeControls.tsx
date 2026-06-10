@@ -52,14 +52,14 @@ export function EdgeControls({ edges, nodes, selectedEdge, isReadOnly = false, o
           <div key={edge.id} style={{ pointerEvents: 'none' }}>
             {/* Large clickable control point */}
             <div
-              className="absolute transform -translate-x-1/2 -translate-y-1/2 rounded-xl shadow-md flex items-center justify-center cursor-pointer"
+              className="absolute transform -translate-x-1/2 -translate-y-1/2 rounded-2xl shadow-md flex items-center justify-center cursor-pointer"
               style={{
                 left: `${midX}px`,
                 top: `${midY}px`,
-                width: '32px',
-                height: '32px',
-                backgroundColor: isSelected ? '#3b82f6' : 'white',
-                border: `2px solid ${isSelected ? '#2563eb' : '#d1d5db'}`,
+                width: '40px',
+                height: '40px',
+                backgroundColor: isSelected ? '#00388F' : 'white',
+                border: `1.5px solid ${isSelected ? '#00388F' : '#E3E5E8'}`,
                 zIndex: isSelected ? 1001 : 1000,
                 pointerEvents: isReadOnly ? 'none' : 'auto', // Disable clicking in read-only mode
                 transition: 'all 0.2s ease'
@@ -72,7 +72,7 @@ export function EdgeControls({ edges, nodes, selectedEdge, isReadOnly = false, o
               }}
             >
               <Settings
-                size={16}
+                size={18}
                 color={isSelected ? 'white' : '#6b7280'}
               />
             </div>

@@ -74,8 +74,8 @@ export const Node = memo(function Node({
 
   // Get node colors
   const colors = getNodeColors(node);
-  const background = isSelected ? 'bg-blue-50' : isDragging ? 'bg-gray-50' : colors.background;
-  const iconColor = isSelected ? 'text-blue-500' : isDragging ? 'text-gray-600' : colors.icon;
+  const background = isDragging ? 'bg-gray-50' : colors.background;
+  const iconColor = isDragging ? 'text-gray-600' : colors.icon;
 
   const handleNameSubmit = () => {
     if (nodeName.trim() && onNameChange) {
@@ -103,7 +103,7 @@ export const Node = memo(function Node({
           rounded-lg transition-all duration-200 select-none
           ${isReadOnly ? 'cursor-default' : isCreatingEdge ? 'cursor-crosshair' : isDragging ? 'cursor-grabbing' : 'cursor-grab'}
           ${isDragging ? 'shadow-lg scale-105' : 'shadow-sm hover:shadow-md'}
-          border-2 ${highlight ? HIGHLIGHT_RING[highlight] : isSelected ? 'border-blue-500' : isCreatingEdge ? 'border-blue-400 border-dashed' : 'border-gray-200'}
+          border-2 ${highlight ? HIGHLIGHT_RING[highlight] : isSelected ? 'border-fw-border-active' : isCreatingEdge ? 'border-blue-400 border-dashed' : 'border-gray-200'}
         `}
         style={{
           transform: `translate(${position.x}px, ${position.y}px)`,
@@ -175,11 +175,6 @@ export const Node = memo(function Node({
           }
         }}
       >
-        {/* Background Glow Effect */}
-        {isSelected && (
-          <div className="absolute inset-0 rounded-lg blur-sm opacity-20 bg-blue-400" />
-        )}
-
         {/* Icon */}
         {displayMode === 'card' ? (
           <>
@@ -234,7 +229,7 @@ export const Node = memo(function Node({
             <span 
               className={`
                 text-xs font-medium transition-all duration-200
-                ${isSelected ? 'text-blue-700' : 'text-gray-600'}
+                ${isSelected ? 'text-fw-link' : 'text-gray-600'}
                 hover:text-blue-600 cursor-pointer
               `}
               onClick={(e) => {
@@ -259,7 +254,8 @@ export const Node = memo(function Node({
         )}
 
         {/* Region sublabel - per Figma node spec */}
-        {displayMode === 'icon' && (node.config?.region || node.config?.city) && !isEditingName && (
+        {displayMode === 'icon' && (node.config?.region || node.config?.city) &&
+          (node.config?.region || node.config?.city)?.toLowerCase() !== node.name.toLowerCase() && !isEditingName && (
           <div
             className="absolute -bottom-10 left-1/2 transform -translate-x-1/2 whitespace-nowrap text-[9px] tracking-wider uppercase text-gray-400 pointer-events-none"
           >

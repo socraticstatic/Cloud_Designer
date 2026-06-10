@@ -114,11 +114,11 @@ export function Toolbar({
       <button
         onClick={onOpenTemplates}
         className="px-3 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg flex items-center space-x-2 transition-colors"
-        title="Choose Template"
+        title="Templates"
         type="button"
       >
         <Layout className="h-5 w-5" />
-        <span className="text-sm hidden xl:inline">Choose</span>
+        <span className="text-sm hidden xl:inline">Templates</span>
       </button>
       
       {/* Small separator line */}
