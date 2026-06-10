@@ -297,7 +297,7 @@ export function NetworkDesigner({
   const handleRestoreTopology = (restoredNodes: NetworkNode[], restoredEdges: NetworkEdge[]) => {
     const nodesWithIcons = restoredNodes.map(node => ({
       ...node,
-      icon: getNodeIcon(node.type, node.functionType, node.cloudProvider, node.config)
+      icon: getNodeIcon(node.type, node.functionType, node.config?.networkType, node.config)
     }));
 
     setNodes(nodesWithIcons);
@@ -600,7 +600,7 @@ export function NetworkDesigner({
     if (prevState) {
       const nodesWithIcons = prevState.nodes.map(node => ({
         ...node,
-        icon: getNodeIcon(node.type, node.functionType, node.cloudProvider, node.config)
+        icon: getNodeIcon(node.type, node.functionType, node.config?.networkType, node.config)
       }));
       setNodes(nodesWithIcons);
       setEdges(prevState.edges);

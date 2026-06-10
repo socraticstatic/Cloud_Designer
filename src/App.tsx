@@ -11,6 +11,15 @@ const NAV_ITEMS = [
   { label: 'Configure', icon: SlidersHorizontal, active: false }
 ];
 
+function mockNavToast(area: string) {
+  window.addToast({
+    type: 'info',
+    title: area,
+    message: `${area} lives in the full NetBond Advanced suite - this proof of concept covers the Create / Network Designer experience.`,
+    duration: 3000
+  });
+}
+
 function App() {
   const [isReadOnly, setIsReadOnly] = useState(false);
 
@@ -50,6 +59,7 @@ function App() {
           {NAV_ITEMS.map(item => (
             <button
               key={item.label}
+              onClick={() => !item.active && mockNavToast(item.label)}
               className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                 item.active
                   ? 'text-fw-link'
@@ -64,17 +74,17 @@ function App() {
         </nav>
 
         <div className="flex-1 flex items-center justify-end gap-1">
-          <button className="p-2 rounded-lg text-fw-body hover:bg-fw-wash transition-colors" title="Search" type="button">
+          <button onClick={() => mockNavToast('Search')} className="p-2 rounded-lg text-fw-body hover:bg-fw-wash transition-colors" title="Search" type="button">
             <Search className="h-5 w-5" />
           </button>
-          <button className="p-2 rounded-lg text-fw-body hover:bg-fw-wash transition-colors" title="Help" type="button">
+          <button onClick={() => mockNavToast('Help')} className="p-2 rounded-lg text-fw-body hover:bg-fw-wash transition-colors" title="Help" type="button">
             <HelpCircle className="h-5 w-5" />
           </button>
-          <button className="p-2 rounded-lg text-fw-body hover:bg-fw-wash transition-colors" title="Notifications" type="button">
+          <button onClick={() => mockNavToast('Notifications')} className="p-2 rounded-lg text-fw-body hover:bg-fw-wash transition-colors" title="Notifications" type="button">
             <Bell className="h-5 w-5" />
           </button>
           <div className="h-5 w-px bg-fw-border-secondary mx-1" />
-          <button className="p-2 rounded-lg text-fw-body hover:bg-fw-wash transition-colors" title="Profile" type="button">
+          <button onClick={() => mockNavToast('Profile')} className="p-2 rounded-lg text-fw-body hover:bg-fw-wash transition-colors" title="Profile" type="button">
             <User className="h-5 w-5" />
           </button>
         </div>
