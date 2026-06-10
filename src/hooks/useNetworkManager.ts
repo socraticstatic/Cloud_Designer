@@ -27,6 +27,32 @@ export function useNetworkManager(
     }
   }, [nodes, edges]);
 
+  // Collision avoidance: nudge a desired position to the nearest free
+  // grid spot (no overlap with existing nodes, always inside the safe
+  // area so nodes never land under the toolbar or status pill).
+  const findFreeSpot = (x: number, y: number) => {
+    const safe = getSafeBounds(1100, CANVAS_BOUNDS.MAX_Y);
+    const SIZE = CANVAS_BOUNDS.NODE_SIZE;
+    const CLEAR = SIZE + 40; // node + label breathing room
+    const clamp = (px: number, py: number) => ({
+      x: Math.min(Math.max(px, safe.minX), safe.maxX - SIZE),
+      y: Math.min(Math.max(py, safe.minY + 20), safe.maxY - SIZE - 20)
+    });
+    const collides = (px: number, py: number) =>
+      nodes.some(n => Math.abs(n.x - px) < CLEAR && Math.abs(n.y - py) < CLEAR);
+
+    let spot = clamp(x, y);
+    if (!collides(spot.x, spot.y)) return spot;
+    // spiral outward on the grid until a free spot appears
+    for (let ring = 1; ring <= 12; ring++) {
+      for (const [dx, dy] of [[1,0],[0,1],[-1,0],[0,-1],[1,1],[-1,1],[1,-1],[-1,-1]]) {
+        const candidate = clamp(x + dx * ring * 90, y + dy * ring * 90);
+        if (!collides(candidate.x, candidate.y)) return candidate;
+      }
+    }
+    return spot;
+  };
+
   // Smart positioning: place nodes relative to existing topology
   const getSmartPosition = (type: NetworkNode['type'], functionType?: string) => {
     const safe = getSafeBounds(800, CANVAS_BOUNDS.MAX_Y);
@@ -81,7 +107,8 @@ export function useNetworkManager(
   // Create a new node with smart positioning
   const addNode = (type: NetworkNode['type'], functionType?: string, networkType?: string, provider?: string) => {
     const displayName = getNodeDisplayName(type, functionType, networkType, provider);
-    const pos = getSmartPosition(type, functionType);
+    const desired = getSmartPosition(type, functionType);
+    const pos = findFreeSpot(desired.x, desired.y);
 
     const newNode: NetworkNode = {
       id: `node-${Date.now()}`,

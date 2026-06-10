@@ -1,4 +1,5 @@
-import { Server, Cloud, Network, Plus, Undo, Play, Check, Save, Trash2, Shield, Activity, PanelRight, Menu, Database, Globe, Lock, Feather as Ethernet, Wifi, LayoutGrid as Layout, Share2, UploadCloud, Sparkles } from 'lucide-react';
+import { Server, Cloud, Network, Plus, Undo, Play, Check, Save, Trash2, Shield, Activity, PanelRight, Menu, Database, Globe, Lock, Feather as Ethernet, Wifi, LayoutGrid as Layout, UploadCloud, Sparkles } from 'lucide-react';
+import { CloudRouterIcon } from '../icons/CloudRouterIcon';
 import { NetworkNode } from '../types';
 import { useState, useEffect, useRef } from 'react';
 import {
@@ -134,7 +135,7 @@ export function Toolbar({
         title="Add Cloud Router"
         type="button"
       >
-        <Share2 className="h-5 w-5" />
+        <CloudRouterIcon className="h-5 w-5" />
         <span className="text-sm hidden xl:inline">Cloud Router</span>
       </button>
       

@@ -1,0 +1,32 @@
+// The canonical AT&T Cloud Router glyph - circle ring with four outward
+// chevrons ("four-way-control" in the SDCI Figma). Ported from the
+// NetBond Advanced repo (att-netbond-sdci AttIcon set) so the designer
+// uses the real mark, not a stand-in.
+
+interface CloudRouterIconProps {
+  className?: string;
+}
+
+const PATHS = [
+  'M16.3 3.5C9.1 3.5 3.5 9.1 3.5 16.3C3.5 23.5 9.1 29.1 16.3 29.1C23.5 29.1 29.1 23.5 29.1 16.3C29.1 9.1 23.5 3.5 16.3 3.5ZM16.3 4.8C22.7 4.8 27.9 10 27.9 16.3C27.9 22.7 22.7 27.9 16.3 27.9C10 27.9 4.8 22.7 4.8 16.3C4.8 10 10 4.8 16.3 4.8Z',
+  'M15.5 11.3V14.3H17.2V11.3L18.8 12.9L20 11.7L16.3 8L12.6 11.7L13.8 12.9L15.5 11.3Z',
+  'M17.2 21.4V18.4H15.5V21.4L13.8 19.8L12.6 21L16.3 24.7L20 21L18.8 19.8L17.2 21.4Z',
+  'M21.4 15.5V17.2H18.4V15.5H21.4L19.8 13.8L21 12.6L24.7 16.3L21 20L19.8 18.8L21.4 17.2Z',
+  'M11.3 17.2V15.5H14.3V17.2H11.3L12.9 18.8L11.7 20L8 16.3L11.7 12.6L12.9 13.8L11.3 15.5Z'
+];
+
+export function CloudRouterIcon({ className = 'h-5 w-5' }: CloudRouterIconProps) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="2 2 28 28"
+      fill="currentColor"
+      className={className}
+      aria-hidden="true"
+    >
+      {PATHS.map((d, i) => (
+        <path key={i} fillRule="evenodd" clipRule="evenodd" d={d} />
+      ))}
+    </svg>
+  );
+}
