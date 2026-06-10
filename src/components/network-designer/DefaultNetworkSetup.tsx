@@ -8,7 +8,7 @@ import { demoNodes, demoEdges } from '../../data/demoTopology';
 interface DefaultNetworkSetupProps {
   isOpen: boolean;
   onComplete: (cloudRouterName: string) => void;
-  onApplyTemplate?: (nodes: NetworkNode[], edges: NetworkEdge[]) => void;
+  onApplyTemplate?: (nodes: NetworkNode[], edges: NetworkEdge[], name?: string) => void;
 }
 
 type SetupMode = 'selection' | 'user' | 'ai' | 'templates' | 'saved';
@@ -814,7 +814,7 @@ export function DefaultNetworkSetup({ isOpen, onComplete, onApplyTemplate }: Def
           node.config
         )
       }));
-      onApplyTemplate(nodesWithIcons, topology.edges);
+      onApplyTemplate(nodesWithIcons, topology.edges, topology.name);
     }
     resetForm();
 

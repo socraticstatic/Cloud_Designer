@@ -18,10 +18,52 @@ import {
 } from '../hooks';
 import { getNodeIcon } from '../utils/nodeUtils';
 import { ensureNodesHaveGeoData } from '../utils/sampleGeoData';
-import { getAutoConnectTarget } from '../data/connectionDefaults';
-import { DEFAULT_NETWORK_CONFIG, Z_INDEX, getSafeCenter, CANVAS_BOUNDS } from '../constants';
+import { Z_INDEX, getSafeCenter, CANVAS_BOUNDS } from '../constants';
 import { NetworkNode, NetworkEdge } from './types';
 import { DefaultNetworkSetup } from './network-designer/DefaultNetworkSetup';
+import { Legend } from './network-designer/Legend';
+import { TopologyImportModal } from './network-designer/advisor/TopologyImportModal';
+import { AdvisorPanel } from './network-designer/advisor/AdvisorPanel';
+import { runAdvisor, Assessment, Finding } from './network-designer/advisor/advisorEngine';
+import { ParseResult } from './network-designer/advisor/topologyParser';
+import { ArrowLeft, ChevronDown, ChevronUp, Eye, Pencil, Plus, Search, LayoutList, LayoutGrid } from 'lucide-react';
+
+// Browser-cache persistence keys (proof of concept storage layer)
+const STORAGE_TOPOLOGY = 'cloud-designer:topology';
+const STORAGE_TEMPLATES = 'cloud-designer:templates';
+const STORAGE_ASSESSMENT = 'cloud-designer:assessment';
+// Shared design library - same store the welcome screen's "Open" view reads
+const STORAGE_DESIGNS = 'savedTopologies';
+
+interface SavedDesign {
+  id: string;
+  name: string;
+  description?: string;
+  savedAt: number;
+  lastModified?: number;
+  nodes: Omit<NetworkNode, 'icon'>[];
+  edges: NetworkEdge[];
+}
+
+function stripIcons(nodes: NetworkNode[]) {
+  return nodes.map(({ icon: _icon, ...rest }) => rest);
+}
+
+function rehydrateIcons(nodes: NetworkNode[]): NetworkNode[] {
+  return nodes.map(node => ({
+    ...node,
+    icon: getNodeIcon(node.type, node.functionType, node.config?.networkType, node.config)
+  }));
+}
+
+function readStorage<T>(key: string): T | null {
+  try {
+    const raw = localStorage.getItem(key);
+    return raw ? (JSON.parse(raw) as T) : null;
+  } catch {
+    return null;
+  }
+}
 
 // Lazy load heavy components
 const GlobalView = lazy(() => import('./network-designer/global-view/GlobalView').then(module => ({ default: module.GlobalView })));
@@ -49,6 +91,7 @@ interface NetworkDesignerProps {
   onComplete: (config: ConnectionConfig) => void;
   onCancel: () => void;
   isReadOnly?: boolean;
+  onToggleReadOnly?: () => void;
 }
 
 type AbstractionLevel = 'global' | 'network' | 'circuit';
@@ -65,7 +108,8 @@ interface CustomTemplate {
 export function NetworkDesigner({
   onComplete,
   onCancel,
-  isReadOnly = false
+  isReadOnly = false,
+  onToggleReadOnly
 }: NetworkDesignerProps) {
   // Refs
   const canvasRef = useRef<HTMLDivElement>(null);
@@ -117,6 +161,93 @@ export function NetworkDesigner({
     openTemplatesDrawer,
     closeTemplatesDrawer
   } = useTemplatesManager();
+
+  // Advisor + import state
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [showAdvisor, setShowAdvisor] = useState(false);
+  const [assessment, setAssessment] = useState<Assessment | null>(null);
+  const [focusedFinding, setFocusedFinding] = useState<Finding | null>(null);
+  const [designName, setDesignName] = useState('AWS Connectivity Environment');
+  const [displayMode, setDisplayMode] = useState<'icon' | 'card'>('icon');
+  const [showSwitcher, setShowSwitcher] = useState(false);
+  const [switcherQuery, setSwitcherQuery] = useState('');
+  const [savedDesigns, setSavedDesigns] = useState<SavedDesign[]>(() => {
+    const designs = readStorage<SavedDesign[]>(STORAGE_DESIGNS) ?? [];
+    // One-time migration from the short-lived 'cloud-designer:designs' record format
+    const legacy = readStorage<Record<string, { nodes: SavedDesign['nodes']; edges: NetworkEdge[]; savedAt: number }>>('cloud-designer:designs');
+    if (legacy) {
+      Object.entries(legacy).forEach(([name, d]) => {
+        if (!designs.some(existing => existing.name === name)) {
+          designs.unshift({
+            id: name.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+            name,
+            savedAt: d.savedAt,
+            nodes: d.nodes,
+            edges: d.edges
+          });
+        }
+      });
+      try {
+        localStorage.setItem(STORAGE_DESIGNS, JSON.stringify(designs));
+        localStorage.removeItem('cloud-designer:designs');
+      } catch { /* ignore */ }
+    }
+    return designs;
+  });
+  const restoredRef = useRef(false);
+
+  // Restore persisted state from browser cache on first mount
+  useEffect(() => {
+    const savedTopology = readStorage<{ nodes: NetworkNode[]; edges: NetworkEdge[]; name?: string }>(STORAGE_TOPOLOGY);
+    if (savedTopology && savedTopology.nodes?.length) {
+      restoredRef.current = true;
+      setNodes(rehydrateIcons(savedTopology.nodes));
+      setEdges(savedTopology.edges || []);
+      if (savedTopology.name) setDesignName(savedTopology.name);
+    }
+    const savedTemplates = readStorage<CustomTemplate[]>(STORAGE_TEMPLATES);
+    if (savedTemplates?.length) {
+      setCustomTemplates(savedTemplates.map(t => ({ ...t, nodes: rehydrateIcons(t.nodes) })));
+    }
+    const savedAssessment = readStorage<Assessment>(STORAGE_ASSESSMENT);
+    if (savedAssessment) setAssessment(savedAssessment);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Persist topology to browser cache whenever it changes
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      try {
+        if (nodes.length > 0 || edges.length > 0) {
+          localStorage.setItem(STORAGE_TOPOLOGY, JSON.stringify({ nodes: stripIcons(nodes), edges, name: designName }));
+          // Upsert into the shared design library (also feeds the welcome screen)
+          setSavedDesigns(prev => {
+            const entry: SavedDesign = {
+              id: designName.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+              name: designName,
+              savedAt: prev.find(d => d.name === designName)?.savedAt ?? Date.now(),
+              lastModified: Date.now(),
+              nodes: stripIcons(nodes),
+              edges
+            };
+            const next = [entry, ...prev.filter(d => d.name !== designName)];
+            localStorage.setItem(STORAGE_DESIGNS, JSON.stringify(next));
+            return next;
+          });
+        } else if (restoredRef.current) {
+          localStorage.removeItem(STORAGE_TOPOLOGY);
+        }
+      } catch { /* storage full or unavailable - mock POC, ignore */ }
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [nodes, edges, designName]);
+
+  // Persist custom templates
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_TEMPLATES, JSON.stringify(customTemplates.map(t => ({ ...t, nodes: stripIcons(t.nodes) }))));
+    } catch { /* ignore */ }
+  }, [customTemplates]);
 
   // History drawer state
   const [showHistoryDrawer, setShowHistoryDrawer] = useState(false);
@@ -242,11 +373,83 @@ export function NetworkDesigner({
   }, [abstractionLevel]);
 
   // Check if we need to show the default network setup
+  // (skipped when a persisted topology exists in browser cache)
   useEffect(() => {
-    if (nodes.length === 0 && edges.length === 0) {
+    if (nodes.length === 0 && edges.length === 0 && !localStorage.getItem(STORAGE_TOPOLOGY)) {
       setShowDefaultSetup(true);
     }
   }, [nodes.length, edges.length]);
+
+  // --- Topology import + Network Advisor ---
+
+  const handleRunAdvisor = useCallback((targetNodes?: NetworkNode[], targetEdges?: NetworkEdge[]) => {
+    const result = runAdvisor(targetNodes ?? nodes, targetEdges ?? edges);
+    setAssessment(result);
+    setFocusedFinding(null);
+    setShowAdvisor(true);
+    try {
+      localStorage.setItem(STORAGE_ASSESSMENT, JSON.stringify(result));
+    } catch { /* ignore */ }
+    return result;
+  }, [nodes, edges]);
+
+  const handleImportTopology = (result: ParseResult) => {
+    const enriched = ensureNodesHaveGeoData(result.nodes);
+    setNodes(enriched);
+    setEdges(result.edges);
+    saveToHistory(enriched, result.edges);
+    if (result.sourceName) {
+      setDesignName(result.sourceName.replace(/\.(json|csv)$/i, ''));
+    }
+    setShowDefaultSetup(false);
+    clearSelection();
+
+    const analysis = handleRunAdvisor(enriched, result.edges);
+    window.addToast({
+      type: 'success',
+      title: 'Topology Imported',
+      message: `${enriched.length} nodes and ${result.edges.length} connections loaded. Advisor found ${analysis.findings.length} findings.`,
+      duration: 4000
+    });
+  };
+
+  const handleFocusFinding = (finding: Finding | null) => {
+    setFocusedFinding(finding);
+  };
+
+  // --- Connection switcher (design library) ---
+
+  const handleSwitchDesign = (name: string) => {
+    const design = savedDesigns.find(d => d.name === name);
+    if (!design) return;
+    setNodes(rehydrateIcons(design.nodes as NetworkNode[]));
+    setEdges(design.edges);
+    setDesignName(name);
+    setAssessment(null);
+    setFocusedFinding(null);
+    clearSelection();
+    setShowSwitcher(false);
+    setShowDefaultSetup(false);
+  };
+
+  const handleCreateNewDesign = () => {
+    setNodes([]);
+    setEdges([]);
+    setDesignName(`New Network Design ${savedDesigns.length + 1}`);
+    setAssessment(null);
+    setFocusedFinding(null);
+    clearSelection();
+    setShowSwitcher(false);
+    setShowDefaultSetup(true);
+  };
+
+  // Highlight maps fed to the canvas, derived from the focused finding
+  const highlightedNodes = focusedFinding
+    ? Object.fromEntries(focusedFinding.nodeIds.map(id => [id, focusedFinding.severity]))
+    : {};
+  const highlightedEdges = focusedFinding
+    ? Object.fromEntries(focusedFinding.edgeIds.map(id => [id, focusedFinding.severity]))
+    : {};
   
   // Handle default network setup completion
   const handleDefaultNetworkSetup = (cloudRouterName: string) => {
@@ -617,6 +820,9 @@ export function NetworkDesigner({
             onNodeDragEnd={handleNodeDragEnd}
             onEdgeClick={handleEdgeSelection}
             maxY={800}
+            highlightedNodes={highlightedNodes}
+            highlightedEdges={highlightedEdges}
+            displayMode={displayMode}
             ref={canvasRef}
           />
         );
@@ -681,8 +887,156 @@ export function NetworkDesigner({
           </div>
         )}
 
+        {/* Back + design name pill with connection switcher - per Figma top-left chrome */}
+        {abstractionLevel === 'network' && (
+          <div className="absolute top-4 left-4" style={{ zIndex: Z_INDEX.FLOATING_PANEL }}>
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 flex items-center px-3 py-2 gap-2">
+              <button
+                onClick={onCancel}
+                className="flex items-center gap-1.5 text-sm font-medium text-fw-link hover:text-fw-linkHover transition-colors"
+                type="button"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                Back
+              </button>
+              <div className="h-5 w-px bg-gray-200" />
+              <button
+                onClick={() => setShowSwitcher(!showSwitcher)}
+                className="flex items-center gap-2 group"
+                type="button"
+              >
+                <span className="text-sm font-medium text-fw-heading max-w-[180px] truncate" title={designName}>
+                  {designName}
+                </span>
+                <span className="px-1.5 py-0.5 rounded text-[10px] font-medium tracking-wide bg-fw-neutral text-fw-bodyLight uppercase">
+                  Draft
+                </span>
+                {showSwitcher
+                  ? <ChevronUp className="h-4 w-4 text-fw-bodyLight group-hover:text-fw-body" />
+                  : <ChevronDown className="h-4 w-4 text-fw-bodyLight group-hover:text-fw-body" />}
+              </button>
+            </div>
+
+            {/* Connection switcher dropdown - per Figma browsing frame */}
+            {showSwitcher && (
+              <div className="mt-2 w-80 bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+                <div className="p-3 pb-2">
+                  <div className="relative">
+                    <Search className="h-4 w-4 text-fw-disabled absolute left-3 top-1/2 -translate-y-1/2" />
+                    <input
+                      value={switcherQuery}
+                      onChange={e => setSwitcherQuery(e.target.value)}
+                      placeholder="Search"
+                      className="w-full pl-9 pr-3 py-2 text-sm border border-fw-border-secondary rounded-full bg-fw-base text-fw-body placeholder:text-fw-disabled"
+                    />
+                  </div>
+                </div>
+                <button
+                  onClick={handleCreateNewDesign}
+                  className="w-full flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-fw-link hover:bg-fw-wash transition-colors"
+                  type="button"
+                >
+                  <Plus className="h-4 w-4" />
+                  Create New Connection
+                </button>
+                <div className="max-h-56 overflow-y-auto custom-scrollbar border-t border-fw-border-secondary">
+                  {savedDesigns
+                    .filter(design => design.name.toLowerCase().includes(switcherQuery.toLowerCase()))
+                    .sort((a, b) => (b.lastModified ?? b.savedAt) - (a.lastModified ?? a.savedAt))
+                    .map(design => (
+                      <button
+                        key={design.id}
+                        onClick={() => handleSwitchDesign(design.name)}
+                        className={`w-full flex items-start gap-2.5 px-4 py-2.5 text-left hover:bg-fw-wash transition-colors ${
+                          design.name === designName ? 'bg-fw-accent' : ''
+                        }`}
+                        type="button"
+                      >
+                        <span className="mt-1.5 h-2 w-2 rounded-full bg-green-600 flex-shrink-0" />
+                        <span className="min-w-0">
+                          <span className="flex items-center gap-2">
+                            <span className="text-sm font-medium text-fw-heading truncate">{design.name}</span>
+                            <span className="px-1.5 py-0.5 rounded text-[9px] font-medium tracking-wide bg-fw-neutral text-fw-bodyLight uppercase">
+                              Draft
+                            </span>
+                          </span>
+                          <span className="block text-xs text-fw-bodyLight mt-0.5">
+                            {design.description || `${design.nodes.length} nodes - ${design.edges.length} connections`}
+                          </span>
+                        </span>
+                      </button>
+                    ))}
+                  {savedDesigns.length === 0 && (
+                    <p className="px-4 py-3 text-xs text-fw-bodyLight">No saved designs yet.</p>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Read / Edit mode pill - per Figma top-right chrome */}
+        {abstractionLevel === 'network' && onToggleReadOnly && (
+          <div
+            className="absolute top-4 right-4 bg-white rounded-xl shadow-sm border border-gray-200 flex items-center p-1"
+            style={{ zIndex: Z_INDEX.CHROME }}
+          >
+            <button
+              onClick={() => isReadOnly || onToggleReadOnly()}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                isReadOnly ? 'bg-fw-ctaGhost text-fw-link' : 'text-fw-bodyLight hover:bg-fw-wash'
+              }`}
+              type="button"
+            >
+              <Eye className="h-4 w-4" />
+              Read
+            </button>
+            <button
+              onClick={() => isReadOnly && onToggleReadOnly()}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                !isReadOnly ? 'bg-fw-ctaGhost text-fw-link' : 'text-fw-bodyLight hover:bg-fw-wash'
+              }`}
+              type="button"
+            >
+              <Pencil className="h-4 w-4" />
+              Edit
+            </button>
+            <div className="h-5 w-px bg-gray-200 mx-1" />
+            <button
+              onClick={() => setDisplayMode(displayMode === 'icon' ? 'card' : 'icon')}
+              className="p-1.5 rounded-lg text-fw-bodyLight hover:bg-fw-wash transition-colors"
+              title={displayMode === 'icon' ? 'Switch to detail cards' : 'Switch to icon nodes'}
+              type="button"
+            >
+              {displayMode === 'icon' ? <LayoutList className="h-4 w-4" /> : <LayoutGrid className="h-4 w-4" />}
+            </button>
+          </div>
+        )}
+
         {/* Render the current abstraction level view */}
         {renderAbstractionLevelView()}
+
+        {/* Canvas legend - per Figma state legend */}
+        {abstractionLevel === 'network' && <Legend />}
+
+        {/* Network Advisor panel */}
+        {abstractionLevel === 'network' && (
+          <AdvisorPanel
+            assessment={assessment}
+            isOpen={showAdvisor}
+            onClose={() => setShowAdvisor(false)}
+            onRerun={() => handleRunAdvisor()}
+            onFocusFinding={handleFocusFinding}
+            focusedFindingId={focusedFinding?.id ?? null}
+          />
+        )}
+
+        {/* Topology import modal */}
+        <TopologyImportModal
+          isOpen={showImportModal}
+          onClose={() => setShowImportModal(false)}
+          onImport={handleImportTopology}
+        />
         
         {/* Toolbar - Only show in network view with highest z-index */}
         {abstractionLevel === 'network' && !isReadOnly && (
@@ -700,6 +1054,8 @@ export function NetworkDesigner({
               onSaveTemplate={handleSaveTemplate}
               onClearCanvas={clearNetwork}
               onOpenTemplates={openTemplatesDrawer}
+              onImportTopology={() => setShowImportModal(true)}
+              onOpenAdvisor={() => (assessment ? setShowAdvisor(true) : handleRunAdvisor())}
             />
           </div>
         )}
@@ -757,9 +1113,10 @@ export function NetworkDesigner({
         <DefaultNetworkSetup
           isOpen={showDefaultSetup}
           onComplete={handleDefaultNetworkSetup}
-          onApplyTemplate={(templateNodes, templateEdges) => {
+          onApplyTemplate={(templateNodes, templateEdges, name) => {
             setNodes(templateNodes);
             setEdges(templateEdges);
+            if (name) setDesignName(name);
             saveToHistory(templateNodes, templateEdges);
             setShowDefaultSetup(false);
             

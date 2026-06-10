@@ -3,11 +3,15 @@ import { NetworkNode } from '../types';
 import { getNodeColors } from '../../utils/nodeUtils';
 import { CANVAS_BOUNDS, Z_INDEX } from '../../constants';
 
+export type NodeHighlight = 'error' | 'warning' | 'recommendation' | 'positive';
+
 interface NodeProps {
   node: NetworkNode;
   isSelected: boolean;
   isCreatingEdge: boolean;
   isReadOnly?: boolean;
+  highlight?: NodeHighlight | null;
+  displayMode?: 'icon' | 'card';
   onClick: () => void;
   onDragStart: () => void;
   onDragEnd: () => void;
@@ -16,12 +20,22 @@ interface NodeProps {
   zoomLevel?: number;
 }
 
+// Advisor highlight ring colors follow the Figma state legend
+const HIGHLIGHT_RING: Record<NodeHighlight, string> = {
+  error: 'ring-4 ring-red-600/40 border-red-600',
+  warning: 'ring-4 ring-orange-500/40 border-orange-500',
+  recommendation: 'ring-4 ring-blue-600/40 border-blue-600',
+  positive: 'ring-4 ring-green-600/40 border-green-600'
+};
+
 // Memoize the Node component for better performance
 export const Node = memo(function Node({
   node,
   isSelected,
   isCreatingEdge,
   isReadOnly = false,
+  highlight = null,
+  displayMode = 'icon',
   onClick,
   onDragStart,
   onDragEnd,
@@ -84,12 +98,12 @@ export const Node = memo(function Node({
       <div
         ref={nodeRef}
         className={`
-          absolute w-16 h-16 flex items-center justify-center
+          absolute flex items-center justify-center
+          ${displayMode === 'card' ? 'h-16 px-3 gap-2.5 bg-white' : `w-16 h-16 ${background}`}
           rounded-lg transition-all duration-200 select-none
-          ${background}
           ${isReadOnly ? 'cursor-default' : isCreatingEdge ? 'cursor-crosshair' : isDragging ? 'cursor-grabbing' : 'cursor-grab'}
           ${isDragging ? 'shadow-lg scale-105' : 'shadow-sm hover:shadow-md'}
-          border-2 ${isSelected ? 'border-blue-500' : isCreatingEdge ? 'border-blue-400 border-dashed' : 'border-gray-200'}
+          border-2 ${highlight ? HIGHLIGHT_RING[highlight] : isSelected ? 'border-blue-500' : isCreatingEdge ? 'border-blue-400 border-dashed' : 'border-gray-200'}
         `}
         style={{
           transform: `translate(${position.x}px, ${position.y}px)`,
@@ -167,14 +181,36 @@ export const Node = memo(function Node({
         )}
 
         {/* Icon */}
+        {displayMode === 'card' ? (
+          <>
+            <div className={`h-10 w-10 rounded-lg flex items-center justify-center flex-shrink-0 ${background}`}>
+              <Icon className={`h-5 w-5 ${iconColor}`} />
+            </div>
+            <div className="min-w-0 pr-1 whitespace-nowrap">
+              <div className="text-sm font-medium text-gray-900 leading-tight">{node.name}</div>
+              <div className="flex items-center gap-1.5 text-[11px] text-gray-500 leading-tight mt-0.5">
+                {(node.config?.region || node.config?.city) && (
+                  <>
+                    <span>{node.config?.region || node.config?.city}</span>
+                    <span className="text-gray-300">|</span>
+                  </>
+                )}
+                <span className={`inline-flex h-1.5 w-1.5 rounded-full ${node.status === 'active' ? 'bg-green-600' : 'bg-gray-400'}`} />
+                <span>{node.status === 'active' ? 'Active' : 'Inactive'}</span>
+              </div>
+            </div>
+          </>
+        ) : (
         <Icon className={`
           h-8 w-8 transition-all duration-200
           ${iconColor}
           ${isDragging ? 'scale-90' : 'scale-100'}
         `} />
-        
+        )}
+
         {/* Node Label */}
-        <div 
+        {displayMode === 'icon' && (
+        <div
           className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 whitespace-nowrap"
           style={{ fontSize: `${Math.max(12, 12 / zoomLevel)}px` }}
         >
@@ -213,11 +249,21 @@ export const Node = memo(function Node({
             </span>
           )}
         </div>
+        )}
 
         {/* Status Indicator */}
         {!isReadOnly && (
           <div className="absolute -top-1 -right-1">
             <div className={`w-3 h-3 rounded-full ${colors.status}`} />
+          </div>
+        )}
+
+        {/* Region sublabel - per Figma node spec */}
+        {displayMode === 'icon' && (node.config?.region || node.config?.city) && !isEditingName && (
+          <div
+            className="absolute -bottom-10 left-1/2 transform -translate-x-1/2 whitespace-nowrap text-[9px] tracking-wider uppercase text-gray-400 pointer-events-none"
+          >
+            {node.config?.region || node.config?.city}
           </div>
         )}
 

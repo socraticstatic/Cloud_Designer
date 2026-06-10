@@ -4,13 +4,124 @@
 @tailwind components;
 @tailwind utilities;
 
+/* AT&T Flywheel Design System - AleckSans font family */
+@font-face {
+  font-family: 'ATT Aleck Sans';
+  src: url('/fonts/ATTAleckSans_Light.woff2') format('woff2');
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'ATT Aleck Sans';
+  src: url('/fonts/ATTAleckSans_Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'ATT Aleck Sans';
+  src: url('/fonts/ATTAleckSans_Medium.woff2') format('woff2');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'ATT Aleck Sans';
+  src: url('/fonts/ATTAleckSans_Bold.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'ATT Aleck Sans';
+  src: url('/fonts/ATTAleckSans_Thick.woff2') format('woff2');
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'ATT Aleck Sans';
+  src: url('/fonts/ATTAleckSans_Black.woff2') format('woff2');
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+}
+
 @layer base {
+  :root {
+    /* AT&T Flywheel base colors (HSL triplets, per att-flywheel-kit) */
+    --att-blue: 196 100% 43%;
+    --functional-blue: 201 100% 35%;
+    --functional-blue-dark: 201 100% 32%;
+    --cobalt-700: 217 100% 28%;
+    --cobalt-600: 212 100% 36%;
+    --cobalt-100: 212 100% 95%;
+    --att-blue-000: 196 100% 97%;
+
+    --fw-gray-100: 210 33% 98%;
+    --fw-gray-200: 210 17% 96%;
+    --fw-gray-300: 210 11% 88%;
+    --fw-gray-500: 210 5% 56%;
+    --fw-gray-600: 210 5% 43%;
+    --fw-gray-700: 210 9% 30%;
+    --fw-gray-900: 210 17% 9%;
+
+    --green-600: 115 55% 32%;
+    --orange-600: 22 81% 55%;
+    --red-600: 345 100% 39%;
+
+    /* Flywheel semantic tokens - text */
+    --fw-heading: var(--fw-gray-900);
+    --fw-body: var(--fw-gray-700);
+    --fw-bodyLight: var(--fw-gray-600);
+    --fw-disabled: var(--fw-gray-500);
+    --fw-link: var(--functional-blue-dark);
+    --fw-linkHover: var(--functional-blue);
+    --fw-success: var(--green-600);
+    --fw-warn: var(--orange-600);
+    --fw-error: var(--red-600);
+    --fw-info: var(--functional-blue-dark);
+
+    /* Flywheel semantic tokens - backgrounds */
+    --fw-base: 0 0% 100%;
+    --fw-wash: var(--fw-gray-100);
+    --fw-neutral: var(--fw-gray-200);
+    --fw-accent: var(--att-blue-000);
+    --fw-primary: var(--cobalt-700);
+    --fw-ctaPrimary: var(--cobalt-700);
+    --fw-ctaPrimaryHover: var(--cobalt-600);
+    --fw-ctaGhost: var(--cobalt-100);
+    --fw-disabled-bg: var(--fw-gray-300);
+    --fw-success-bg: 115 70% 95%;
+    --fw-warn-bg: 22 90% 95%;
+    --fw-error-bg: 345 90% 95%;
+
+    /* Flywheel semantic tokens - borders */
+    --fw-border-primary: var(--fw-gray-600);
+    --fw-border-secondary: var(--fw-gray-300);
+    --fw-border-active: var(--functional-blue-dark);
+    --fw-border-hover: var(--functional-blue);
+    --fw-border-focus: var(--fw-gray-800, 210 17% 14%);
+    --fw-border-success: var(--green-600);
+    --fw-border-warn: var(--orange-600);
+    --fw-border-error: var(--red-600);
+  }
+
   body {
     @apply text-gray-900 bg-gray-50;
+    font-family: 'ATT Aleck Sans', 'Inter var', system-ui, sans-serif;
   }
-  
+
   :focus-visible {
-    @apply outline-none ring-2 ring-blue-500 ring-offset-2;
+    outline: 3px solid hsl(var(--functional-blue-dark));
+    outline-offset: 2px;
+    border-radius: 4px;
   }
   
   /* Custom scrollbar styling */

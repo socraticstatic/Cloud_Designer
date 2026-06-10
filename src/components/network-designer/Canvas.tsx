@@ -3,6 +3,7 @@ import { NetworkNode, NetworkEdge } from '../types';
 import { Node } from './Node';
 import { Edge } from './Edge';
 import { EdgeControls } from './EdgeControls';
+import { LocationGroups } from './LocationGroups';
 import { CANVAS_BOUNDS, Z_INDEX, CANVAS_SAFE_AREA } from '../../constants';
 
 interface CanvasProps {
@@ -22,6 +23,9 @@ interface CanvasProps {
   onUpdateEdge?: (edgeId: string, updates: Partial<NetworkEdge>) => void;
   onDeleteNode?: (nodeId: string) => void;
   onDeleteEdge?: (edgeId: string) => void;
+  highlightedNodes?: Record<string, 'error' | 'warning' | 'recommendation' | 'positive'>;
+  highlightedEdges?: Record<string, 'error' | 'warning' | 'recommendation' | 'positive'>;
+  displayMode?: 'icon' | 'card';
 }
 
 // Memoized Edge renderer for better performance
@@ -43,7 +47,10 @@ export const Canvas = forwardRef<HTMLDivElement, CanvasProps>(({
   onUpdateNode,
   onUpdateEdge,
   onDeleteNode,
-  onDeleteEdge
+  onDeleteEdge,
+  highlightedNodes = {},
+  highlightedEdges = {},
+  displayMode = 'icon'
 }, ref) => {
   const internalCanvasRef = useRef<HTMLDivElement>(null);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
@@ -257,8 +264,8 @@ export const Canvas = forwardRef<HTMLDivElement, CanvasProps>(({
       }}
       onClick={handleCanvasClick}
     >
-      {/* Light Blue Background */}
-      <div className="absolute inset-0 bg-blue-50" style={{ zIndex: 1 }}></div>
+      {/* Canvas wash background - per Figma concept frames */}
+      <div className="absolute inset-0 bg-fw-wash" style={{ zIndex: 1 }}></div>
 
       {/* Grid Background */}
       <div 
@@ -283,6 +290,9 @@ export const Canvas = forwardRef<HTMLDivElement, CanvasProps>(({
           zIndex: 10
         }}
       >
+        {/* Location group containers - behind edges and nodes */}
+        <LocationGroups nodes={nodes} />
+
         {/* SVG Layer for Edges - Only visual representation */}
         <svg 
           className="absolute inset-0" 
@@ -297,6 +307,7 @@ export const Canvas = forwardRef<HTMLDivElement, CanvasProps>(({
               edge={edge}
               nodes={nodes}
               isSelected={selectedEdge === edge.id}
+              highlight={highlightedEdges[edge.id] ?? null}
               onClick={() => onEdgeClick(edge)}
             />
           ))}
@@ -354,6 +365,8 @@ export const Canvas = forwardRef<HTMLDivElement, CanvasProps>(({
               isSelected={selectedNode === node.id}
               isCreatingEdge={isCreatingEdge}
               isReadOnly={isReadOnly}
+              highlight={highlightedNodes[node.id] ?? null}
+              displayMode={displayMode}
               onClick={() => onNodeClick(node)}
               onDragStart={() => setIsDragging(true)}
               onDragEnd={() => {

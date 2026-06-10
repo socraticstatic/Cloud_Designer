@@ -51,18 +51,33 @@ export const getNodeDisplayName = (type: NetworkNode['type'], functionType?: str
   }
 };
 
+// Node colors per the SDCI Figma "Network Designer | Nodes" spec:
+// white cards, type-tinted icons; AT&T Core globe in functional blue,
+// Cloud Router in magenta, clouds in functional blue.
 export const getNodeColors = (node: NetworkNode) => {
+  const isCloudRouter =
+    node.type === 'function' &&
+    (node.functionType === 'Cloud Router' || (node.functionType === 'Router' && node.config?.routerType === 'cloud'));
+
   const getBackgroundColor = () => {
-    return 'bg-gray-50';
+    if (isCloudRouter) return 'bg-fuchsia-50';
+    if (node.type === 'network') return 'bg-cobalt-100';
+    if (node.type === 'destination') return 'bg-cobalt-100';
+    return 'bg-white';
   };
 
   const getIconColor = () => {
+    if (isCloudRouter) return 'text-fuchsia-600';
+    if (node.type === 'network') return 'text-cobalt-700';
+    if (node.type === 'destination') return 'text-functional-blue';
+    if (node.type === 'datacenter') return 'text-cobalt-600';
     return 'text-gray-700';
   };
 
   const getStatusColor = () => {
+    if (node.config?.health === 'down' || node.config?.health === 'error') return 'bg-red-600';
     if (node.status !== 'active') return 'bg-gray-400';
-    return 'bg-green-500';
+    return 'bg-green-600';
   };
 
   return {

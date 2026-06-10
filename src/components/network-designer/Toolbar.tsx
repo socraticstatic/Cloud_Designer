@@ -1,4 +1,4 @@
-import { Server, Cloud, Network, Plus, Undo, Play, Check, Save, Trash2, Shield, Activity, PanelRight, Menu, Database, Globe, Lock, Feather as Ethernet, Wifi, LayoutGrid as Layout, Router, Share2 } from 'lucide-react';
+import { Server, Cloud, Network, Plus, Undo, Play, Check, Save, Trash2, Shield, Activity, PanelRight, Menu, Database, Globe, Lock, Feather as Ethernet, Wifi, LayoutGrid as Layout, Share2, UploadCloud, Sparkles } from 'lucide-react';
 import { NetworkNode } from '../types';
 import { useState, useEffect, useRef } from 'react';
 import {
@@ -22,6 +22,8 @@ interface ToolbarProps {
   onSaveTemplate?: () => void;
   onClearCanvas?: () => void;
   onOpenTemplates?: () => void;
+  onImportTopology?: () => void;
+  onOpenAdvisor?: () => void;
 }
 
 export function Toolbar({
@@ -36,7 +38,9 @@ export function Toolbar({
   onCreateConnections,
   onSaveTemplate,
   onClearCanvas,
-  onOpenTemplates
+  onOpenTemplates,
+  onImportTopology,
+  onOpenAdvisor
 }: ToolbarProps) {
   // State to track which dropdown is open
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
@@ -99,7 +103,7 @@ export function Toolbar({
   return (
     <div 
       ref={toolbarRef} 
-      className="absolute bottom-6 left-1/2 transform -translate-x-1/2 bg-white rounded-lg shadow-sm border border-gray-200 p-2 flex items-center space-x-1 min-w-max" 
+      className="absolute bottom-6 left-1/2 transform -translate-x-1/2 bg-white rounded-2xl shadow-md border border-gray-200 p-2 flex items-center space-x-1 min-w-max"
       style={{ zIndex: Z_INDEX.CHROME }}
     >
       {/* Choose Button - Added before Function */}
@@ -408,37 +412,74 @@ export function Toolbar({
           </div>
       )}
 
-      {/* Create Connections */}
-      {onCreateConnections && (
+      {/* Import topology */}
+      {onImportTopology && (
         <>
-          {/* Small separator line */}
           <div className="h-8 w-px bg-gray-200"></div>
-          
           <div className="relative group">
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                if (hasConnections && onCreateConnections) {
-                  onCreateConnections();
-                }
+                onImportTopology();
               }}
-              disabled={!hasConnections}
-              className={`
-                p-2 rounded-lg transition-colors
-                ${!hasConnections
-                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-                }
-              `}
-              title="Create Connections"
+              className="p-2 rounded-lg text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition-colors"
+              title="Import Topology"
               type="button"
             >
-              <Check className="h-5 w-5" />
+              <UploadCloud className="h-5 w-5" />
             </button>
             <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 text-xs text-white bg-gray-900 rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-              Create connections
+              Import your network topology
             </div>
           </div>
+        </>
+      )}
+
+      {/* Network Advisor */}
+      {onOpenAdvisor && (
+        <div className="relative group">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onOpenAdvisor();
+            }}
+            className="p-2 rounded-lg text-fw-link hover:bg-fw-accent transition-colors"
+            title="Network Advisor"
+            type="button"
+          >
+            <Sparkles className="h-5 w-5" />
+          </button>
+          <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 text-xs text-white bg-gray-900 rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+            Get consultative feedback
+          </div>
+        </div>
+      )}
+
+      {/* Save updates - primary CTA per Figma */}
+      {onCreateConnections && (
+        <>
+          <div className="h-8 w-px bg-gray-200"></div>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              if (hasConnections && onCreateConnections) {
+                onCreateConnections();
+              }
+            }}
+            disabled={!hasConnections}
+            className={`
+              flex items-center gap-2 px-5 py-2 rounded-full text-sm font-medium transition-colors
+              ${!hasConnections
+                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                : 'bg-fw-ctaPrimary text-white hover:bg-fw-ctaPrimaryHover'
+              }
+            `}
+            title="Save updates"
+            type="button"
+          >
+            <Check className="h-4 w-4" />
+            Save updates
+          </button>
         </>
       )}
     </div>

@@ -57,8 +57,8 @@ export function StatusBar({ nodes, edges, onRefresh, canvasRef, onSelectNode, on
   return (
     <>
       <div
-        className="absolute top-6 left-1/2 transform -translate-x-1/2 bg-white rounded-lg shadow-sm border border-gray-200 py-2 px-3 flex items-center space-x-6 whitespace-nowrap"
-        style={{ zIndex: Z_INDEX.CHROME, minWidth: '700px' }}
+        className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-white rounded-xl shadow-sm border border-gray-200 py-2 px-4 flex items-center space-x-5 whitespace-nowrap"
+        style={{ zIndex: Z_INDEX.CHROME }}
       >
         {/* Validation Indicator */}
         {nodes.length > 0 && (
