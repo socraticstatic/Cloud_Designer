@@ -14,9 +14,11 @@ interface GlobalViewProps {
   edges: NetworkEdge[];
   onNodeSelect: (nodeId: string) => void;
   onZoomIn: (datacenterId: string) => void;
+  // Advisor findings per node - sites carrying findings get severity marks
+  issueBadges?: Record<string, 'error' | 'warning' | 'recommendation'>;
 }
 
-export function GlobalView({ nodes, edges, onNodeSelect, onZoomIn }: GlobalViewProps) {
+export function GlobalView({ nodes, edges, onNodeSelect, onZoomIn, issueBadges = {} }: GlobalViewProps) {
   const [selectedLocation, setSelectedLocation] = useState<string | null>(null);
   const [activePanel, setActivePanel] = useState<'none' | 'metrics' | 'performance'>('none');
 
@@ -54,6 +56,7 @@ export function GlobalView({ nodes, edges, onNodeSelect, onZoomIn }: GlobalViewP
           edges={edges}
           onNodeSelect={handleNodeSelect}
           selectedNodeId={selectedLocation}
+          issueBadges={issueBadges}
         />
       ) : (
         <EmptyState onZoomOut={(id) => { if (id) onZoomIn(id); }} hasNodes={nodes.length > 0} />

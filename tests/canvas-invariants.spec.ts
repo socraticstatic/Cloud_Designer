@@ -176,6 +176,19 @@ test('no canvas content under chrome - advisor closed and open', async ({ page }
   expect(await chromeViolations(page)).toEqual([]);
 });
 
+test('advisor findings surface on the Pano map as site severity marks', async ({ page }) => {
+  await openDesigner(page);
+  // run the advisor so findings (SPOF on the hub router) exist
+  await page.locator('button[title="Network Advisor"]').first().click();
+  await expect(page.locator('[aria-label="Network Advisor"]')).toBeVisible();
+  // switch to the Pano map
+  await page.getByText('Pano', { exact: true }).click();
+  await expect(page.locator('.site-marker').first()).toBeVisible();
+  // at least one site chip carries a severity mark (error or warning tint)
+  const marked = page.locator('.site-marker [style*="#C70032"], .site-marker [style*="#EA712F"]');
+  await expect(marked.first()).toBeVisible();
+});
+
 test('clear canvas requires confirmation', async ({ page }) => {
   await openDesigner(page);
   const trash = page.locator('button[title="Clear Canvas"]');

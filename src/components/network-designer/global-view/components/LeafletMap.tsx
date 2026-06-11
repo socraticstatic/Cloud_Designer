@@ -8,6 +8,7 @@ interface LeafletMapProps {
   edges: NetworkEdge[];
   onNodeSelect: (nodeId: string) => void;
   selectedNodeId: string | null;
+  issueBadges?: Record<string, 'error' | 'warning' | 'recommendation'>;
 }
 
 interface NodeLocation {
@@ -19,7 +20,7 @@ interface NodeLocation {
   status: string;
 }
 
-export function LeafletMap({ nodes, edges, onNodeSelect, selectedNodeId }: LeafletMapProps) {
+export function LeafletMap({ nodes, edges, onNodeSelect, selectedNodeId, issueBadges = {} }: LeafletMapProps) {
   const mapRef = useRef<L.Map | null>(null);
   const [zoomPct, setZoomPct] = useState(100);
   const mapContainerRef = useRef<HTMLDivElement>(null);
@@ -114,18 +115,34 @@ export function LeafletMap({ nodes, edges, onNodeSelect, selectedNodeId }: Leafl
 
     // chipDy: vertical pixel offset applied by the declutter pass so
     // overlapping site chips stack into rows instead of covering each other
+    const SEVERITY_COLOR = { error: '#C70032', warning: '#EA712F', recommendation: '#0057B8' } as const;
+    const RANK = { error: 3, warning: 2, recommendation: 1 } as const;
+    const siteSeverity = (site: Site) => {
+      let worst: keyof typeof RANK | null = null;
+      site.nodeIds.forEach(id => {
+        const sev = issueBadges[id];
+        if (sev && (!worst || RANK[sev] > RANK[worst])) worst = sev;
+      });
+      return worst;
+    };
     const makeSiteIcon = (site: Site, isSelected: boolean, chipDy = 0) => {
       const dot = site.anyActive ? '#2D7E24' : '#9CA3AF';
+      const severity = siteSeverity(site);
       const count = site.nodeIds.length > 1
         ? `<span style="background:#00388F;color:white;border-radius:9999px;padding:1px 7px;font-size:11px;font-weight:600;">${site.nodeIds.length}</span>`
         : '';
+      // Advisor finding mark: severity-tinted border + alert dot on the chip
+      const severityDot = severity
+        ? `<span style="width:8px;height:8px;border-radius:50%;background:${SEVERITY_COLOR[severity]};flex-shrink:0;" title="Advisor finding"></span>`
+        : '';
+      const borderColor = isSelected ? '#00388F' : severity ? SEVERITY_COLOR[severity] : '#DCDFE3';
       return L.divIcon({
         className: 'site-marker',
         html: `
           <div style="
             display:flex;align-items:center;gap:7px;
             background:white;
-            border:1.5px solid ${isSelected ? '#00388F' : '#DCDFE3'};
+            border:1.5px solid ${borderColor};
             border-radius:10px;
             padding:6px 10px;
             box-shadow:0 2px 8px rgba(0,0,0,0.18);
@@ -134,6 +151,7 @@ export function LeafletMap({ nodes, edges, onNodeSelect, selectedNodeId }: Leafl
             <span style="width:10px;height:10px;border-radius:50%;background:${dot};flex-shrink:0;"></span>
             <span style="font-size:13px;font-weight:600;color:#13171b;">${site.name}</span>
             ${count}
+            ${severityDot}
           </div>
         `,
         iconSize: [140, 32],
@@ -230,7 +248,7 @@ export function LeafletMap({ nodes, edges, onNodeSelect, selectedNodeId }: Leafl
     return () => {
       map.off('zoomend moveend', declutterChips);
     };
-  }, [nodes, edges, onNodeSelect, selectedNodeId]);
+  }, [nodes, edges, onNodeSelect, selectedNodeId, issueBadges]);
 
 
   return (

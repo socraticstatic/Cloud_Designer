@@ -20,6 +20,8 @@ interface CircuitViewProps {
   selectedNode: string | null;
   onNodeSelect: (node: NetworkNode | null) => void;
   onZoomOut: () => void;
+  // Advisor findings per node - devices carrying findings get severity marks
+  issueBadges?: Record<string, 'error' | 'warning' | 'recommendation'>;
 }
 
 // ─── Circuit table for "Circuits" view mode ──────────────────────────────────
@@ -137,7 +139,8 @@ export function CircuitView({
   edges,
   selectedNode,
   onNodeSelect,
-  onZoomOut
+  onZoomOut,
+  issueBadges = {}
 }: CircuitViewProps) {
   const [selectedDevice, setSelectedDevice] = useState<string | null>(selectedNode);
   const [selectedPort, setSelectedPort] = useState<string | null>(null);
@@ -328,6 +331,7 @@ export function CircuitView({
               selectedPort={selectedPort}
               onSelectPort={handlePortSelect}
               circuits={circuits}
+              issueBadges={issueBadges}
             />
           ) : viewMode.mode === 'physical' ? (
             <CircuitsTable circuits={circuits} nodes={nodes} />

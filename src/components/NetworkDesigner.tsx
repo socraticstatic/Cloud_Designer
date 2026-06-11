@@ -38,6 +38,10 @@ import { ArrowLeft, ChevronDown, ChevronUp, Eye, Pencil, Plus, Search, LayoutLis
 
 // Browser-cache persistence keys (proof of concept storage layer)
 const STORAGE_TOPOLOGY = 'cloud-designer:topology';
+// Bump when the persisted shape changes incompatibly. Loads tolerate any
+// older/unversioned payload (normalization handles them); payloads from a
+// NEWER schema are ignored rather than mangled.
+const SCHEMA_VERSION = 2;
 const STORAGE_TEMPLATES = 'cloud-designer:templates';
 const STORAGE_ASSESSMENT = 'cloud-designer:assessment';
 // Shared design library - same store the welcome screen's "Open" view reads
@@ -233,8 +237,10 @@ export function NetworkDesigner({
 
   // Restore persisted state from browser cache on first mount
   useEffect(() => {
-    const savedTopology = readStorage<{ nodes: NetworkNode[]; edges: NetworkEdge[]; name?: string }>(STORAGE_TOPOLOGY);
-    if (savedTopology && savedTopology.nodes?.length) {
+    const savedTopology = readStorage<{ schemaVersion?: number; nodes: NetworkNode[]; edges: NetworkEdge[]; name?: string }>(STORAGE_TOPOLOGY);
+    if (savedTopology && (savedTopology.schemaVersion ?? 1) > SCHEMA_VERSION) {
+      console.warn('[restore] topology was saved by a newer app version - leaving it untouched');
+    } else if (savedTopology && savedTopology.nodes?.length) {
       restoredRef.current = true;
       // Normalize on restore: legacy saves may carry overlapping or
       // off-canvas nodes (including under the floating toolbar)
@@ -262,7 +268,7 @@ export function NetworkDesigner({
     const timer = setTimeout(() => {
       try {
         if (nodes.length > 0 || edges.length > 0) {
-          localStorage.setItem(STORAGE_TOPOLOGY, JSON.stringify({ nodes: stripIcons(nodes), edges, name: designName }));
+          localStorage.setItem(STORAGE_TOPOLOGY, JSON.stringify({ schemaVersion: SCHEMA_VERSION, nodes: stripIcons(nodes), edges, name: designName }));
           // Upsert into the shared design library (also feeds the welcome screen)
           setSavedDesigns(prev => {
             const entry: SavedDesign = {
@@ -509,9 +515,13 @@ export function NetworkDesigner({
 
   // Remediation playbook, narrative, and per-node issue badges - all
   // recomputed from the live assessment while the advisor is open.
+  // Recompute only when the assessment changes - it regenerates ~1.5s after
+  // any topology edit, and each plan build runs the engine 2x per fixable
+  // finding. Keying on nodes/edges identity doubled that cost per keystroke.
   const remediationPlan = useMemo(
     () => (showAdvisor && assessment ? buildRemediationPlan(nodes, edges, assessment) : []),
-    [showAdvisor, assessment, nodes, edges]
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [showAdvisor, assessment]
   );
   const advisorNarrative = useMemo(
     () => (assessment ? composeNarrative(assessment, nodes, edges) : ''),
@@ -1243,6 +1253,7 @@ export function NetworkDesigner({
                 handleNodeSelection(nodes.find(n => n.id === datacenterId) || null);
                 setAbstractionLevel('network');
               }}
+              issueBadges={issueBadges}
             />
           </Suspense>
         );
@@ -1292,6 +1303,7 @@ export function NetworkDesigner({
               selectedNode={selectedNode}
               onNodeSelect={handleNodeSelection}
               onZoomOut={() => setAbstractionLevel('network')}
+              issueBadges={issueBadges}
             />
           </Suspense>
         );

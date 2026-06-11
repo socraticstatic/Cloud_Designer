@@ -33,6 +33,7 @@ interface PhysicalRackViewProps {
   selectedPort: string | null;
   onSelectPort: (portId: string | null) => void;
   circuits: CircuitDef[];
+  issueBadges?: Record<string, 'error' | 'warning' | 'recommendation'>;
 }
 
 function getDeviceAccent(node: NetworkNode): string {
@@ -114,6 +115,7 @@ export function PhysicalRackView({
   selectedPort,
   onSelectPort,
   circuits,
+  issueBadges = {},
 }: PhysicalRackViewProps) {
   const [expandedDevices, setExpandedDevices] = useState<Set<string>>(new Set());
 
@@ -196,6 +198,18 @@ export function PhysicalRackView({
                     <span className={`ml-2 w-1.5 h-1.5 rounded-full flex-shrink-0 ${
                       node.status === 'active' || nodeActivePorts > 0 ? 'bg-green-500' : 'bg-gray-300'
                     }`} />
+                    {issueBadges[node.id] && (
+                      <span
+                        className={`ml-2 px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wide flex-shrink-0 ${
+                          issueBadges[node.id] === 'error' ? 'bg-fw-error-bg text-fw-error' :
+                          issueBadges[node.id] === 'warning' ? 'bg-fw-warn-bg text-fw-warn' :
+                          'bg-fw-accent text-fw-info'
+                        }`}
+                        title="Advisor finding on this device"
+                      >
+                        {issueBadges[node.id] === 'error' ? 'critical' : issueBadges[node.id]}
+                      </span>
+                    )}
                   </div>
                   <span className="text-xs text-gray-500">{getDeviceLabel(node)}</span>
                 </div>
