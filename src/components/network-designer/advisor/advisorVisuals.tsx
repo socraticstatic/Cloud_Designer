@@ -116,15 +116,21 @@ export function TrendSparkline({ history }: { history: HistoryPoint[] }) {
   );
 }
 
-// Typewriter narrative. Reveals ~3 chars per frame; click to finish instantly.
+// Typewriter narrative. Reveals ~3 chars per frame; click to finish
+// instantly. Long memos collapse to a few lines with a Show more toggle
+// so the findings list below always keeps its room.
+const COLLAPSE_THRESHOLD = 220;
+
 export function NarrativeBlock({ text }: { text: string }) {
   const [shown, setShown] = useState(0);
+  const [expanded, setExpanded] = useState(false);
   const lastText = useRef(text);
 
   useEffect(() => {
     if (text !== lastText.current) {
       lastText.current = text;
       setShown(0);
+      setExpanded(false);
     }
     if (shown >= text.length) return;
     const timer = setInterval(() => {
@@ -133,14 +139,33 @@ export function NarrativeBlock({ text }: { text: string }) {
     return () => clearInterval(timer);
   }, [text, shown]);
 
+  const collapsible = text.length > COLLAPSE_THRESHOLD;
+  const clamped = collapsible && !expanded;
+
   return (
-    <div
-      className="text-[13px] leading-relaxed text-fw-body whitespace-pre-line cursor-default"
-      onClick={() => setShown(text.length)}
-      title={shown < text.length ? 'Click to finish' : undefined}
-    >
-      {text.slice(0, shown)}
-      {shown < text.length && <span className="inline-block w-1.5 h-3.5 bg-fw-link align-middle ml-0.5 animate-pulse" />}
+    <div>
+      <div
+        className={`text-[13px] leading-relaxed text-fw-body whitespace-pre-line cursor-default relative ${
+          clamped ? 'max-h-[5.5rem] overflow-hidden' : ''
+        }`}
+        onClick={() => setShown(text.length)}
+        title={shown < text.length ? 'Click to finish' : undefined}
+      >
+        {text.slice(0, shown)}
+        {shown < text.length && <span className="inline-block w-1.5 h-3.5 bg-fw-link align-middle ml-0.5 animate-pulse" />}
+        {clamped && (
+          <span className="absolute inset-x-0 bottom-0 h-6 bg-gradient-to-t from-fw-wash/90 to-transparent pointer-events-none" />
+        )}
+      </div>
+      {collapsible && (
+        <button
+          onClick={() => setExpanded(e => !e)}
+          className="mt-1 text-[11px] font-medium text-fw-link hover:underline"
+          type="button"
+        >
+          {expanded ? 'Show less' : 'Show more'}
+        </button>
+      )}
     </div>
   );
 }

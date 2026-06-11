@@ -1,6 +1,8 @@
 import React from 'react';
 import { useState, useEffect } from 'react';
 import { Router, Network, ArrowRight, Sparkles, Globe, Upload, Brain, FileImage, Zap, LayoutGrid as Layout, Cloud, FolderOpen, Clock, Trash2 } from 'lucide-react';
+import { CloudRouterIcon } from '../icons/CloudRouterIcon';
+import { TopologyThumbnail } from './TopologyThumbnail';
 import { NetworkNode, NetworkEdge } from '../../types';
 import { getNodeIcon } from '../../utils/nodeUtils';
 import { demoNodes, demoEdges } from '../../data/demoTopology';
@@ -890,17 +892,19 @@ export function DefaultNetworkSetup({ isOpen, onComplete, onApplyTemplate }: Def
                 className="group p-4 border-2 border-gray-200 rounded-xl hover:border-slate-400 hover:shadow-lg transition-all duration-300 flex flex-col"
               >
                 <div className="flex-1 flex flex-col">
-                  <div className="mx-auto w-12 h-12 bg-gradient-to-br from-slate-100 to-slate-200 rounded-full flex items-center justify-center mb-2 group-hover:from-slate-200 group-hover:to-slate-300 transition-all">
-                    <Sparkles className="h-6 w-6 text-slate-600" />
+                  <div className="mx-auto w-12 h-12 bg-fuchsia-50 rounded-xl flex items-center justify-center mb-2 group-hover:bg-fuchsia-100 transition-all">
+                    <CloudRouterIcon className="h-7 w-7 text-fuchsia-600" />
                   </div>
                   <h3 className="text-lg font-semibold text-gray-900 mb-2 text-center">Create</h3>
                   <p className="text-gray-600 text-xs leading-relaxed text-center flex-1">
-                    Start with AT&T Core and customize your cloud router.
+                    Start from scratch: AT&T Core plus your named cloud router.
                   </p>
                 </div>
-                <div className="mt-2 flex justify-center space-x-1.5">
-                  <div className="w-2 h-2 bg-amber-300 rounded-full"></div>
-                  <div className="w-2 h-2 bg-stone-400 rounded-full"></div>
+                <div className="mt-2 flex justify-center">
+                  <div className="inline-flex items-center text-xs text-fuchsia-700 bg-fuchsia-50 px-2 py-0.5 rounded-full">
+                    <Globe className="h-3 w-3 mr-1" />
+                    Core + Router
+                  </div>
                 </div>
               </button>
 
@@ -940,10 +944,11 @@ export function DefaultNetworkSetup({ isOpen, onComplete, onApplyTemplate }: Def
                     Choose from pre-built enterprise patterns.
                   </p>
                 </div>
-                <div className="mt-2 flex justify-center space-x-1">
-                  <div className="w-1.5 h-1.5 bg-slate-400 rounded-full"></div>
-                  <div className="w-1.5 h-1.5 bg-slate-400 rounded-full"></div>
-                  <div className="w-1.5 h-1.5 bg-slate-400 rounded-full"></div>
+                <div className="mt-2 flex justify-center">
+                  <div className="inline-flex items-center text-xs text-slate-600 bg-slate-50 px-2 py-0.5 rounded-full">
+                    <Layout className="h-3 w-3 mr-1" />
+                    Patterns
+                  </div>
                 </div>
               </button>
 
@@ -1344,6 +1349,11 @@ export function DefaultNetworkSetup({ isOpen, onComplete, onApplyTemplate }: Def
                             >
                               <Trash2 className="h-4 w-4" />
                             </button>
+                          </div>
+
+                          {/* Mini topology preview */}
+                          <div className="mb-3 rounded-lg border border-gray-100 bg-gray-50 overflow-hidden">
+                            <TopologyThumbnail nodes={topology.nodes} edges={topology.edges} height={96} />
                           </div>
 
                           {topology.description && (

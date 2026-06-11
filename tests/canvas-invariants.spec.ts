@@ -189,6 +189,34 @@ test('advisor findings surface on the Pano map as site severity marks', async ({
   await expect(marked.first()).toBeVisible();
 });
 
+test('opening a saved design normalizes it to the current canvas and fits', async ({ page }) => {
+  // saved on some other (huge) canvas: positions far outside today's viewport
+  const farFlung = {
+    id: 'far-design', name: 'Far Design', savedAt: 1, lastModified: 2,
+    nodes: FIXTURE.nodes.map((n, i) => ({ ...n, x: 1800 + i * 300, y: 700 + i * 120 })),
+    edges: FIXTURE.edges
+  };
+  await page.addInitScript((design) => {
+    localStorage.setItem('savedTopologies', JSON.stringify([design]));
+  }, farFlung);
+  await page.goto('/');
+  // welcome screen -> Open -> the saved card (with its thumbnail)
+  await page.getByRole('button', { name: /Open Continue working/ }).click();
+  await page.getByRole('button', { name: /Far Design/ }).click();
+  await expect(page.locator('.node-enter')).toHaveCount(FIXTURE.nodes.length);
+  await page.waitForTimeout(700); // normalization + auto-fit settle
+
+  const positions = await logicalPositions(page);
+  assertNoRestingOverlaps(positions);
+  const canvasWidth = await page.evaluate(() =>
+    document.querySelector('.relative.overflow-hidden.bg-gray-50')!.clientWidth
+  );
+  positions.forEach(p => {
+    expect(p.x, `${p.name} in current canvas`).toBeLessThanOrEqual(canvasWidth - 160);
+    expect(p.y, `${p.name} above toolbar`).toBeLessThanOrEqual(600);
+  });
+});
+
 test('last mile wizard activates a provider-bound connection', async ({ page }) => {
   await openDesigner(page);
   // open the Direct Connect edge's config via its gear pill

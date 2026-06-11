@@ -618,8 +618,9 @@ export function NetworkDesigner({
   const handleSwitchDesign = (name: string) => {
     const design = savedDesigns.find(d => d.name === name);
     if (!design) return;
-    setNodes(rehydrateIcons(design.nodes as NetworkNode[]));
+    setNodes(resolveAllOverlaps(rehydrateIcons(design.nodes as NetworkNode[]), layoutBoundsNow()));
     setEdges(seedAllEdgeMetrics(design.edges));
+    setFitSignal(sig => sig + 1);
     setDesignName(name);
     setAssessment(null);
     setFocusedFinding(null);
@@ -1691,11 +1692,15 @@ export function NetworkDesigner({
           isOpen={showDefaultSetup}
           onComplete={handleDefaultNetworkSetup}
           onApplyTemplate={(templateNodes, templateEdges, name) => {
-            setNodes(templateNodes);
+            // Saved positions came from whatever canvas they were drawn on -
+            // normalize into the CURRENT bounds, then fit to screen
+            const placed = resolveAllOverlaps(templateNodes, layoutBoundsNow());
+            setNodes(placed);
             setEdges(templateEdges);
             if (name) setDesignName(name);
-            saveToHistory(templateNodes, templateEdges);
+            saveToHistory(placed, templateEdges);
             setShowDefaultSetup(false);
+            setFitSignal(sig => sig + 1);
             
             window.addToast({
               type: 'success',
