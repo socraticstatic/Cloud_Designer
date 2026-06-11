@@ -20,6 +20,19 @@ export function simulateFailure(
 ): FailureResult {
   const failed = nodes.find(n => n.id === nodeId);
   const survivors = nodes.filter(n => n.id !== nodeId);
+
+  // Trivial topologies: nothing left to strand
+  if (survivors.length === 0) {
+    return {
+      failedNodeId: nodeId,
+      unreachableNodeIds: [],
+      deadEdgeIds: edges.filter(e => e.source === nodeId || e.target === nodeId).map(e => e.id),
+      downSites: [],
+      isolatedCount: 0,
+      isArticulation: false,
+      verdict: `${failed?.name ?? 'This node'} is the only node in the design. There is nothing else to strand, which is its own kind of risk.`
+    };
+  }
   const liveEdges = edges.filter(e => e.source !== nodeId && e.target !== nodeId);
   const deadEdgeIds = edges.filter(e => e.source === nodeId || e.target === nodeId).map(e => e.id);
 

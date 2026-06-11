@@ -101,6 +101,12 @@ export const Canvas = forwardRef<HTMLDivElement, CanvasProps>(({
 
   // Use provided ref or internal ref
   const canvasRef = ref as RefObject<HTMLDivElement> || internalCanvasRef;
+
+  // Gesture listeners (marquee, drag-to-connect) outlive the render they
+  // started in - they must read nodes through a ref, never the closure.
+  // Same stale-closure disease that caused the node-drag runaway.
+  const nodesGestureRef = useRef(nodes);
+  nodesGestureRef.current = nodes;
   
   // Track mouse position for edge creation preview
   useEffect(() => {
@@ -273,7 +279,7 @@ export const Canvas = forwardRef<HTMLDivElement, CanvasProps>(({
       const minY = Math.min(start.y, end.y);
       const maxY2 = Math.max(start.y, end.y);
       if (maxX - minX > 8 || maxY2 - minY > 8) {
-        const hit = nodes
+        const hit = nodesGestureRef.current
           .filter(n => n.x + 32 > minX && n.x + 32 < maxX && n.y + 32 > minY && n.y + 32 < maxY2)
           .map(n => n.id);
         onMarqueeSelect?.(hit);
@@ -373,14 +379,14 @@ export const Canvas = forwardRef<HTMLDivElement, CanvasProps>(({
       style={{ 
         width: '100%',
         height: `${maxY}px`,
-        zIndex: 5,
+        zIndex: Z_INDEX.CANVAS_CONTENT,
         cursor: isPanning ? 'grabbing' : 'default'
       }}
       onClick={handleCanvasClick}
       onMouseDown={handleMarqueeStart}
     >
       {/* Canvas wash background - per Figma concept frames */}
-      <div className="absolute inset-0 bg-fw-wash" style={{ zIndex: 1 }}></div>
+      <div className="absolute inset-0 bg-fw-wash" style={{ zIndex: Z_INDEX.BACKGROUND }}></div>
 
       {/* Grid Background */}
       <div 
@@ -389,7 +395,7 @@ export const Canvas = forwardRef<HTMLDivElement, CanvasProps>(({
           backgroundImage: 'radial-gradient(circle, #e5e7eb 1px, transparent 1px)',
           backgroundSize: `${gridSize * zoomLevel}px ${gridSize * zoomLevel}px`,
           backgroundPosition: `${panOffset.x % (gridSize * zoomLevel)}px ${panOffset.y % (gridSize * zoomLevel)}px`,
-          zIndex: 2,
+          zIndex: Z_INDEX.GRID,
           opacity: 0.6
         }}
       />
@@ -402,7 +408,7 @@ export const Canvas = forwardRef<HTMLDivElement, CanvasProps>(({
           transformOrigin: '0 0',
           width: '100%',
           height: '100%',
-          zIndex: 10
+          zIndex: Z_INDEX.EDGES
         }}
       >
         {/* Location group containers - interactive site objects */}
@@ -421,7 +427,7 @@ export const Canvas = forwardRef<HTMLDivElement, CanvasProps>(({
         {/* SVG Layer for Edges - Only visual representation */}
         <svg 
           className="absolute inset-0" 
-          style={{ zIndex: 10, pointerEvents: 'none' }}
+          style={{ zIndex: Z_INDEX.EDGES, pointerEvents: 'none' }}
           width="100%"
           height="100%"
         >
@@ -553,7 +559,7 @@ export const Canvas = forwardRef<HTMLDivElement, CanvasProps>(({
         />
 
         {/* Nodes Layer - transparent to events so group chips beneath stay clickable */}
-        <div className="absolute inset-0 pointer-events-none" style={{ zIndex: 20 }}>
+        <div className="absolute inset-0 pointer-events-none" style={{ zIndex: Z_INDEX.NODES }}>
           {nodes.map((node) => (
             <Node
               key={node.id}
@@ -605,7 +611,7 @@ export const Canvas = forwardRef<HTMLDivElement, CanvasProps>(({
 
         {/* Ghost nodes - the advisor's proposed additions, dashed green */}
         {ghostNodes.length > 0 && (
-          <div className="absolute inset-0 pointer-events-none ghost-pulse" style={{ zIndex: 21 }}>
+          <div className="absolute inset-0 pointer-events-none ghost-pulse" style={{ zIndex: Z_INDEX.NODES + 1 }}>
             {ghostNodes.map(node => (
               <div
                 key={`ghost-${node.id}`}
@@ -628,7 +634,7 @@ export const Canvas = forwardRef<HTMLDivElement, CanvasProps>(({
 
       {/* Zoom controls + fit (right rail, Figma parity with Pano) */}
       {!isReadOnly && (
-        <div className="absolute right-4 top-1/2 -translate-y-1/2 flex flex-col gap-1 bg-white rounded-xl shadow-sm border border-gray-200 p-1" style={{ zIndex: 80 }}>
+        <div className="absolute right-4 top-1/2 -translate-y-1/2 flex flex-col gap-1 bg-white rounded-xl shadow-sm border border-gray-200 p-1" style={{ zIndex: Z_INDEX.CHROME }}>
           <button
             onClick={() => setZoomLevel(z => Math.min(2, +(z + 0.2).toFixed(2)))}
             className="p-1.5 rounded-lg text-gray-500 hover:bg-gray-50 hover:text-gray-800 text-sm font-semibold leading-none"

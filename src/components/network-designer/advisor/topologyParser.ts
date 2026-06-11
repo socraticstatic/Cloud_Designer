@@ -156,6 +156,14 @@ function buildEdges(rawEdges: RawEdge[], idMap: Map<string, string>, warnings: s
       warnings.push(`Connection ${i + 1}: endpoint "${!source ? sourceKey : targetKey}" not found - skipped.`);
       return;
     }
+    if (source === target) {
+      warnings.push(`Connection ${i + 1}: "${sourceKey}" connects to itself - skipped.`);
+      return;
+    }
+    if (edges.some(e => (e.source === source && e.target === target) || (e.source === target && e.target === source))) {
+      warnings.push(`Connection ${i + 1}: duplicate of an earlier ${sourceKey} - ${targetKey} link - skipped.`);
+      return;
+    }
     edges.push(seedEdgeMetrics({
       id: `edge-import-${stamp}-${i}`,
       source,

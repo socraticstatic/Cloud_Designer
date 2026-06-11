@@ -736,6 +736,12 @@ export function NetworkDesigner({
         return;
       }
       if (typing || isReadOnly) return;
+      // The apply-all stepper owns the topology while running - undo/redo
+      // mid-run would make it apply fixes against state it no longer holds
+      if (applyAllActiveRef.current && (e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'z') {
+        e.preventDefault();
+        return;
+      }
       if ((e.key === 'Delete' || e.key === 'Backspace')) {
         if (multiSelected.length > 0) {
           e.preventDefault();

@@ -84,6 +84,11 @@ export function LocationGroups({
   const [editingCity, setEditingCity] = useState<string | null>(null);
   const [draftName, setDraftName] = useState('');
   const draggedRef = useRef(false);
+  // Drag listeners outlive their starting render - read callbacks via refs
+  const moveRef = useRef(onMoveGroup);
+  moveRef.current = onMoveGroup;
+  const moveEndRef = useRef(onMoveGroupEnd);
+  moveEndRef.current = onMoveGroupEnd;
 
   if (groups.length === 0) return null;
 
@@ -100,7 +105,7 @@ export function LocationGroups({
       const dy = (me.clientY - lastY) / zoomLevel;
       if (Math.abs(me.clientX - lastX) > 2 || Math.abs(me.clientY - lastY) > 2) {
         draggedRef.current = true;
-        onMoveGroup(group.memberIds, dx, dy);
+        moveRef.current?.(group.memberIds, dx, dy);
         lastX = me.clientX;
         lastY = me.clientY;
       }
@@ -108,7 +113,7 @@ export function LocationGroups({
     const handleUp = () => {
       document.removeEventListener('mousemove', handleMove);
       document.removeEventListener('mouseup', handleUp);
-      if (draggedRef.current) onMoveGroupEnd?.();
+      if (draggedRef.current) moveEndRef.current?.();
       else {
         // plain click opens the editor
         setEditingCity(group.city);
@@ -128,7 +133,7 @@ export function LocationGroups({
   return (
     <>
       {/* Containers - behind edges and nodes */}
-      <div className="absolute inset-0 pointer-events-none" style={{ zIndex: 5 }}>
+      <div className="absolute inset-0 pointer-events-none" style={{ zIndex: Z_INDEX.CANVAS_CONTENT }}>
         {groups.map(group => {
           const palette = GROUP_PALETTES[group.paletteIndex % GROUP_PALETTES.length];
           return (
@@ -148,7 +153,7 @@ export function LocationGroups({
       </div>
 
       {/* Chips + editors - above nodes so they stay interactive */}
-      <div className="absolute inset-0 pointer-events-none" style={{ zIndex: 30 }}>
+      <div className="absolute inset-0 pointer-events-none" style={{ zIndex: Z_INDEX.NODES + 10 }}>
       {groups.map(group => {
         const palette = GROUP_PALETTES[group.paletteIndex % GROUP_PALETTES.length];
         const isEditing = editingCity === group.city;
