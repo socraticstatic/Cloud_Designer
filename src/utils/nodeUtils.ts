@@ -1,6 +1,6 @@
 import { Server, Cloud, Router, Network, Shield, Activity, PanelRight, Menu, Database, Globe, Lock, Feather as Ethernet, Wifi } from 'lucide-react';
 import { CloudRouterIcon } from '../components/icons/CloudRouterIcon';
-import { getProviderIcon, getDatacenterIcon } from '../components/icons/ProviderIcons';
+import { getProviderIcon, getDatacenterIcon, AttGlobeIcon } from '../components/icons/ProviderIcons';
 import { NetworkNode } from '../types';
 
 export const getFunctionIcon = (functionType: string, config?: any) => {
@@ -21,7 +21,7 @@ export const getNetworkTypeIcon = (networkType: string) => {
     case 'vpn': return Lock;
     case 'ethernet': return Ethernet;
     case 'iot': return Wifi;
-    case 'at&t core': return Globe;
+    case 'at&t core': return AttGlobeIcon;
     default: return Network;
   }
 };

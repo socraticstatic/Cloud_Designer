@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, memo } from 'react';
 import { NetworkNode } from '../types';
 import { getNodeColors } from '../../utils/nodeUtils';
+import { getBrandWordmark } from '../icons/ProviderIcons';
 import { CANVAS_BOUNDS, Z_INDEX } from '../../constants';
 
 export type NodeHighlight = 'error' | 'warning' | 'recommendation' | 'positive';
@@ -193,6 +194,13 @@ export const Node = memo(function Node({
               <Icon className={`h-5 w-5 ${iconColor}`} />
             </div>
             <div className="min-w-0 pr-1 whitespace-nowrap">
+              {/* Card mode has the width for the provider's real wordmark */}
+              {(() => {
+                const wordmark = getBrandWordmark(node.config?.provider || node.cloudProvider);
+                return wordmark
+                  ? <img src={wordmark} className="h-3.5 w-auto max-w-[96px] object-contain object-left mb-0.5" alt={node.config?.provider || ''} />
+                  : null;
+              })()}
               <div className="text-sm font-medium text-gray-900 leading-tight">{node.name}</div>
               <div className="flex items-center gap-1.5 text-[11px] text-gray-500 leading-tight mt-0.5">
                 {(node.config?.region || node.config?.city) && (

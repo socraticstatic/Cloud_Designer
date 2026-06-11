@@ -71,3 +71,29 @@ export function getDatacenterIcon(provider?: string) {
   if (p.includes('databank')) return DataBankIcon;
   return null;
 }
+
+
+// Real brand assets (public/brands/): the AT&T globe from the NetBond
+// repo plus partner marks from Wikimedia Commons. Wordmark-shaped logos
+// are unreadable at canvas-tile size, so they appear only on surfaces
+// with horizontal room (card display mode); square tiles keep monograms.
+const BRAND_BASE = `${import.meta.env.BASE_URL}brands/`;
+
+export function AttGlobeIcon({ className = 'h-5 w-5' }: ProviderIconProps) {
+  return <img src={`${BRAND_BASE}att-globe.svg`} className={`${className} object-contain`} alt="" aria-hidden="true" />;
+}
+
+const WORDMARKS: Record<string, string> = {
+  equinix: 'equinix.svg',
+  'digital realty': 'digital-realty.svg',
+  cyrusone: 'cyrusone.svg',
+  coreweave: 'coreweave.svg'
+};
+
+// Returns the real wordmark asset URL for a provider, or null when only
+// a monogram exists (CoreSite, DataBank have no published vector mark).
+export function getBrandWordmark(provider?: string): string | null {
+  const p = (provider || '').toLowerCase();
+  const key = Object.keys(WORDMARKS).find(k => p.includes(k));
+  return key ? `${BRAND_BASE}${WORDMARKS[key]}` : null;
+}
