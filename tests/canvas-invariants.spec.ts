@@ -266,6 +266,24 @@ test('chrome surfaces never overlap each other - including narrow viewport with 
   expect(await chromeChromeViolations(page)).toEqual([]);
 });
 
+test('toolbar stays on one row with the advisor open at desktop width', async ({ page }) => {
+  // Two stacked bugs lived here: labels keyed off the viewport while the
+  // dock stole column width, and the abspos left-50% box shrink-to-fit to
+  // HALF the column - the Save check wrapped onto its own row.
+  await openDesigner(page);
+  await page.locator('button[title="Network Advisor"]').first().click();
+  await expect(page.locator('[aria-label="Network Advisor"]')).toBeVisible();
+  await page.waitForTimeout(900);
+  const spread = await page.evaluate(() => {
+    const toolbar = document.querySelector('button[title="Clear Canvas"]')!.closest('div[class*="bottom-6"]')!;
+    const tops = [...toolbar.querySelectorAll('button')]
+      .filter(b => b.getBoundingClientRect().height > 0)
+      .map(b => Math.round(b.getBoundingClientRect().top));
+    return Math.max(...tops) - Math.min(...tops);
+  });
+  expect(spread).toBeLessThan(12);
+});
+
 test('node labels never overlap across the visual state matrix', async ({ page }) => {
   await openDesigner(page);
   // state 1: configured nodes with region sublabels (the fixture)

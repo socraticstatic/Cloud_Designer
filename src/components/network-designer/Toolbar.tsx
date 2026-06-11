@@ -27,6 +27,9 @@ interface ToolbarProps {
   onOpenAdvisor?: () => void;
   advisorBadge?: number;
   exportSlot?: React.ReactNode;
+  // The advisor dock steals 400px from this column - labels key off the
+  // COLUMN's space, not the viewport, or the toolbar wraps into rows
+  compact?: boolean;
 }
 
 export function Toolbar({
@@ -45,8 +48,10 @@ export function Toolbar({
   onImportTopology,
   onOpenAdvisor,
   advisorBadge = 0,
-  exportSlot
+  exportSlot,
+  compact = false
 }: ToolbarProps) {
+  const labelCls = compact ? 'hidden' : 'text-sm hidden xl:inline';
   // State to track which dropdown is open
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [confirmClear, setConfirmClear] = useState(false);
@@ -109,7 +114,7 @@ export function Toolbar({
   return (
     <div 
       ref={toolbarRef} 
-      className="absolute bottom-6 left-1/2 transform -translate-x-1/2 bg-white rounded-2xl shadow-md border border-gray-200 p-2 flex items-center justify-center flex-wrap gap-1 max-w-[calc(100%-3rem)]"
+      className="absolute bottom-6 left-1/2 transform -translate-x-1/2 w-max bg-white rounded-2xl shadow-md border border-gray-200 p-2 flex items-center justify-center flex-wrap gap-1 max-w-[calc(100%-8rem)]"
       style={{ zIndex: Z_INDEX.CHROME }}
     >
       {/* Choose Button - Added before Function */}
@@ -120,7 +125,7 @@ export function Toolbar({
         type="button"
       >
         <Layout className="h-5 w-5" />
-        <span className="text-sm hidden xl:inline">Templates</span>
+        <span className={labelCls}>Templates</span>
       </button>
       
       {/* Small separator line */}
@@ -137,7 +142,7 @@ export function Toolbar({
         type="button"
       >
         <CloudRouterIcon className="h-5 w-5" />
-        <span className="text-sm hidden xl:inline">Cloud Router</span>
+        <span className={labelCls}>Cloud Router</span>
       </button>
       
       {/* Small separator line */}
@@ -154,7 +159,7 @@ export function Toolbar({
             type="button"
           >
             <Server className="h-5 w-5" />
-            <span className="text-sm hidden xl:inline">Function</span>
+            <span className={labelCls}>Function</span>
           </button>
           
           {openDropdown === 'function' && (
@@ -186,7 +191,7 @@ export function Toolbar({
             type="button"
           >
             <Cloud className="h-5 w-5" />
-            <span className="text-sm hidden xl:inline">Cloud</span>
+            <span className={labelCls}>Cloud</span>
           </button>
           
           {openDropdown === 'cloud' && (
@@ -218,7 +223,7 @@ export function Toolbar({
             type="button"
           >
             <Database className="h-5 w-5" />
-            <span className="text-sm hidden xl:inline">Datacenter</span>
+            <span className={labelCls}>Datacenter</span>
           </button>
           
           {openDropdown === 'datacenter' && (
@@ -250,7 +255,7 @@ export function Toolbar({
             type="button"
           >
             <Network className="h-5 w-5" />
-            <span className="text-sm hidden xl:inline">Network</span>
+            <span className={labelCls}>Network</span>
           </button>
           
           {openDropdown === 'network' && (

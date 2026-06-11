@@ -1465,7 +1465,7 @@ export function NetworkDesigner({
         {/* Fix preview banner - floats over the canvas while a ghost is live */}
         {fixPreviewState && (
           <div
-            className="absolute top-16 left-1/2 -translate-x-1/2 flex items-center gap-3 bg-white rounded-full shadow-lg border border-green-600/40 pl-4 pr-2 py-2"
+            className="absolute top-16 left-1/2 -translate-x-1/2 w-max max-w-[calc(100%-2rem)] flex items-center gap-3 bg-white rounded-full shadow-lg border border-green-600/40 pl-4 pr-2 py-2"
             style={{ zIndex: Z_INDEX.CHROME }}
           >
             <span className="text-xs font-medium text-fw-heading whitespace-nowrap">
@@ -1549,6 +1549,7 @@ export function NetworkDesigner({
         {abstractionLevel === 'network' && !isReadOnly && (
           <div style={{ zIndex: Z_INDEX.CHROME, pointerEvents: 'auto' }}>
             <Toolbar
+              compact={showAdvisor}
               onAddNode={handleAddNode}
               onToggleEdgeCreation={toggleEdgeCreation}
               isCreatingEdge={isCreatingEdge}
