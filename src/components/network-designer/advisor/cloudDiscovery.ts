@@ -113,7 +113,8 @@ export function discoverAccount(provider: keyof typeof PROFILES, accountId: stri
     nodes: [core, hub, ...vpcs],
     edges,
     warnings: [],
-    sourceName: `${profile.label} account ${accountId.trim() || 'demo'}`
+    sourceName: `${profile.label} account ${accountId.trim() || 'demo'}`,
+    provenance: { provider: profile.label, accountId: accountId.trim() || 'demo' }
   };
 }
 

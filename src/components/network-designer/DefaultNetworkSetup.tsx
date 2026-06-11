@@ -2,12 +2,14 @@ import React from 'react';
 import { useState, useEffect } from 'react';
 import { Router, Network, ArrowRight, Sparkles, Globe, Upload, Brain, FileImage, Zap, LayoutGrid as Layout, Cloud, FolderOpen, Clock, Trash2 } from 'lucide-react';
 import { CloudRouterIcon } from '../icons/CloudRouterIcon';
+import { Radar } from 'lucide-react';
 import { TopologyThumbnail } from './TopologyThumbnail';
 import { NetworkNode, NetworkEdge } from '../../types';
 import { getNodeIcon } from '../../utils/nodeUtils';
 import { demoNodes, demoEdges } from '../../data/demoTopology';
 
 interface DefaultNetworkSetupProps {
+  onOpenDiscover?: () => void;
   isOpen: boolean;
   onComplete: (cloudRouterName: string) => void;
   onApplyTemplate?: (nodes: NetworkNode[], edges: NetworkEdge[], name?: string) => void;
@@ -36,7 +38,7 @@ interface SavedTopology {
   lastModified?: number;
 }
 
-export function DefaultNetworkSetup({ isOpen, onComplete, onApplyTemplate }: DefaultNetworkSetupProps) {
+export function DefaultNetworkSetup({ isOpen, onComplete, onApplyTemplate, onOpenDiscover }: DefaultNetworkSetupProps) {
   const [setupMode, setSetupMode] = useState<SetupMode>('selection');
   const [cloudRouterName, setCloudRouterName] = useState('');
   const [error, setError] = useState('');
@@ -908,25 +910,22 @@ export function DefaultNetworkSetup({ isOpen, onComplete, onApplyTemplate }: Def
                 </div>
               </button>
 
-              {/* Import */}
+              {/* Discover - connect a cloud account (upload/paste live inside) */}
               <button
-                onClick={() => setSetupMode('ai')}
+                onClick={() => (onOpenDiscover ? onOpenDiscover() : setSetupMode('ai'))}
                 className="group p-4 border-2 border-gray-200 rounded-xl hover:border-slate-400 hover:shadow-lg transition-all duration-300 flex flex-col"
               >
                 <div className="flex-1 flex flex-col">
-                  <div className="mx-auto w-12 h-12 bg-gradient-to-br from-slate-100 to-slate-200 rounded-full flex items-center justify-center mb-2 group-hover:from-slate-200 group-hover:to-slate-300 transition-all">
-                    <Brain className="h-6 w-6 text-slate-600" />
+                  <div className="mx-auto w-12 h-12 bg-fw-accent rounded-xl flex items-center justify-center mb-2 group-hover:bg-blue-100 transition-all">
+                    <Radar className="h-6 w-6 text-fw-link" />
                   </div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2 text-center">Import</h3>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2 text-center">Discover</h3>
                   <p className="text-gray-600 text-xs leading-relaxed text-center flex-1">
-                    Upload diagram and let AI recreate it.
+                    Connect a cloud account and import its live estate.
                   </p>
                 </div>
-                <div className="mt-2 flex justify-center">
-                  <div className="inline-flex items-center text-xs text-slate-600 bg-slate-50 px-2 py-0.5 rounded-full">
-                    <Zap className="h-3 w-3 mr-1" />
-                    AI
-                  </div>
+                <div className="mt-2 flex justify-center gap-1 text-[10px] font-semibold text-slate-400 tracking-wide">
+                  <span>AWS</span><span>·</span><span>AZURE</span><span>·</span><span>GCP</span><span>·</span><span>OCI</span>
                 </div>
               </button>
 

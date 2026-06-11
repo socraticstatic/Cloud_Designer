@@ -1,7 +1,7 @@
 // Upload network topology data (JSON / CSV) - styled per the SDCI Figma
 // "Network Designer" concept pages and AT&T Flywheel tokens.
 
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { X, UploadCloud, FileJson, FileSpreadsheet, Download, CheckCircle2, AlertTriangle } from 'lucide-react';
 import { Z_INDEX } from '../../../constants';
 import { useModalA11y } from '../../../hooks/useModalA11y';
@@ -12,11 +12,12 @@ import { Radar } from 'lucide-react';
 
 interface TopologyImportModalProps {
   isOpen: boolean;
+  initialTab?: 'upload' | 'paste' | 'discover';
   onClose: () => void;
   onImport: (result: ParseResult) => void;
 }
 
-export function TopologyImportModal({ isOpen, onClose, onImport }: TopologyImportModalProps) {
+export function TopologyImportModal({ isOpen, onClose, onImport, initialTab = 'upload' }: TopologyImportModalProps) {
   const dialogRef = useModalA11y(onClose, isOpen);
   const [tab, setTab] = useState<'upload' | 'paste' | 'discover'>('upload');
   const [provider, setProvider] = useState<'AWS' | 'Azure' | 'Google' | 'Oracle'>('AWS');
@@ -26,6 +27,25 @@ export function TopologyImportModal({ isOpen, onClose, onImport }: TopologyImpor
   const [result, setResult] = useState<ParseResult | null>(null);
   const [dragActive, setDragActive] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Open on the requested tab (e.g. the welcome screen's Discover card)
+  useEffect(() => {
+    if (isOpen) setTab(initialTab);
+  }, [isOpen, initialTab]);
+
+  const startScan = (prov: typeof provider, acct: string) => {
+    setScanStep(0);
+    const steps = discoverySteps(prov, acct, VPC_WORD[prov]);
+    steps.forEach((_, i) => {
+      setTimeout(() => {
+        setScanStep(i + 1);
+        if (i === steps.length - 1) {
+          setResult(discoverAccount(prov, acct));
+          setScanStep(-1);
+        }
+      }, 450 * (i + 1));
+    });
+  };
 
   const handleFile = useCallback((file: File) => {
     const reader = new FileReader();
@@ -134,6 +154,19 @@ export function TopologyImportModal({ isOpen, onClose, onImport }: TopologyImpor
                 </div>
               </div>
 
+              {scanStep < 0 && (
+                <p className="mt-2 text-[11px] text-fw-bodyLight">
+                  No account handy?{' '}
+                  <button
+                    onClick={() => { setProvider('AWS'); setAccountId('4156-8721-0042'); startScan('AWS', '4156-8721-0042'); }}
+                    className="text-fw-link underline hover:no-underline"
+                    type="button"
+                  >
+                    Try the demo account
+                  </button>
+                </p>
+              )}
+
               {scanStep >= 0 ? (
                 <div className="mt-5 rounded-xl border border-fw-border-secondary bg-fw-wash px-4 py-4">
                   {discoverySteps(provider, accountId, VPC_WORD[provider]).map((line, i) => (
@@ -147,19 +180,7 @@ export function TopologyImportModal({ isOpen, onClose, onImport }: TopologyImpor
                 </div>
               ) : (
                 <button
-                  onClick={() => {
-                    setScanStep(0);
-                    const steps = discoverySteps(provider, accountId, VPC_WORD[provider]);
-                    steps.forEach((_, i) => {
-                      setTimeout(() => {
-                        setScanStep(i + 1);
-                        if (i === steps.length - 1) {
-                          setResult(discoverAccount(provider, accountId));
-                          setScanStep(-1);
-                        }
-                      }, 450 * (i + 1));
-                    });
-                  }}
+                  onClick={() => startScan(provider, accountId)}
                   className="mt-5 inline-flex items-center gap-2 px-5 py-2 text-sm font-medium rounded-full bg-fw-ctaPrimary text-white hover:bg-fw-ctaPrimaryHover transition-colors"
                   type="button"
                 >

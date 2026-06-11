@@ -229,6 +229,25 @@ test('pasting topology JSON imports and assesses it', async ({ page }) => {
   assertNoRestingOverlaps(await logicalPositions(page));
 });
 
+test('welcome Discover card runs the demo account end to end', async ({ page }) => {
+  // clean state: welcome screen shows
+  await page.goto('/');
+  await expect(page.getByText('Welcome to Cloud Designer')).toBeVisible();
+  await page.getByRole('button', { name: /Discover Connect a cloud account/ }).click();
+  // import modal opens directly on the Discover tab
+  await expect(page.getByText('Scan account')).toBeVisible();
+  // one-click demo account
+  await page.getByRole('button', { name: 'Try the demo account' }).click();
+  await page.getByRole('button', { name: 'Import & analyze' }).click({ timeout: 10000 });
+  await expect(page.getByText('Topology Imported')).toBeVisible();
+  // provenance chip appears beside the design name
+  await expect(page.getByText(/Discovered · AWS · 4156-8721-0042/)).toBeVisible();
+  // and survives a reload (persistence debounce is 500ms - let it land)
+  await page.waitForTimeout(900);
+  await page.reload();
+  await expect(page.getByText(/Discovered · AWS · 4156-8721-0042/)).toBeVisible();
+});
+
 test('cloud discovery imports an estate and the advisor flags the CIDR overlap', async ({ page }) => {
   await openDesigner(page);
   await page.locator('button[title="Network Advisor"]').first().click();

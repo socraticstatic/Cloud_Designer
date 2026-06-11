@@ -191,6 +191,10 @@ export function NetworkDesigner({
   } = useAdvisor({ nodes, edges, setNodes, setEdges, saveToHistory, rehydrateIcons });
   const [fitSignal, setFitSignal] = useState(0);
   const [lastMileEdgeId, setLastMileEdgeId] = useState<string | null>(null);
+  // Where the current topology came from (cloud discovery) - shown as a
+  // provenance chip beside the design name and persisted with the design
+  const [provenance, setProvenance] = useState<{ provider: string; accountId: string } | null>(null);
+  const [importInitialTab, setImportInitialTab] = useState<'upload' | 'discover'>('upload');
 
   // Re-fit the canvas whenever the advisor dock changes the viewport width
   const advisorWasOpen = useRef(false);
@@ -246,7 +250,7 @@ export function NetworkDesigner({
 
   // Restore persisted state from browser cache on first mount
   useEffect(() => {
-    const savedTopology = readStorage<{ schemaVersion?: number; nodes: NetworkNode[]; edges: NetworkEdge[]; name?: string }>(STORAGE_TOPOLOGY);
+    const savedTopology = readStorage<{ schemaVersion?: number; nodes: NetworkNode[]; edges: NetworkEdge[]; name?: string; provenance?: { provider: string; accountId: string } | null }>(STORAGE_TOPOLOGY);
     if (savedTopology && (savedTopology.schemaVersion ?? 1) > SCHEMA_VERSION) {
       console.warn('[restore] topology was saved by a newer app version - leaving it untouched');
     } else if (savedTopology && savedTopology.nodes?.length) {
@@ -261,6 +265,7 @@ export function NetworkDesigner({
       // unwinds to the stack's empty initial state and blanks the canvas
       saveToHistory(restoredNodes, restoredEdges);
       if (savedTopology.name) setDesignName(savedTopology.name);
+      if (savedTopology.provenance) setProvenance(savedTopology.provenance);
     }
     const savedTemplates = readStorage<CustomTemplate[]>(STORAGE_TEMPLATES);
     if (savedTemplates?.length) {
@@ -287,7 +292,7 @@ export function NetworkDesigner({
     const timer = setTimeout(() => {
       try {
         if (nodes.length > 0 || edges.length > 0) {
-          localStorage.setItem(STORAGE_TOPOLOGY, JSON.stringify({ schemaVersion: SCHEMA_VERSION, nodes: stripIcons(nodes), edges, name: designName }));
+          localStorage.setItem(STORAGE_TOPOLOGY, JSON.stringify({ schemaVersion: SCHEMA_VERSION, nodes: stripIcons(nodes), edges, name: designName, provenance }));
           // Upsert into the shared design library (also feeds the welcome screen)
           setSavedDesigns(prev => {
             const entry: SavedDesign = {
@@ -470,6 +475,7 @@ export function NetworkDesigner({
     }
     setShowDefaultSetup(false);
     clearSelection();
+    setProvenance(result.provenance ?? null);
 
     const analysis = handleRunAdvisor(enriched, result.edges);
     window.addToast({
@@ -486,6 +492,7 @@ export function NetworkDesigner({
   const handleSwitchDesign = (name: string) => {
     const design = savedDesigns.find(d => d.name === name);
     if (!design) return;
+    setProvenance(null);
     setNodes(resolveAllOverlaps(rehydrateIcons(design.nodes as NetworkNode[]), layoutBoundsNow()));
     setEdges(seedAllEdgeMetrics(design.edges));
     setFitSignal(sig => sig + 1);
@@ -498,6 +505,7 @@ export function NetworkDesigner({
   };
 
   const handleCreateNewDesign = () => {
+    setProvenance(null);
     setNodes([]);
     setEdges([]);
     setDesignName(`New Network Design ${savedDesigns.length + 1}`);
@@ -1272,6 +1280,14 @@ export function NetworkDesigner({
                 }`}>
                   {designStatus === 'saved' ? 'Saved' : 'Draft'}
                 </span>
+                {provenance && (
+                  <span
+                    className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-fw-accent text-fw-link whitespace-nowrap"
+                    title={`Discovered from ${provenance.provider} account ${provenance.accountId}`}
+                  >
+                    ⌖ Discovered · {provenance.provider} · {provenance.accountId}
+                  </span>
+                )}
                 {showSwitcher
                   ? <ChevronUp className="h-4 w-4 text-fw-bodyLight group-hover:text-fw-body" />
                   : <ChevronDown className="h-4 w-4 text-fw-bodyLight group-hover:text-fw-body" />}
@@ -1497,8 +1513,9 @@ export function NetworkDesigner({
         {/* Topology import modal */}
         <TopologyImportModal
           isOpen={showImportModal}
-          onClose={() => setShowImportModal(false)}
+          onClose={() => { setShowImportModal(false); setImportInitialTab('upload'); }}
           onImport={handleImportTopology}
+          initialTab={importInitialTab}
         />
         
         {/* Toolbar - Only show in network view with highest z-index */}
@@ -1579,6 +1596,11 @@ export function NetworkDesigner({
         <DefaultNetworkSetup
           isOpen={showDefaultSetup}
           onComplete={handleDefaultNetworkSetup}
+          onOpenDiscover={() => {
+            setShowDefaultSetup(false);
+            setImportInitialTab('discover');
+            setShowImportModal(true);
+          }}
           onApplyTemplate={(templateNodes, templateEdges, name) => {
             // Saved positions came from whatever canvas they were drawn on -
             // normalize into the CURRENT bounds, then fit to screen

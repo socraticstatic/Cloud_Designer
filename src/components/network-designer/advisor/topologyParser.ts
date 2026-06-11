@@ -14,6 +14,8 @@ export interface ParseResult {
   warnings: string[];
   error?: string;
   sourceName?: string;
+  // Set when the topology came from cloud-account discovery
+  provenance?: { provider: string; accountId: string };
 }
 
 type RawNode = Record<string, any>;

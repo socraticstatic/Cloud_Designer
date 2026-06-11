@@ -31,8 +31,15 @@ export function composeNarrative(
   const warnings = assessment.findings.filter(f => f.severity === 'warning');
   const positives = assessment.findings.filter(f => f.severity === 'positive');
 
-  // Paragraph 1: posture
-  const shape = `${nodes.length} nodes across ${cities.length || 'one'} site${cities.length === 1 ? '' : 's'}` +
+  // Paragraph 1: posture. Discovered estates get acknowledged - the
+  // consultant should say where the data came from.
+  const discoveredFrom = [...new Set(
+    nodes.filter(n => n.config?.tags?.discovered === 'true').map(n => n.config?.provider).filter(Boolean)
+  )];
+  const originLead = discoveredFrom.length > 0
+    ? `Discovered from your ${discoveredFrom.join(' and ')} estate. `
+    : '';
+  const shape = `${originLead}${nodes.length} nodes across ${cities.length || 'one'} site${cities.length === 1 ? '' : 's'}` +
     (providers.length > 1 ? `, spanning ${providers.length} cloud providers` : providers.length === 1 ? `, connected to ${providers[0]}` : '');
   if (assessment.grade === 'A' || assessment.grade === 'B') {
     paragraphs.push(pick(seed, 1, [
