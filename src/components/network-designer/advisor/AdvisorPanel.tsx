@@ -14,9 +14,11 @@ import { FailureResult } from './failureSim';
 import { HistoryPoint } from './scoreHistory';
 import { GradeRing, DimensionBars, TrendSparkline, NarrativeBlock } from './advisorVisuals';
 import { PlanTab } from './PlanTab';
+import { PathsTab } from './PathsTab';
+import { CloudPath, PathPolicy } from './pathEngine';
 import { SimulateTab } from './SimulateTab';
 
-export type AdvisorTab = 'assess' | 'plan' | 'simulate';
+export type AdvisorTab = 'assess' | 'paths' | 'plan' | 'simulate';
 
 interface AdvisorPanelProps {
   assessment: Assessment | null;
@@ -43,6 +45,11 @@ interface AdvisorPanelProps {
   onTabChange?: (tab: AdvisorTab) => void;
   onOpenImport?: () => void;
   isReadOnly?: boolean;
+  cloudPaths: CloudPath[];
+  pathPolicy: PathPolicy;
+  onPolicyChange: (policy: PathPolicy) => void;
+  focusedPath: CloudPath | null;
+  onFocusPath: (path: CloudPath | null) => void;
 }
 
 const SEVERITY_META: Record<FindingSeverity, {
@@ -84,7 +91,12 @@ export function AdvisorPanel({
   onResetSim,
   onTabChange,
   onOpenImport,
-  isReadOnly = false
+  isReadOnly = false,
+  cloudPaths,
+  pathPolicy,
+  onPolicyChange,
+  focusedPath,
+  onFocusPath
 }: AdvisorPanelProps) {
   const [filter, setFilter] = useState<FindingSeverity | 'all'>('all');
   const [tab, setTab] = useState<AdvisorTab>('assess');
@@ -113,7 +125,10 @@ export function AdvisorPanel({
       <div className="flex items-center justify-between px-4 pt-4 pb-2">
         <div className="flex items-center gap-2">
           <Sparkles className="h-5 w-5 text-fw-link" />
-          <h2 className="text-base font-bold text-fw-heading">Network Advisor</h2>
+          <div>
+            <h2 className="text-base font-bold text-fw-heading leading-tight">Network Advisor</h2>
+            <p className="text-[10px] text-fw-bodyLight leading-tight">Cloud Connect optimization engine</p>
+          </div>
         </div>
         <div className="flex items-center gap-1">
           {onOpenImport && (
@@ -175,6 +190,7 @@ export function AdvisorPanel({
           <div className="flex gap-1 px-4 pb-2 border-b border-fw-border-secondary">
             {([
               ['assess', 'Assess', null],
+              ['paths', 'Paths', cloudPaths.length || null],
               ['plan', 'Plan', fixableCount || null],
               ['simulate', 'Simulate', null]
             ] as const).map(([key, label, badge]) => (
@@ -335,6 +351,16 @@ export function AdvisorPanel({
                 })}
               </div>
             </>
+          )}
+
+          {tab === 'paths' && (
+            <PathsTab
+              paths={cloudPaths}
+              policy={pathPolicy}
+              onPolicyChange={onPolicyChange}
+              onFocusPath={onFocusPath}
+              focusedPathId={focusedPath?.id ?? null}
+            />
           )}
 
           {tab === 'plan' && (

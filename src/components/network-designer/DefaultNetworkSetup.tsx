@@ -879,8 +879,8 @@ export function DefaultNetworkSetup({ isOpen, onComplete, onApplyTemplate, onOpe
             <div className="inline-flex items-center justify-center w-12 h-12 bg-white/15 rounded-full mb-2">
               <Sparkles className="h-6 w-6 text-white" />
             </div>
-            <h1 className="text-xl font-bold mb-1">Welcome to Cloud Designer</h1>
-            <p className="text-sm text-slate-200">Choose how you'd like to create your enterprise network</p>
+            <h1 className="text-xl font-bold mb-1">Welcome to Cloud Connect</h1>
+            <p className="text-sm text-slate-200">Hyperscaler connectivity with control - design, assess, and connect your enterprise network</p>
           </div>
         </div>
 

@@ -187,7 +187,8 @@ export function NetworkDesigner({
     handleRunAdvisor, handleFocusFinding, handleApplyFix, handlePreviewFix,
     handleCancelPreview, handleSimulate, handleResetSim,
     handleApplyAll, handleStopApplyAll,
-    remediationPlan, advisorNarrative, issueBadges, openIssueCount
+    remediationPlan, advisorNarrative, issueBadges, openIssueCount,
+    cloudPaths, pathPolicy, setPathPolicy, focusedPath, setFocusedPath
   } = useAdvisor({ nodes, edges, setNodes, setEdges, saveToHistory, rehydrateIcons });
   const [fitSignal, setFitSignal] = useState(0);
   const [lastMileEdgeId, setLastMileEdgeId] = useState<string | null>(null);
@@ -676,12 +677,16 @@ export function NetworkDesigner({
     ? Object.fromEntries([simResult.failedNodeId, ...simResult.unreachableNodeIds].map(id => [id, 'error' as Sev]))
     : focusedFinding
       ? Object.fromEntries(focusedFinding.nodeIds.map(id => [id, focusedFinding.severity]))
-      : {};
+      : focusedPath
+        ? Object.fromEntries(focusedPath.nodeIds.map(id => [id, 'recommendation' as Sev]))
+        : {};
   const highlightedEdges: Record<string, Sev> = simResult
     ? Object.fromEntries(simResult.deadEdgeIds.map(id => [id, 'error' as Sev]))
     : focusedFinding
       ? Object.fromEntries(focusedFinding.edgeIds.map(id => [id, focusedFinding.severity]))
-      : {};
+      : focusedPath
+        ? Object.fromEntries(focusedPath.edgeIds.map(id => [id, 'recommendation' as Sev]))
+        : {};
   
   // Handle default network setup completion
   const handleDefaultNetworkSetup = (cloudRouterName: string) => {
@@ -1649,7 +1654,12 @@ export function NetworkDesigner({
             onStopApplyAll={handleStopApplyAll}
             onSimulate={handleSimulate}
             onResetSim={handleResetSim}
-            onTabChange={() => { setFixPreviewState(null); setSimResult(null); setFocusedFinding(null); }}
+            onTabChange={() => { setFixPreviewState(null); setSimResult(null); setFocusedFinding(null); setFocusedPath(null); }}
+            cloudPaths={cloudPaths}
+            pathPolicy={pathPolicy}
+            onPolicyChange={setPathPolicy}
+            focusedPath={focusedPath}
+            onFocusPath={setFocusedPath}
             onOpenImport={() => setShowImportModal(true)}
             isReadOnly={isReadOnly}
           />

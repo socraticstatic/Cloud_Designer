@@ -15,6 +15,7 @@ import {
 import { simulateFailure, FailureResult } from '../components/network-designer/advisor/failureSim';
 import { composeNarrative } from '../components/network-designer/advisor/narrative';
 import { readHistory, appendHistory, HistoryPoint } from '../components/network-designer/advisor/scoreHistory';
+import { computeCloudPaths, CloudPath, PathPolicy } from '../components/network-designer/advisor/pathEngine';
 
 const STORAGE_ASSESSMENT = 'cloud-designer:assessment';
 
@@ -34,6 +35,11 @@ export function useAdvisor({ nodes, edges, setNodes, setEdges, saveToHistory, re
   const [fixPreviewState, setFixPreviewState] = useState<{ finding: Finding; preview: FixPreview; impact: FixImpact } | null>(null);
   const [simResult, setSimResult] = useState<FailureResult | null>(null);
   const [advisorHistory, setAdvisorHistory] = useState<HistoryPoint[]>(() => readHistory());
+  const [pathPolicy, setPathPolicyState] = useState<PathPolicy>(() => {
+    const saved = localStorage.getItem('cloud-designer:path-policy');
+    return (saved === 'latency' || saved === 'cost' || saved === 'security') ? saved : 'balanced';
+  });
+  const [focusedPath, setFocusedPath] = useState<CloudPath | null>(null);
   const [isApplyingAll, setIsApplyingAll] = useState(false);
   const [applyingStep, setApplyingStep] = useState(0);
   const applyAllActiveRef = useRef(false);
@@ -190,6 +196,31 @@ export function useAdvisor({ nodes, edges, setNodes, setEdges, saveToHistory, re
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [nodes, edges]);
 
+  const setPathPolicy = (policy: PathPolicy) => {
+    setPathPolicyState(policy);
+    try { localStorage.setItem('cloud-designer:path-policy', policy); } catch { /* ignore */ }
+  };
+
+  // Cloud-to-cloud paths under the active routing policy (PRD U3/U4)
+  const cloudPaths = useMemo(
+    () => (showAdvisor ? computeCloudPaths(nodes, edges, pathPolicy) : []),
+    [showAdvisor, nodes, edges, pathPolicy]
+  );
+
+  // The routing policy also shapes remediation order (policy-driven, U4):
+  // a security policy surfaces security fixes first; a cost policy walks
+  // the cheapest fixes first.
+  const policyOrderedPlan = useMemo(() => {
+    if (pathPolicy === 'security') {
+      return [...remediationPlan].sort((a, b) =>
+        (a.finding.category === 'Security' ? 0 : 1) - (b.finding.category === 'Security' ? 0 : 1));
+    }
+    if (pathPolicy === 'cost') {
+      return [...remediationPlan].sort((a, b) => a.impact.costDelta - b.impact.costDelta);
+    }
+    return remediationPlan;
+  }, [remediationPlan, pathPolicy]);
+
   const openIssueCount = assessment
     ? assessment.findings.filter(f => f.severity === 'error' || f.severity === 'warning').length
     : 0;
@@ -205,6 +236,7 @@ export function useAdvisor({ nodes, edges, setNodes, setEdges, saveToHistory, re
     handleRunAdvisor, handleFocusFinding, handleApplyFix, handlePreviewFix,
     handleCancelPreview, handleSimulate, handleResetSim,
     handleApplyAll, handleStopApplyAll,
-    remediationPlan, advisorNarrative, issueBadges, openIssueCount
+    remediationPlan: policyOrderedPlan, advisorNarrative, issueBadges, openIssueCount,
+    cloudPaths, pathPolicy, setPathPolicy, focusedPath, setFocusedPath
   };
 }

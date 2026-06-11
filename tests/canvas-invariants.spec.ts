@@ -229,10 +229,26 @@ test('pasting topology JSON imports and assesses it', async ({ page }) => {
   assertNoRestingOverlaps(await logicalPositions(page));
 });
 
+test('cloud-to-cloud paths compute under the routing policy with AT&T-controlled marking', async ({ page }) => {
+  await openDesigner(page);
+  await page.locator('button[title="Network Advisor"]').first().click();
+  await page.getByRole('button', { name: /^Paths/ }).click();
+  // fixture has AWS and Azure behind the hub - one cloud pair
+  await expect(page.getByText('AWS \u2194 Azure')).toBeVisible();
+  await expect(page.getByText(/of 1 cloud-to-cloud paths ride the AT&T mid-mile/)).toBeVisible();
+  await expect(page.getByText(/best latency \/ cost \/ security balance/)).toBeVisible();
+  // policy switch changes the selection rationale (U4)
+  await page.getByRole('button', { name: 'Lowest cost' }).click();
+  await expect(page.getByText('Selected for lowest monthly transport cost')).toBeVisible();
+  // clicking a path highlights it on canvas
+  await page.getByText('AWS \u2194 Azure').click();
+  await expect(page.getByText(/highlighted on canvas/)).toBeVisible();
+});
+
 test('welcome Discover card runs the demo account end to end', async ({ page }) => {
   // clean state: welcome screen shows
   await page.goto('/');
-  await expect(page.getByText('Welcome to Cloud Designer')).toBeVisible();
+  await expect(page.getByText('Welcome to Cloud Connect')).toBeVisible();
   await page.getByRole('button', { name: /Discover Connect a cloud account/ }).click();
   // import modal opens directly on the Discover tab
   await expect(page.getByText('Scan account')).toBeVisible();
