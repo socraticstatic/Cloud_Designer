@@ -189,6 +189,46 @@ test('advisor findings surface on the Pano map as site severity marks', async ({
   await expect(marked.first()).toBeVisible();
 });
 
+test('failure simulation paints the blast radius and restores cleanly', async ({ page }) => {
+  await openDesigner(page);
+  await page.locator('button[title="Network Advisor"]').first().click();
+  await page.getByRole('button', { name: 'Simulate' }).click();
+  // fail the hub - everything except the core strands
+  await page.getByRole('button', { name: /HubRouter.*fail it/ }).click();
+  await expect(page.getByText(/single point of failure on your critical path|strands/)).toBeVisible();
+  // stranded nodes dim on the canvas
+  const dimmed = await page.locator('.node-enter.opacity-25').count();
+  expect(dimmed).toBeGreaterThan(0);
+  // restore brings everything back
+  await page.getByRole('button', { name: /Restore HubRouter/ }).click();
+  await expect(page.locator('.node-enter.opacity-25')).toHaveCount(0);
+});
+
+test('pasting topology JSON imports and assesses it', async ({ page }) => {
+  await openDesigner(page);
+  await page.locator('button[title="Network Advisor"]').first().click();
+  await page.locator('button[title="Upload topology data (JSON or CSV)"]').click();
+  await page.getByRole('button', { name: 'Paste JSON' }).click();
+  const payload = JSON.stringify({
+    nodes: [
+      { id: 'a', name: 'Core', type: 'network', networkType: 'at&t core' },
+      { id: 'b', name: 'EdgeRouter', type: 'function', functionType: 'Router' },
+      { id: 'c', name: 'AWS East', type: 'destination', provider: 'AWS' }
+    ],
+    edges: [
+      { source: 'a', target: 'b', type: 'MPLS', bandwidth: '10 Gbps' },
+      { source: 'b', target: 'c', type: 'Direct Connect', bandwidth: '10 Gbps' }
+    ]
+  });
+  await page.locator('textarea').fill(payload);
+  await page.getByRole('button', { name: /Parse/i }).click();
+  await page.getByRole('button', { name: 'Import & analyze' }).click();
+  await expect(page.getByText('Topology Imported')).toBeVisible();
+  await expect(page.locator('.node-enter')).toHaveCount(3);
+  // imported nodes are normalized in-bounds and overlap-free
+  assertNoRestingOverlaps(await logicalPositions(page));
+});
+
 test('undo and redo unwind and replay node moves', async ({ page }) => {
   await openDesigner(page);
   const node = nodeByName(page, 'Firewall');
