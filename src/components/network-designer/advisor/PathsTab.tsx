@@ -77,9 +77,15 @@ export function PathsTab({ paths, policy, onPolicyChange, onFocusPath, focusedPa
               <p className="mt-1 text-[11px] text-fw-bodyLight truncate" title={path.hopNames.join(' > ')}>
                 {path.hopNames.join(' › ')}
               </p>
-              <div className="flex items-center gap-3 mt-1.5 text-[11px] text-fw-body">
+              <div className="flex items-center gap-3 mt-1.5 text-[11px] text-fw-body flex-wrap">
                 <span className="tabular-nums">{path.latencyMs} ms</span>
-                <span className="tabular-nums">${path.monthlyCost.toLocaleString()}/mo</span>
+                <span className="tabular-nums">${path.monthlyCost.toLocaleString()}/mo transport</span>
+                <span className="tabular-nums">~${path.egressMonthly.toLocaleString()}/mo egress</span>
+                <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold tracking-wide ${
+                  path.controlMethod === 'native' ? 'bg-fw-success-bg text-fw-success' : 'bg-fw-wash text-fw-bodyLight'
+                }`}>
+                  {path.controlMethod === 'native' ? 'NATIVE CONTROL' : 'OVERLAY FALLBACK'}
+                </span>
                 <span className={`inline-flex items-center gap-1 ${path.fullyEncrypted ? 'text-fw-success' : 'text-fw-warn'}`}>
                   {path.fullyEncrypted ? <Lock className="h-3 w-3" /> : <Unlock className="h-3 w-3" />}
                   {path.fullyEncrypted ? 'encrypted' : 'partially open'}

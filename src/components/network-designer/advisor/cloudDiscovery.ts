@@ -21,7 +21,9 @@ const PROFILES: Record<string, ProviderProfile> = {
   AWS: { label: 'AWS', regions: ['us-east-1', 'us-west-2', 'us-east-2', 'eu-west-1'], edgeType: 'Direct Connect' },
   Azure: { label: 'Azure', regions: ['eastus', 'westus2', 'southcentralus', 'northeurope'], edgeType: 'ExpressRoute' },
   Google: { label: 'Google', regions: ['us-central1', 'us-east1', 'us-east4', 'europe-west1'], edgeType: 'Cloud Interconnect' },
-  Oracle: { label: 'Oracle', regions: ['us-ashburn-1', 'us-phoenix-1'], edgeType: 'FastConnect' }
+  Oracle: { label: 'Oracle', regions: ['us-ashburn-1', 'us-phoenix-1'], edgeType: 'FastConnect' },
+  // Neocloud (PRD exec summary) - AI-infrastructure cloud
+  CoreWeave: { label: 'CoreWeave', regions: ['us-east-04', 'us-west-01'], edgeType: 'Ethernet' }
 };
 
 const ENVS = ['prod', 'staging', 'dev', 'shared'];
@@ -78,6 +80,7 @@ export function discoverAccount(provider: keyof typeof PROFILES, accountId: stri
         region,
         configured: true,
         subnets: [cidr, `172.${16 + i}.0.0/20`],
+        gateways: [`igw-${(seed + i).toString(36).slice(0, 6)}`, `tgw-${(seed * 7 + i).toString(36).slice(0, 6)}`],
         tags: { environment: env, team: TEAMS[(seed + i * 3) % TEAMS.length], discovered: 'true' }
       }
     });
@@ -131,5 +134,5 @@ export function discoverySteps(provider: string, accountId: string, vpcWord: str
 }
 
 export const VPC_WORD: Record<string, string> = {
-  AWS: 'VPC', Azure: 'VNET', Google: 'VPC', Oracle: 'VCN'
+  AWS: 'VPC', Azure: 'VNET', Google: 'VPC', Oracle: 'VCN', CoreWeave: 'VPC'
 };

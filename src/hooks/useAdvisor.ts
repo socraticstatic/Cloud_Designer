@@ -201,6 +201,19 @@ export function useAdvisor({ nodes, edges, setNodes, setEdges, saveToHistory, re
     try { localStorage.setItem('cloud-designer:path-policy', policy); } catch { /* ignore */ }
   };
 
+  // Attach rate (PRD O2 success metric): of the provider circuits in the
+  // design, how many have an activated last mile?
+  const attachStats = useMemo(() => {
+    const providerTypes = ['direct connect', 'expressroute', 'cloud interconnect', 'fastconnect'];
+    const destinationIds = new Set(nodes.filter(n => n.type === 'destination').map(n => n.id));
+    const circuits = edges.filter(e =>
+      providerTypes.some(t => e.type.toLowerCase().includes(t)) &&
+      (destinationIds.has(e.source) || destinationIds.has(e.target))
+    );
+    const attached = circuits.filter(e => e.config?.lastMile).length;
+    return { circuits: circuits.length, attached };
+  }, [nodes, edges]);
+
   // Cloud-to-cloud paths under the active routing policy (PRD U3/U4)
   const cloudPaths = useMemo(
     () => (showAdvisor ? computeCloudPaths(nodes, edges, pathPolicy) : []),
@@ -237,6 +250,7 @@ export function useAdvisor({ nodes, edges, setNodes, setEdges, saveToHistory, re
     handleCancelPreview, handleSimulate, handleResetSim,
     handleApplyAll, handleStopApplyAll,
     remediationPlan: policyOrderedPlan, advisorNarrative, issueBadges, openIssueCount,
-    cloudPaths, pathPolicy, setPathPolicy, focusedPath, setFocusedPath
+    cloudPaths, pathPolicy, setPathPolicy, focusedPath, setFocusedPath,
+    attachStats
   };
 }

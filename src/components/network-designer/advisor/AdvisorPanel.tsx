@@ -50,6 +50,7 @@ interface AdvisorPanelProps {
   onPolicyChange: (policy: PathPolicy) => void;
   focusedPath: CloudPath | null;
   onFocusPath: (path: CloudPath | null) => void;
+  attachStats: { circuits: number; attached: number };
 }
 
 const SEVERITY_META: Record<FindingSeverity, {
@@ -96,7 +97,8 @@ export function AdvisorPanel({
   pathPolicy,
   onPolicyChange,
   focusedPath,
-  onFocusPath
+  onFocusPath,
+  attachStats
 }: AdvisorPanelProps) {
   const [filter, setFilter] = useState<FindingSeverity | 'all'>('all');
   const [tab, setTab] = useState<AdvisorTab>('assess');
@@ -221,12 +223,22 @@ export function AdvisorPanel({
                   </div>
                 </div>
                 <div className="flex items-center justify-between mt-2.5">
-                  {assessment.monthlyCost > 0 ? (
-                    <p className="text-xs text-fw-bodyLight">
-                      Transport:{' '}
-                      <span className="font-medium text-fw-heading">${assessment.monthlyCost.toLocaleString()}/mo</span>
-                    </p>
-                  ) : <span />}
+                  <div className="flex items-center gap-3">
+                    {assessment.monthlyCost > 0 && (
+                      <p className="text-xs text-fw-bodyLight">
+                        Transport:{' '}
+                        <span className="font-medium text-fw-heading">${assessment.monthlyCost.toLocaleString()}/mo</span>
+                      </p>
+                    )}
+                    {attachStats.circuits > 0 && (
+                      <p className="text-xs text-fw-bodyLight" title="Provider circuits with an activated last mile">
+                        Attach rate:{' '}
+                        <span className={`font-medium ${attachStats.attached === attachStats.circuits ? 'text-fw-success' : 'text-fw-heading'}`}>
+                          {attachStats.attached}/{attachStats.circuits}
+                        </span>
+                      </p>
+                    )}
+                  </div>
                   <TrendSparkline history={history} />
                 </div>
               </div>

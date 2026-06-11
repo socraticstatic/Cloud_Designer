@@ -20,7 +20,7 @@ interface TopologyImportModalProps {
 export function TopologyImportModal({ isOpen, onClose, onImport, initialTab = 'upload' }: TopologyImportModalProps) {
   const dialogRef = useModalA11y(onClose, isOpen);
   const [tab, setTab] = useState<'upload' | 'paste' | 'discover'>('upload');
-  const [provider, setProvider] = useState<'AWS' | 'Azure' | 'Google' | 'Oracle'>('AWS');
+  const [provider, setProvider] = useState<'AWS' | 'Azure' | 'Google' | 'Oracle' | 'CoreWeave'>('AWS');
   const [accountId, setAccountId] = useState('');
   const [scanStep, setScanStep] = useState(-1); // -1 idle, >=0 scanning
   const [pasted, setPasted] = useState('');
@@ -139,6 +139,7 @@ export function TopologyImportModal({ isOpen, onClose, onImport, initialTab = 'u
                     <option>Azure</option>
                     <option>Google</option>
                     <option>Oracle</option>
+                    <option>CoreWeave</option>
                   </select>
                 </div>
                 <div>

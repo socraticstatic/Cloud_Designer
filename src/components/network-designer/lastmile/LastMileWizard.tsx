@@ -43,7 +43,8 @@ const PROVIDER_META: Record<string, { service: string; prefix: string; region: s
   aws: { service: 'AWS DIRECT CONNECT', prefix: 'dxcon', region: 'us-east-1' },
   azure: { service: 'AZURE EXPRESSROUTE', prefix: 'er', region: 'eastus' },
   google: { service: 'GOOGLE CLOUD INTERCONNECT', prefix: 'ic', region: 'us-east4' },
-  oracle: { service: 'ORACLE FASTCONNECT', prefix: 'fc', region: 'us-ashburn-1' }
+  oracle: { service: 'ORACLE FASTCONNECT', prefix: 'fc', region: 'us-ashburn-1' },
+  coreweave: { service: 'COREWEAVE INTERCONNECT', prefix: 'cw', region: 'us-east-04' }
 };
 
 function circuitIdentity(edge: NetworkEdge, destination: NetworkNode) {

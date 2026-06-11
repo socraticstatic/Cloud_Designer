@@ -25,9 +25,35 @@ export interface CloudPath {
   edgeIds: string[];
   latencyMs: number;
   monthlyCost: number;
+  egressMonthly: number;
   fullyEncrypted: boolean;
   attControlled: boolean;
+  // PRD 6.1: native route manipulation where the path rides the AT&T
+  // mid-mile, overlay tunneling as the fallback
+  controlMethod: 'native' | 'overlay';
   reason: string;
+}
+
+// Mock egress pricing ($/GB) by source cloud - the inter-cloud transfer
+// cost FinOps actually chases. Volume is estimated from path capacity.
+const EGRESS_PER_GB: Record<string, number> = {
+  aws: 0.09, azure: 0.087, google: 0.12, oracle: 0.0085, coreweave: 0.0
+};
+
+function egressEstimate(from: NetworkNode, to: NetworkNode, pathEdges: NetworkEdge[]): number {
+  const minGbps = Math.min(...pathEdges.map(e => {
+    const m = e.bandwidth.match(/(\d+(?:\.\d+)?)\s*(g|m)/i);
+    if (!m) return 1;
+    return m[2].toLowerCase() === 'm' ? parseFloat(m[1]) / 1000 : parseFloat(m[1]);
+  }));
+  const volumeGb = Math.round(minGbps * 90); // mock: ~90 GB/mo per provisioned Gbps
+  const rate = (n: NetworkNode) => {
+    const prov = (n.cloudProvider || n.config?.provider || '').toLowerCase();
+    const key = Object.keys(EGRESS_PER_GB).find(k => prov.includes(k));
+    return key ? EGRESS_PER_GB[key] : 0.09;
+  };
+  // inter-cloud transfers pay the higher side's egress
+  return Math.round(volumeGb * Math.max(rate(from), rate(to)));
 }
 
 const edgeLatency = (e: NetworkEdge): number => {
@@ -117,6 +143,11 @@ export function computeCloudPaths(
               const n = byId.get(id);
               return n?.config?.networkType === 'at&t core' || n?.name === 'AT&T Core';
             }),
+            egressMonthly: egressEstimate(from, to, pathEdges),
+            controlMethod: nodeIds.some(id => {
+              const n = byId.get(id);
+              return n?.config?.networkType === 'at&t core' || n?.name === 'AT&T Core';
+            }) ? 'native' : 'overlay',
             reason: reasonFor[policy]
           };
         }

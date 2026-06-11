@@ -188,7 +188,8 @@ export function NetworkDesigner({
     handleCancelPreview, handleSimulate, handleResetSim,
     handleApplyAll, handleStopApplyAll,
     remediationPlan, advisorNarrative, issueBadges, openIssueCount,
-    cloudPaths, pathPolicy, setPathPolicy, focusedPath, setFocusedPath
+    cloudPaths, pathPolicy, setPathPolicy, focusedPath, setFocusedPath,
+    attachStats
   } = useAdvisor({ nodes, edges, setNodes, setEdges, saveToHistory, rehydrateIcons });
   const [fitSignal, setFitSignal] = useState(0);
   const [lastMileEdgeId, setLastMileEdgeId] = useState<string | null>(null);
@@ -1660,6 +1661,7 @@ export function NetworkDesigner({
             onPolicyChange={setPathPolicy}
             focusedPath={focusedPath}
             onFocusPath={setFocusedPath}
+            attachStats={attachStats}
             onOpenImport={() => setShowImportModal(true)}
             isReadOnly={isReadOnly}
           />
