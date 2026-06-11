@@ -192,6 +192,49 @@ async function intraNodeOverlaps(page: Page) {
   });
 }
 
+// Chrome-vs-chrome: floating chrome surfaces (toolbar, pills, rails,
+// advisor dock) must never overlap EACH OTHER either. Found in UAT: at
+// narrow widths with the advisor open, the toolbar overflowed its column
+// and buried its last buttons under the dock.
+async function chromeChromeViolations(page: Page) {
+  return page.evaluate(() => {
+    const chrome: Element[] = [];
+    document.querySelectorAll('div, nav').forEach(el => {
+      const z = parseInt(getComputedStyle(el).zIndex, 10);
+      if (z >= 80 && z < 200 && el.getBoundingClientRect().width > 0) chrome.push(el);
+    });
+    const panel = document.querySelector('[aria-label="Network Advisor"]');
+    if (panel) chrome.push(panel);
+    const violations: string[] = [];
+    for (let i = 0; i < chrome.length; i++) {
+      for (let j = i + 1; j < chrome.length; j++) {
+        const a = chrome[i], b = chrome[j];
+        if (a.contains(b) || b.contains(a)) continue;
+        const ra = a.getBoundingClientRect(), rb = b.getBoundingClientRect();
+        const w = Math.min(ra.right, rb.right) - Math.max(ra.left, rb.left);
+        const h = Math.min(ra.bottom, rb.bottom) - Math.max(ra.top, rb.top);
+        if (w > 4 && h > 4) {
+          violations.push(`${(a.textContent || a.className.toString()).trim().slice(0, 20)} x ${(b.textContent || b.className.toString()).trim().slice(0, 20)}`);
+        }
+      }
+    }
+    return violations;
+  });
+}
+
+test('chrome surfaces never overlap each other - including narrow viewport with advisor open', async ({ page }) => {
+  await openDesigner(page);
+  expect(await chromeChromeViolations(page)).toEqual([]);
+  await page.locator('button[title="Network Advisor"]').first().click();
+  await expect(page.locator('[aria-label="Network Advisor"]')).toBeVisible();
+  await page.waitForTimeout(900);
+  expect(await chromeChromeViolations(page)).toEqual([]);
+  // the UAT case: narrow viewport squeezes the canvas column
+  await page.setViewportSize({ width: 1100, height: 800 });
+  await page.waitForTimeout(900);
+  expect(await chromeChromeViolations(page)).toEqual([]);
+});
+
 test('node labels never overlap across the visual state matrix', async ({ page }) => {
   await openDesigner(page);
   // state 1: configured nodes with region sublabels (the fixture)

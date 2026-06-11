@@ -211,6 +211,13 @@ export const Node = memo(function Node({
                 )}
                 <span className={`inline-flex h-1.5 w-1.5 rounded-full ${node.status === 'active' ? 'bg-green-600' : 'bg-gray-400'}`} />
                 <span>{node.status === 'active' ? 'Active' : 'Inactive'}</span>
+                {node.config?.routerRole && (
+                  <span className={`px-1 rounded text-[8px] font-bold tracking-wide ${
+                    node.config.routerRole === 'primary' ? 'bg-fuchsia-600 text-white' : 'bg-fuchsia-100 text-fuchsia-700'
+                  }`}>
+                    {node.config.routerRole === 'primary' ? 'PRI' : 'SEC'}
+                  </span>
+                )}
               </div>
             </div>
           </>

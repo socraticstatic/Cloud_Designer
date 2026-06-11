@@ -1233,36 +1233,13 @@ export function NetworkDesigner({
           />
         </div>
 
-        {/* Status Bar - Only shown in network view */}
-        {abstractionLevel === 'network' && (
-          <div style={{ zIndex: Z_INDEX.CHROME }}>
-            <StatusBar
-              nodes={nodes}
-              edges={edges}
-              canvasRef={canvasRef}
-              onRefresh={() => {
-                window.addToast({
-                  type: 'info',
-                  title: 'Refreshing Network',
-                  message: 'Updating network status and metrics...',
-                  duration: 2000
-                });
-              }}
-              onSelectNode={(nodeId) => {
-                const node = nodes.find(n => n.id === nodeId);
-                if (node) handleNodeSelection(node);
-              }}
-              onSelectEdge={(edgeId) => {
-                const edge = edges.find(e => e.id === edgeId);
-                if (edge) handleEdgeSelection(edge);
-              }}
-            />
-          </div>
-        )}
-
+        {/* Top chrome row - flex so the three pills can NEVER overlap:
+            name pill shrinks, status bar centers in remaining space,
+            mode pill holds the right edge */}
+        <div className="absolute top-4 left-4 right-4 flex items-start gap-3" style={{ zIndex: Z_INDEX.FLOATING_PANEL }}>
         {/* Back + design name pill with connection switcher - per Figma top-left chrome */}
         {(
-          <div className="absolute top-4 left-4" style={{ zIndex: Z_INDEX.FLOATING_PANEL }}>
+          <div className="relative flex-shrink min-w-0">
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 flex items-center px-3 py-2 gap-2">
               <button
                 onClick={onCancel}
@@ -1291,7 +1268,7 @@ export function NetworkDesigner({
                     className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-fw-accent text-fw-link whitespace-nowrap"
                     title={`Discovered from ${provenance.provider} account ${provenance.accountId}`}
                   >
-                    ⌖ Discovered · {provenance.provider} · {provenance.accountId}
+                    ⌖ Discovered · {provenance.provider}<span className="hidden xl:inline"> · {provenance.accountId}</span>
                   </span>
                 )}
                 {showSwitcher
@@ -1360,33 +1337,38 @@ export function NetworkDesigner({
           </div>
         )}
 
-        {/* Filter pill - dims non-matching nodes (Figma: Filter exploration) */}
+
+        {/* Status Bar - Only shown in network view */}
         {abstractionLevel === 'network' && (
-          <div
-            className="absolute top-16 left-4 bg-white rounded-full shadow-sm border border-gray-200 flex items-center px-3 py-1.5 gap-2"
-            style={{ zIndex: Z_INDEX.CHROME }}
-          >
-            <Search className="h-3.5 w-3.5 text-fw-bodyLight" />
-            <input
-              value={filterQuery}
-              onChange={e => setFilterQuery(e.target.value)}
-              placeholder="Filter nodes"
-              className="w-28 text-xs bg-transparent outline-none text-fw-body placeholder:text-fw-disabled"
+          <div className="mx-auto min-w-0">
+            <StatusBar
+              nodes={nodes}
+              edges={edges}
+              canvasRef={canvasRef}
+              onRefresh={() => {
+                window.addToast({
+                  type: 'info',
+                  title: 'Refreshing Network',
+                  message: 'Updating network status and metrics...',
+                  duration: 2000
+                });
+              }}
+              onSelectNode={(nodeId) => {
+                const node = nodes.find(n => n.id === nodeId);
+                if (node) handleNodeSelection(node);
+              }}
+              onSelectEdge={(edgeId) => {
+                const edge = edges.find(e => e.id === edgeId);
+                if (edge) handleEdgeSelection(edge);
+              }}
             />
-            {filterQuery && (
-              <button onClick={() => setFilterQuery('')} className="text-fw-bodyLight hover:text-fw-body" type="button" aria-label="Clear filter">
-                <X className="h-3 w-3" />
-              </button>
-            )}
           </div>
         )}
 
+
         {/* Read / Edit mode pill - per Figma top-right chrome */}
         {onToggleReadOnly && (
-          <div
-            className="absolute top-4 right-4 bg-white rounded-xl shadow-sm border border-gray-200 flex items-center p-1"
-            style={{ zIndex: Z_INDEX.CHROME }}
-          >
+          <div className="flex-shrink-0 bg-white rounded-xl shadow-sm border border-gray-200 flex items-center p-1">
             <button
               onClick={() => isReadOnly || onToggleReadOnly()}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
@@ -1432,6 +1414,31 @@ export function NetworkDesigner({
                 </span>
               )}
             </button>
+          </div>
+        )}
+
+
+        </div>
+
+
+        {/* Filter pill - dims non-matching nodes (Figma: Filter exploration) */}
+        {abstractionLevel === 'network' && (
+          <div
+            className="absolute top-16 left-4 bg-white rounded-full shadow-sm border border-gray-200 flex items-center px-3 py-1.5 gap-2"
+            style={{ zIndex: Z_INDEX.CHROME }}
+          >
+            <Search className="h-3.5 w-3.5 text-fw-bodyLight" />
+            <input
+              value={filterQuery}
+              onChange={e => setFilterQuery(e.target.value)}
+              placeholder="Filter nodes"
+              className="w-28 text-xs bg-transparent outline-none text-fw-body placeholder:text-fw-disabled"
+            />
+            {filterQuery && (
+              <button onClick={() => setFilterQuery('')} className="text-fw-bodyLight hover:text-fw-body" type="button" aria-label="Clear filter">
+                <X className="h-3 w-3" />
+              </button>
+            )}
           </div>
         )}
 

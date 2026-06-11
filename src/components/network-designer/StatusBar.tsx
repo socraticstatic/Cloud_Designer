@@ -56,7 +56,7 @@ export function StatusBar({ nodes, edges, onRefresh, canvasRef, onSelectNode, on
   return (
     <>
       <div
-        className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-white rounded-xl shadow-sm border border-gray-200 py-2 px-4 flex items-center space-x-4 whitespace-nowrap max-w-[calc(100%-32rem)] overflow-hidden"
+        className="relative bg-white rounded-xl shadow-sm border border-gray-200 py-2 px-4 flex items-center space-x-4 whitespace-nowrap max-w-full min-w-0 overflow-hidden"
         style={{ zIndex: Z_INDEX.CHROME }}
       >
         {/* Total Bandwidth */}
@@ -96,7 +96,7 @@ export function StatusBar({ nodes, edges, onRefresh, canvasRef, onSelectNode, on
       {/* Validation Panel Dropdown */}
       {showValidation && issues.length > 0 && (
         <div
-          className="absolute top-16 left-1/2 transform -translate-x-1/2 bg-white rounded-lg shadow-lg border border-gray-200 w-96 max-h-64 overflow-y-auto"
+          className="absolute top-full mt-2 left-1/2 transform -translate-x-1/2 bg-white rounded-lg shadow-lg border border-gray-200 w-96 max-h-64 overflow-y-auto"
           style={{ zIndex: Z_INDEX.FLOATING_PANEL }}
         >
           <div className="flex items-center justify-between px-3 py-2 border-b border-gray-100">
