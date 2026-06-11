@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { estimateEdgeCost } from '../advisor/advisorEngine';
 import { DollarSign, TrendingUp, Clock, AlertCircle, BarChart4, X, ShieldCheck, Network, Zap } from 'lucide-react';
 import { NetworkNode, NetworkEdge } from '../../types';
 
@@ -60,22 +61,10 @@ export function BusinessMetricsPanel({ nodes, edges, isVisible, onClose }: Busin
       }
     });
     
-    // Edge costs based on bandwidth and type
+    // Transport costs use the SAME model as the Network Advisor so the
+    // Pano business view and the advisor never quote different numbers
     edges.forEach(edge => {
-      const bandwidth = parseInt(edge.bandwidth.split(' ')[0], 10) || 1;
-      
-      // Cost formula based on connection type
-      if (edge.type.includes('Direct Connect')) {
-        totalCost += 100 + (bandwidth * 20);
-      } else if (edge.type.includes('ExpressRoute')) {
-        totalCost += 120 + (bandwidth * 25);
-      } else if (edge.type.includes('Cloud Router')) {
-        totalCost += 80 + (bandwidth * 15);
-      } else if (edge.type.includes('VPN')) {
-        totalCost += 50 + (bandwidth * 5);
-      } else {
-        totalCost += 50 + (bandwidth * 10);
-      }
+      totalCost += estimateEdgeCost(edge);
     });
     
     return totalCost;

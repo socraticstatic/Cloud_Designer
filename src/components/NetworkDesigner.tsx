@@ -256,6 +256,11 @@ export function NetworkDesigner({
     }
     const savedAssessment = readStorage<Assessment>(STORAGE_ASSESSMENT);
     if (savedAssessment) setAssessment(savedAssessment);
+    // Snapshot history survives refresh like everything else
+    const savedSnapshots = readStorage<typeof topologyHistory>('cloud-designer:snapshots');
+    if (savedSnapshots?.length) {
+      setTopologyHistory(savedSnapshots.map(item => ({ ...item, nodes: rehydrateIcons(item.nodes) })));
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -337,6 +342,12 @@ export function NetworkDesigner({
         JSON.stringify(item.nodes) === JSON.stringify(nodes) &&
         JSON.stringify(item.edges) === JSON.stringify(edges)
       );
+      if (!isDuplicate) {
+        try {
+          const persisted = [{ ...newHistoryItem, nodes: stripIcons(newHistoryItem.nodes) }, ...prev.map(it => ({ ...it, nodes: stripIcons(it.nodes) }))].slice(0, 3);
+          localStorage.setItem('cloud-designer:snapshots', JSON.stringify(persisted));
+        } catch { /* ignore */ }
+      }
 
       if (isDuplicate) return prev;
 

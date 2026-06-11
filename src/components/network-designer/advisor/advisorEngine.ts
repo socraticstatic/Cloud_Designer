@@ -305,6 +305,66 @@ export function runAdvisor(nodes: NetworkNode[], edges: NetworkEdge[]): Assessme
     });
   }
 
+  // --- Resiliency: asymmetric protection on multi-homed destinations ---
+  destinations.forEach(dest => {
+    const links = neighborEdges(dest.id, edges);
+    if (links.length < 2) return;
+    const protectedLinks = links.filter(e => e.config?.resilience && e.config.resilience !== 'single');
+    const exposed = links.filter(e => !e.config?.resilience || e.config.resilience === 'single');
+    if (protectedLinks.length > 0 && exposed.length > 0) {
+      add({
+        severity: 'warning',
+        category: 'Resiliency',
+        title: `${dest.name} has asymmetric protection`,
+        detail: `${dest.name} is multi-homed, but only ${protectedLinks.length} of ${links.length} paths carry a resilience profile. The unprotected path is the one that fails during the maintenance window.`,
+        recommendation: 'Protect every path to a multi-homed workload, or consciously document the unprotected one as best-effort.',
+        nodeIds: [dest.id],
+        edgeIds: exposed.map(e => e.id),
+        fix: { label: 'Protect remaining paths', action: { type: 'set-resilience', edgeIds: exposed.map(e => e.id), value: 'redundant' } }
+      });
+    }
+  });
+
+  // --- Performance: bandwidth oversubscription at the hub ---
+  routers.forEach(router => {
+    const links = neighborEdges(router.id, edges);
+    if (links.length < 3) return;
+    const capacities = links.map(e => parseGbps(e.bandwidth));
+    const uplink = Math.max(...capacities);
+    const downstream = capacities.reduce((a, b) => a + b, 0) - uplink;
+    if (downstream > uplink * 2) {
+      add({
+        severity: 'warning',
+        category: 'Performance',
+        title: `${router.name} is oversubscribed ${(downstream / uplink).toFixed(1)}:1`,
+        detail: `${router.name} aggregates ${downstream} Gbps of downstream capacity into a ${uplink} Gbps uplink. Above 2:1, concurrent peaks congest the uplink.`,
+        recommendation: 'Upgrade the uplink, add a second hub, or steer bulk traffic off-peak with QoS.',
+        nodeIds: [router.id],
+        edgeIds: [links[capacities.indexOf(uplink)].id]
+      });
+    }
+  });
+
+  // --- Provisioning: provider circuits without an activated last mile ---
+  const providerEdgeTypes = ['direct connect', 'expressroute', 'cloud interconnect', 'fastconnect'];
+  const unactivated = edges.filter(e => {
+    if (e.config?.lastMile) return false;
+    const isProviderEdge = providerEdgeTypes.some(t => e.type.toLowerCase().includes(t));
+    const touchesCloud = destinations.some(d => d.id === e.source || d.id === e.target);
+    return isProviderEdge && touchesCloud;
+  });
+  if (unactivated.length > 0) {
+    add({
+      severity: 'recommendation',
+      category: 'Architecture',
+      title: `${unactivated.length} provider circuit${unactivated.length > 1 ? 's' : ''} without last-mile activation`,
+      detail: 'These dedicated interconnects are drawn but their last mile is not configured. The circuit exists on paper; traffic cannot ride it until activation.',
+      recommendation: 'Open each connection and run Set up last mile to choose the connection type and activate it.',
+      nodeIds: [],
+      edgeIds: unactivated.map(e => e.id)
+    });
+  }
+
   // --- Routing hygiene: BGP ASN + VLAN collisions ---
   routers.forEach(router => {
     if (!router.config?.asn) {
@@ -327,6 +387,18 @@ export function runAdvisor(nodes: NetworkNode[], edges: NetworkEdge[]): Assessme
     }
   });
   vlanSeen.forEach((ids, vlan) => {
+    if (vlan < 1 || vlan > 4094) {
+      add({
+        severity: 'warning',
+        category: 'Architecture',
+        title: `VLAN ${vlan} is outside the valid range`,
+        detail: 'Valid 802.1Q VLAN IDs run 1-4094. This value cannot be provisioned.',
+        recommendation: 'Assign a VLAN ID between 1 and 4094.',
+        nodeIds: [],
+        edgeIds: ids
+      });
+      return;
+    }
     if (ids.length > 1) {
       add({
         severity: 'warning',
