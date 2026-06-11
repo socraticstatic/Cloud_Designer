@@ -1,6 +1,6 @@
 import { Server, Cloud, Router, Network, Shield, Activity, PanelRight, Menu, Database, Globe, Lock, Feather as Ethernet, Wifi } from 'lucide-react';
 import { CloudRouterIcon } from '../components/icons/CloudRouterIcon';
-import { getProviderIcon } from '../components/icons/ProviderIcons';
+import { getProviderIcon, getDatacenterIcon } from '../components/icons/ProviderIcons';
 import { NetworkNode } from '../types';
 
 export const getFunctionIcon = (functionType: string, config?: any) => {
@@ -33,7 +33,7 @@ export const getNodeIcon = (type: NetworkNode['type'], functionType?: string, ne
     case 'destination':
       return getProviderIcon(config?.provider ?? config?.cloudProvider) ?? Cloud;
     case 'datacenter':
-      return Database;
+      return getDatacenterIcon(config?.provider) ?? Database;
     case 'network':
       return networkType ? getNetworkTypeIcon(networkType) : Network;
     default:

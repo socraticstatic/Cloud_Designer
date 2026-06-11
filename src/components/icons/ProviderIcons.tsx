@@ -21,11 +21,53 @@ export const AzureIcon = makeIcon('M22.379 23.343a1.62 1.62 0 0 0 1.536-2.14v.00
 export const GoogleIcon = makeIcon('M12.19 2.38a9.344 9.344 0 0 0-9.234 6.893c.053-.02-.055.013 0 0-3.875 2.551-3.922 8.11-.247 10.941l.006-.007-.007.03a6.717 6.717 0 0 0 4.077 1.356h5.173l.03.03h5.192c6.687.053 9.376-8.605 3.835-12.35a9.365 9.365 0 0 0-2.821-4.552l-.043.043.006-.05A9.344 9.344 0 0 0 12.19 2.38zm-.358 4.146c1.244-.04 2.518.368 3.486 1.15a5.186 5.186 0 0 1 1.862 4.078v.518c3.53-.07 3.53 5.262 0 5.193h-5.193l-.008.009v-.04H6.785a2.59 2.59 0 0 1-1.067-.23h.001a2.597 2.597 0 1 1 3.437-3.437l3.013-3.012A6.747 6.747 0 0 0 8.11 8.24c.018-.01.04-.026.054-.023a5.186 5.186 0 0 1 3.67-1.69z');
 export const OracleIcon = makeIcon('M16.412 4.412h-8.82a7.588 7.588 0 0 0-.008 15.176h8.828a7.588 7.588 0 0 0 0-15.176zm-.193 12.502H7.786a4.915 4.915 0 0 1 0-9.828h8.433a4.914 4.914 0 1 1 0 9.828z');
 
+// Brands without an official simple-icons mark (datacenter operators,
+// neoclouds) get a branded monogram tile in the provider's color instead
+// of a counterfeit logo - distinguishable, honest, consistent.
+function makeMonogram(letters: string, color: string) {
+  return function MonogramIcon({ className = 'h-5 w-5' }: ProviderIconProps) {
+    return (
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className={className} aria-hidden="true">
+        <rect x="1" y="1" width="22" height="22" rx="5" fill={color} />
+        <text
+          x="12" y="12.5"
+          textAnchor="middle"
+          dominantBaseline="central"
+          fill="white"
+          fontSize={letters.length > 1 ? 9.5 : 12}
+          fontWeight="800"
+          fontFamily="ui-sans-serif, system-ui, sans-serif"
+        >
+          {letters}
+        </text>
+      </svg>
+    );
+  };
+}
+
+export const CoreWeaveIcon = makeMonogram('CW', '#6E56CF');
+export const EquinixIcon = makeMonogram('EQ', '#ED1C24');
+export const DigitalRealtyIcon = makeMonogram('DR', '#005EB8');
+export const CyrusOneIcon = makeMonogram('C1', '#00A9E0');
+export const CoreSiteIcon = makeMonogram('CS', '#F58220');
+export const DataBankIcon = makeMonogram('DB', '#00B2A9');
+
 export function getProviderIcon(provider?: string) {
   const p = (provider || '').toLowerCase();
   if (p.includes('aws') || p.includes('amazon')) return AwsIcon;
   if (p.includes('azure') || p.includes('microsoft')) return AzureIcon;
   if (p.includes('google') || p.includes('gcp')) return GoogleIcon;
   if (p.includes('oracle')) return OracleIcon;
+  if (p.includes('coreweave')) return CoreWeaveIcon;
+  return null;
+}
+
+export function getDatacenterIcon(provider?: string) {
+  const p = (provider || '').toLowerCase();
+  if (p.includes('equinix')) return EquinixIcon;
+  if (p.includes('digital realty')) return DigitalRealtyIcon;
+  if (p.includes('cyrusone')) return CyrusOneIcon;
+  if (p.includes('coresite')) return CoreSiteIcon;
+  if (p.includes('databank')) return DataBankIcon;
   return null;
 }
