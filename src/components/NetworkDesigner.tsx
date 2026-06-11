@@ -33,6 +33,7 @@ import { simulateFailure, FailureResult } from './network-designer/advisor/failu
 import { composeNarrative } from './network-designer/advisor/narrative';
 import { readHistory, appendHistory, HistoryPoint } from './network-designer/advisor/scoreHistory';
 import { resolveAllOverlaps, resolveNodeOverlap, restingBounds } from '../utils/nodeLayout';
+import { LastMileWizard, LastMileConfig } from './network-designer/lastmile/LastMileWizard';
 import { ParseResult } from './network-designer/advisor/topologyParser';
 import { ArrowLeft, ChevronDown, ChevronUp, Eye, Pencil, Plus, Search, LayoutList, LayoutGrid, X, Sparkles } from 'lucide-react';
 
@@ -182,6 +183,7 @@ export function NetworkDesigner({
   const [applyingStep, setApplyingStep] = useState(0);
   const applyAllActiveRef = useRef(false);
   const [fitSignal, setFitSignal] = useState(0);
+  const [lastMileEdgeId, setLastMileEdgeId] = useState<string | null>(null);
 
   // Re-fit the canvas whenever the advisor dock changes the viewport width
   const advisorWasOpen = useRef(false);
@@ -1570,6 +1572,39 @@ export function NetworkDesigner({
           </div>
         )}
 
+        {/* Last Mile wizard - activates provider-bound connections */}
+        {lastMileEdgeId && (() => {
+          const lmEdge = edges.find(e => e.id === lastMileEdgeId);
+          const lmDest = lmEdge && (
+            nodes.find(n => n.id === lmEdge.target && n.type === 'destination') ??
+            nodes.find(n => n.id === lmEdge.source && n.type === 'destination')
+          );
+          if (!lmEdge || !lmDest) return null;
+          return (
+            <LastMileWizard
+              edge={lmEdge}
+              destination={lmDest}
+              onClose={() => setLastMileEdgeId(null)}
+              onActivate={(config: LastMileConfig) => {
+                const nextEdges = edges.map(e =>
+                  e.id === lmEdge.id
+                    ? { ...e, status: 'active' as const, config: { ...e.config, lastMile: config, encrypted: config.connectionType === 'vpn' ? true : e.config?.encrypted } }
+                    : e
+                );
+                setEdges(nextEdges);
+                saveToHistory(nodes, nextEdges);
+                setLastMileEdgeId(null);
+                window.addToast({
+                  type: 'success',
+                  title: 'Connection Activated',
+                  message: `${lmDest.name} last mile is live: ${config.connectionType === 'vpn' ? 'VPN' : 'Internet'} to cloud at ${lmEdge.bandwidth}.`,
+                  duration: 4000
+                });
+              }}
+            />
+          );
+        })()}
+
         {/* Topology import modal */}
         <TopologyImportModal
           isOpen={showImportModal}
@@ -1622,6 +1657,7 @@ export function NetworkDesigner({
             nodes={nodes}
             isVisible={showEdgeConfig}
             onClose={() => setShowEdgeConfig(false)}
+            onOpenLastMile={() => setLastMileEdgeId(selectedEdgeObject.id)}
             onUpdate={(updates) => updateEdge(selectedEdgeObject.id, updates)}
             onDelete={() => deleteEdge(selectedEdgeObject.id)}
             containerRef={canvasRef}

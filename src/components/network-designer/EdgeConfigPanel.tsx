@@ -9,6 +9,8 @@ interface EdgeConfigPanelProps {
   onUpdate: (updates: Partial<NetworkEdge>) => void;
   onDelete: () => void;
   containerRef: React.RefObject<HTMLElement>;
+  // Opens the Last Mile wizard - offered when the edge lands on a cloud
+  onOpenLastMile?: () => void;
 }
 
 export function EdgeConfigPanel({
@@ -18,7 +20,8 @@ export function EdgeConfigPanel({
   onClose,
   onUpdate,
   onDelete,
-  containerRef
+  containerRef,
+  onOpenLastMile
 }: EdgeConfigPanelProps) {
   if (!edge) return null;
 
@@ -42,6 +45,9 @@ export function EdgeConfigPanel({
     });
   };
 
+  const cloudEnd = [sourceNode, targetNode].find(n => n.type === 'destination');
+  const lastMile = edge.config?.lastMile;
+
   return (
     <FloatingPanel
       title="Connection Configuration"
@@ -51,6 +57,30 @@ export function EdgeConfigPanel({
       containerRef={containerRef}
     >
       <div className="overflow-y-auto custom-scrollbar">
+        {/* Last Mile - provider-bound connections get the activation wizard */}
+        {cloudEnd && onOpenLastMile && (
+          <button
+            onClick={onOpenLastMile}
+            className={`w-full mb-3 flex items-center justify-between rounded-xl border px-3 py-2.5 text-left transition-colors ${
+              lastMile
+                ? 'border-fw-border-success bg-fw-success-bg hover:bg-green-100'
+                : 'border-fw-border-active bg-fw-accent hover:bg-blue-100'
+            }`}
+            type="button"
+          >
+            <span className="min-w-0">
+              <span className={`block text-xs font-bold ${lastMile ? 'text-fw-success' : 'text-fw-link'}`}>
+                {lastMile ? 'Last mile active' : 'Set up last mile'}
+              </span>
+              <span className="block text-[11px] text-fw-bodyLight mt-0.5">
+                {lastMile
+                  ? `${lastMile.connectionType === 'vpn' ? 'VPN' : 'Internet'} to cloud · ${lastMile.subnets} · MTU ${lastMile.mtu}`
+                  : `Activate connectivity into ${cloudEnd.name}`}
+              </span>
+            </span>
+            <span className={`text-lg leading-none ${lastMile ? 'text-fw-success' : 'text-fw-link'}`}>&rsaquo;</span>
+          </button>
+        )}
         <div className="form-group">
           <label htmlFor="connectionType">Connection Type</label>
           <select

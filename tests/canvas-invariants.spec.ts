@@ -189,6 +189,24 @@ test('advisor findings surface on the Pano map as site severity marks', async ({
   await expect(marked.first()).toBeVisible();
 });
 
+test('last mile wizard activates a provider-bound connection', async ({ page }) => {
+  await openDesigner(page);
+  // open the Direct Connect edge's config via its gear pill
+  await page.locator('[title^="Direct Connect"]').first().click();
+  await page.getByText('Set up last mile').click();
+  // step 1: connection type
+  await expect(page.getByText('Select Connection Type')).toBeVisible();
+  await expect(page.getByText('AWS DIRECT CONNECT')).toBeVisible();
+  await page.getByRole('button', { name: 'Internet to Cloud Public' }).click();
+  // step 2: configure (Simple defaults are valid) and activate
+  await expect(page.getByLabel('Internet Subnets')).toHaveValue('0.0.0.0/0');
+  await page.getByRole('button', { name: 'Activate Connection' }).click();
+  await expect(page.getByText('Connection Activated')).toBeVisible();
+  // re-open: the edge remembers its last-mile state
+  await page.locator('[title^="Direct Connect"]').first().click();
+  await expect(page.getByText('Last mile active')).toBeVisible();
+});
+
 test('clear canvas requires confirmation', async ({ page }) => {
   await openDesigner(page);
   const trash = page.locator('button[title="Clear Canvas"]');
