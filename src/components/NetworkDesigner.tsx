@@ -32,6 +32,7 @@ import { previewFix, scoreFixImpact, buildRemediationPlan, FixPreview, FixImpact
 import { simulateFailure, FailureResult } from './network-designer/advisor/failureSim';
 import { composeNarrative } from './network-designer/advisor/narrative';
 import { readHistory, appendHistory, HistoryPoint } from './network-designer/advisor/scoreHistory';
+import { resolveAllOverlaps, resolveNodeOverlap } from '../utils/nodeLayout';
 import { ParseResult } from './network-designer/advisor/topologyParser';
 import { ArrowLeft, ChevronDown, ChevronUp, Eye, Pencil, Plus, Search, LayoutList, LayoutGrid, X } from 'lucide-react';
 
@@ -232,7 +233,8 @@ export function NetworkDesigner({
     const savedTopology = readStorage<{ nodes: NetworkNode[]; edges: NetworkEdge[]; name?: string }>(STORAGE_TOPOLOGY);
     if (savedTopology && savedTopology.nodes?.length) {
       restoredRef.current = true;
-      setNodes(rehydrateIcons(savedTopology.nodes));
+      // Normalize on restore: legacy saves may carry overlapping nodes
+      setNodes(resolveAllOverlaps(rehydrateIcons(savedTopology.nodes), canvasHeight - 100));
       setEdges(seedAllEdgeMetrics(savedTopology.edges || []));
       if (savedTopology.name) setDesignName(savedTopology.name);
     }
@@ -436,7 +438,7 @@ export function NetworkDesigner({
   }, [nodes, edges]);
 
   const handleImportTopology = (result: ParseResult) => {
-    const enriched = ensureNodesHaveGeoData(result.nodes);
+    const enriched = resolveAllOverlaps(ensureNodesHaveGeoData(result.nodes), canvasHeight - 100);
     setNodes(enriched);
     setEdges(result.edges);
     saveToHistory(enriched, result.edges);
@@ -672,6 +674,8 @@ export function NetworkDesigner({
 
   // Drop-to-adopt: releasing a node inside a site's container joins it
   const handleNodeDropMembership = (nodeId: string) => {
+    // Read through the ref - called from the drag-start closure
+    const nodes = nodesRef.current;
     const node = nodes.find(n => n.id === nodeId);
     if (!node) return;
     const groups = computeLocationGroups(nodes, groupColors);
@@ -969,24 +973,47 @@ export function NetworkDesigner({
 
   const dimmedNodeIds = [...new Set([...filterDimmedIds, ...simDimmedIds])];
 
-  // Handle node drag - multi-selected nodes move together
+  // Latest-state refs for drag handlers. The drag mousemove/mouseup
+  // listeners hold the closure from the render where the drag STARTED,
+  // so reading `nodes`/`edges` directly inside them sees stale state.
+  // That stale delta compounded on every mousemove and sent nodes flying
+  // off-canvas. All drag-gesture handlers must read through these refs
+  // or use functional setState.
+  const nodesRef = useRef(nodes);
+  nodesRef.current = nodes;
+  const edgesRef = useRef(edges);
+  edgesRef.current = edges;
+
+  // Handle node drag - multi-selected nodes move together.
+  // Delta is computed inside the updater against CURRENT positions.
   const handleNodeDrag = (nodeId: string, x: number, y: number) => {
-    const node = nodes.find(n => n.id === nodeId);
-    if (!node) return;
-    const dx = x - node.x;
-    const dy = y - node.y;
     const moveIds = multiSelected.includes(nodeId) ? multiSelected : [nodeId];
-    setNodes(prev =>
-      prev.map(n => moveIds.includes(n.id)
-        ? { ...n, x: n.x + dx, y: Math.min(n.y + dy, canvasHeight - 84) }
+    setNodes(prev => {
+      const current = prev.find(n => n.id === nodeId);
+      if (!current) return prev;
+      const dx = x - current.x;
+      const dy = y - current.y;
+      if (dx === 0 && dy === 0) return prev;
+      return prev.map(n => moveIds.includes(n.id)
+        ? { ...n, x: Math.max(0, n.x + dx), y: Math.max(0, Math.min(n.y + dy, canvasHeight - 84)) }
         : n
-      )
-    );
+      );
+    });
   };
-  
-  // Handle node drag end - commit history, then membership adoption
+
+  // Handle node drag end - resolve overlap, commit history, adopt membership.
+  // Reads through refs: this runs from the drag-start closure. Nodes never
+  // rest overlapping: a drop onto another node slides to the nearest clear spot.
   const handleNodeDragEnd = (nodeId?: string) => {
-    saveToHistory(nodes, edges);
+    let next = nodesRef.current;
+    if (nodeId && !multiSelected.includes(nodeId)) {
+      next = resolveNodeOverlap(nodeId, next, canvasHeight - 100);
+      if (next !== nodesRef.current) {
+        setNodes(next);
+        nodesRef.current = next;
+      }
+    }
+    saveToHistory(next, edgesRef.current);
     if (nodeId) handleNodeDropMembership(nodeId);
   };
   
