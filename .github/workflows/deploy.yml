@@ -41,7 +41,10 @@ jobs:
         run: npm run build
         env:
           NODE_ENV: production
-        
+
+      - name: Production bundle smoke check
+        run: npm run smoke
+
       - name: Setup Pages
         uses: actions/configure-pages@v5
         
