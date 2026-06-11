@@ -33,6 +33,7 @@ import { simulateFailure, FailureResult } from './network-designer/advisor/failu
 import { composeNarrative } from './network-designer/advisor/narrative';
 import { readHistory, appendHistory, HistoryPoint } from './network-designer/advisor/scoreHistory';
 import { resolveAllOverlaps, resolveNodeOverlap, restingBounds } from '../utils/nodeLayout';
+import { layoutBySites } from '../utils/siteLayout';
 import { useAdvisor } from '../hooks/useAdvisor';
 import { LastMileWizard, LastMileConfig } from './network-designer/lastmile/LastMileWizard';
 import { ParseResult } from './network-designer/advisor/topologyParser';
@@ -468,7 +469,10 @@ export function NetworkDesigner({
   // --- Topology import ---
 
   const handleImportTopology = (result: ParseResult) => {
-    const enriched = resolveAllOverlaps(ensureNodesHaveGeoData(result.nodes), layoutBoundsNow());
+    // Geo enrichment first (it assigns cities), then site-aware layout so
+    // each location group gets its own disjoint cluster - imported layouts
+    // previously interleaved sites and their containers overlapped
+    const enriched = layoutBySites(ensureNodesHaveGeoData(result.nodes), layoutBoundsNow());
     setNodes(enriched);
     setEdges(result.edges);
     saveToHistory(enriched, result.edges);
@@ -478,6 +482,7 @@ export function NetworkDesigner({
     setShowDefaultSetup(false);
     clearSelection();
     setProvenance(result.provenance ?? null);
+    setFitSignal(sig => sig + 1);
 
     const analysis = handleRunAdvisor(enriched, result.edges);
     window.addToast({

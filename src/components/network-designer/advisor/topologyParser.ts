@@ -42,7 +42,10 @@ function normalizeType(raw: string | undefined, name: string): {
     const networkType = t === 'internet' ? 'internet' : t === 'core' || t === 'transit' ? 'at&t core' : 'private';
     return { type: 'network', networkType };
   }
-  if (['router', 'cloud router', 'cloud-router'].includes(t)) {
+  if (['cloud router', 'cloud-router'].includes(t)) {
+    return { type: 'function', functionType: 'Cloud Router' };
+  }
+  if (t === 'router') {
     return { type: 'function', functionType: 'Router' };
   }
   if (['firewall', 'fw', 'ngfw'].includes(t)) {

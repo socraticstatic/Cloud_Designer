@@ -358,6 +358,53 @@ test('welcome Discover card runs the demo account end to end', async ({ page }) 
   await expect(page.getByText(/Discovered · AWS · 4156-8721-0042/)).toBeVisible();
 });
 
+test('imported sites lay out as disjoint clusters - group containers never overlap', async ({ page }) => {
+  await openDesigner(page);
+  await page.locator('button[title="Network Advisor"]').first().click();
+  await page.locator('button[title="Upload topology data (JSON or CSV)"]').click();
+  await page.getByRole('button', { name: 'Paste JSON' }).click();
+  // two sites whose coordinates deliberately interleave + a solo node
+  const payload = JSON.stringify({
+    nodes: [
+      { id: 'a1', name: 'Core East', type: 'core', city: 'Ashburn', x: 300, y: 200 },
+      { id: 'a2', name: 'EastRouter', type: 'router', city: 'Ashburn', x: 700, y: 400 },
+      { id: 'a3', name: 'AWS East', type: 'cloud', provider: 'AWS', city: 'Ashburn', x: 500, y: 600 },
+      { id: 'd1', name: 'DalRouter', type: 'router', city: 'Dallas', x: 400, y: 300 },
+      { id: 'd2', name: 'Azure South', type: 'cloud', provider: 'Azure', city: 'Dallas', x: 600, y: 500 },
+      { id: 's1', name: 'Internet', type: 'internet' }
+    ],
+    edges: [
+      { source: 'a1', target: 'a2' }, { source: 'a2', target: 'a3' },
+      { source: 'd1', target: 'd2' }, { source: 'a2', target: 'd1' },
+      { source: 's1', target: 'd1' }
+    ]
+  });
+  await page.locator('textarea').fill(payload);
+  await page.getByRole('button', { name: /Parse/i }).click();
+  await page.getByRole('button', { name: 'Import & analyze' }).click();
+  await expect(page.getByText('Topology Imported')).toBeVisible();
+  await page.waitForTimeout(800);
+
+  // both site containers render, and their boxes are disjoint
+  const boxes = await page.evaluate(() =>
+    [...document.querySelectorAll<HTMLElement>('[style*="dashed"]')].map(el => {
+      const r = el.getBoundingClientRect();
+      return { x: r.x, y: r.y, w: r.width, h: r.height };
+    }).filter(b => b.w > 0)
+  );
+  expect(boxes.length).toBeGreaterThanOrEqual(2);
+  for (let i = 0; i < boxes.length; i++) {
+    for (let j = i + 1; j < boxes.length; j++) {
+      const a = boxes[i], b = boxes[j];
+      const w = Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x);
+      const h = Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y);
+      expect(w > 4 && h > 4, `group containers ${i} and ${j} overlap`).toBe(false);
+    }
+  }
+  // and the members themselves still honor the resting gaps
+  assertNoRestingOverlaps(await logicalPositions(page));
+});
+
 test('cloud discovery imports an estate and the advisor flags the CIDR overlap', async ({ page }) => {
   await openDesigner(page);
   await page.locator('button[title="Network Advisor"]').first().click();
