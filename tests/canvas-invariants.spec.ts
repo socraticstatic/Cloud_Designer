@@ -170,15 +170,28 @@ test('no canvas content under chrome - advisor closed and open', async ({ page }
   await openDesigner(page);
   expect(await chromeViolations(page)).toEqual([]);
 
-  await page.locator('button[title="Network Advisor"]').click();
+  await page.locator('button[title="Network Advisor"]').first().click();
   await expect(page.locator('[aria-label="Network Advisor"]')).toBeVisible();
   await page.waitForTimeout(800); // dock transition + auto-fit
   expect(await chromeViolations(page)).toEqual([]);
 });
 
+test('advisor is reachable in Read mode, with mutations hidden', async ({ page }) => {
+  await openDesigner(page);
+  await page.getByRole('button', { name: 'Read', exact: true }).click();
+  // toolbar (and its advisor button) is gone in read mode
+  await expect(page.locator('button[title="Network Advisor"]')).toHaveCount(1);
+  await page.locator('button[title="Network Advisor"]').first().click();
+  const panel = page.locator('[aria-label="Network Advisor"]');
+  await expect(panel).toBeVisible();
+  // read-only: no apply/preview actions anywhere in the panel
+  await expect(panel.getByText('Apply all fixes')).toHaveCount(0);
+  await expect(panel.getByText('Preview', { exact: true })).toHaveCount(0);
+});
+
 test('advisor opens with assessment and an upload entry point', async ({ page }) => {
   await openDesigner(page);
-  await page.locator('button[title="Network Advisor"]').click();
+  await page.locator('button[title="Network Advisor"]').first().click();
   const panel = page.locator('[aria-label="Network Advisor"]');
   await expect(panel).toBeVisible();
   await expect(panel.getByText('Assess')).toBeVisible();

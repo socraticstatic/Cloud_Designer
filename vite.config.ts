@@ -49,11 +49,6 @@ export default defineConfig(({ mode }) => {
             return 'simulation';
           }
 
-          // AI and design assistant components
-          if (id.includes('AIRecommendationEngine') || id.includes('DesignAssistant')) {
-            return 'ai-components';
-          }
-
           // Templates
           if (id.includes('/templates/')) {
             return 'templates';

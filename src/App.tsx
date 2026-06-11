@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Plus, Settings, BarChart3, SlidersHorizontal, Search, HelpCircle, Bell, User } from 'lucide-react';
 import { NetworkDesigner } from './components/NetworkDesigner';
 import { ToastContainer } from './components/common/ToastContainer';
+import { ErrorBoundary } from './components/common/ErrorBoundary';
 import { ConnectionConfig } from './types';
 
 const NAV_ITEMS = [
@@ -91,12 +92,14 @@ function App() {
       </header>
 
       <div className="flex-grow px-6 pb-6">
-        <NetworkDesigner
-          onComplete={handleComplete}
-          onCancel={handleCancel}
-          isReadOnly={isReadOnly}
-          onToggleReadOnly={() => setIsReadOnly(!isReadOnly)}
-        />
+        <ErrorBoundary>
+          <NetworkDesigner
+            onComplete={handleComplete}
+            onCancel={handleCancel}
+            isReadOnly={isReadOnly}
+            onToggleReadOnly={() => setIsReadOnly(!isReadOnly)}
+          />
+        </ErrorBoundary>
       </div>
 
       <ToastContainer />

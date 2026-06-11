@@ -34,7 +34,7 @@ import { composeNarrative } from './network-designer/advisor/narrative';
 import { readHistory, appendHistory, HistoryPoint } from './network-designer/advisor/scoreHistory';
 import { resolveAllOverlaps, resolveNodeOverlap, restingBounds } from '../utils/nodeLayout';
 import { ParseResult } from './network-designer/advisor/topologyParser';
-import { ArrowLeft, ChevronDown, ChevronUp, Eye, Pencil, Plus, Search, LayoutList, LayoutGrid, X } from 'lucide-react';
+import { ArrowLeft, ChevronDown, ChevronUp, Eye, Pencil, Plus, Search, LayoutList, LayoutGrid, X, Sparkles } from 'lucide-react';
 
 // Browser-cache persistence keys (proof of concept storage layer)
 const STORAGE_TOPOLOGY = 'cloud-designer:topology';
@@ -78,9 +78,6 @@ function readStorage<T>(key: string): T | null {
 // Lazy load heavy components
 const GlobalView = lazy(() => import('./network-designer/global-view/GlobalView').then(module => ({ default: module.GlobalView })));
 const CircuitView = lazy(() => import('./network-designer/circuit-view/CircuitView').then(module => ({ default: module.CircuitView })));
-const AIRecommendationEngine = lazy(() => import('./network-designer/AIRecommendationEngine').then(module => ({ default: module.AIRecommendationEngine })));
-const DesignAssistant = lazy(() => import('./network-designer/DesignAssistant').then(module => ({ default: module.DesignAssistant })));
-const NetworkParameters = lazy(() => import('./network-designer/NetworkParameters').then(module => ({ default: module.NetworkParameters })));
 const TemplatesManager = lazy(() => import('./network-designer/panels/TemplatesManager').then(module => ({ default: module.TemplatesManager })));
 const SaveTemplateModal = lazy(() => import('./network-designer/SaveTemplateModal').then(module => ({ default: module.SaveTemplateModal })));
 const NetworkSimulation = lazy(() => import('./network-designer/simulation/NetworkSimulation').then(module => ({ default: module.NetworkSimulation })));
@@ -558,13 +555,14 @@ export function NetworkDesigner({
       setNodes(curNodes);
       setEdges(curEdges);
       setFocusedFinding(next);
+      // checkpoint per step so undo unwinds one fix at a time
+      saveToHistory(curNodes, curEdges);
       curAssessment = runAdvisor(curNodes, curEdges);
       setAssessment(curAssessment);
       setAdvisorHistory(appendHistory(curAssessment));
       await new Promise(resolve => setTimeout(resolve, 1000));
       step++;
     }
-    saveToHistory(curNodes, curEdges);
     setFocusedFinding(null);
     setIsApplyingAll(false);
     applyAllActiveRef.current = false;
@@ -1493,6 +1491,22 @@ export function NetworkDesigner({
             >
               {displayMode === 'icon' ? <LayoutList className="h-4 w-4" /> : <LayoutGrid className="h-4 w-4" />}
             </button>
+            {/* Advisor entry lives here too so Read-mode reviewers can reach
+                the assessment - the toolbar (and its advisor button) hides
+                in Read mode */}
+            <button
+              onClick={() => (assessment ? setShowAdvisor(true) : handleRunAdvisor())}
+              className="relative p-1.5 rounded-lg text-fw-link hover:bg-fw-accent transition-colors"
+              title="Network Advisor"
+              type="button"
+            >
+              <Sparkles className="h-4 w-4" />
+              {openIssueCount > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 min-w-[14px] h-3.5 px-0.5 rounded-full bg-fw-error text-white text-[9px] font-bold flex items-center justify-center leading-none">
+                  {openIssueCount}
+                </span>
+              )}
+            </button>
           </div>
         )}
 
@@ -1674,6 +1688,7 @@ export function NetworkDesigner({
             onResetSim={handleResetSim}
             onTabChange={() => { setFixPreviewState(null); setSimResult(null); setFocusedFinding(null); }}
             onOpenImport={() => setShowImportModal(true)}
+            isReadOnly={isReadOnly}
           />
         </div>
       </div>

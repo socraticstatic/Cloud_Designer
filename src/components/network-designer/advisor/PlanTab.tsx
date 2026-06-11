@@ -5,6 +5,7 @@ import { Play, Square, Sparkles, Check } from 'lucide-react';
 import { PlanStep } from './fixPreview';
 
 interface PlanTabProps {
+  isReadOnly?: boolean;
   plan: PlanStep[];
   baselineGrade: string;
   baselineCost: number;
@@ -17,6 +18,7 @@ interface PlanTabProps {
 }
 
 export function PlanTab({
+  isReadOnly = false,
   plan,
   baselineGrade,
   baselineCost,
@@ -55,7 +57,7 @@ export function PlanTab({
             </span>
           )}
         </p>
-        <button
+        {!isReadOnly && <button
           onClick={isApplyingAll ? onStopApplyAll : onApplyAll}
           className={`mt-2.5 inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-medium transition-colors ${
             isApplyingAll
@@ -66,7 +68,7 @@ export function PlanTab({
         >
           {isApplyingAll ? <Square className="h-3 w-3" /> : <Play className="h-3 w-3" />}
           {isApplyingAll ? `Applying step ${applyingStep + 1} of ${plan.length}…` : 'Apply all fixes'}
-        </button>
+        </button>}
       </div>
 
       {/* Ordered steps */}
@@ -116,7 +118,7 @@ export function PlanTab({
                     <span className="text-fw-disabled">after: {step.cumulativeGrade}</span>
                   </div>
                 </div>
-                {!isApplyingAll && (
+                {!isApplyingAll && !isReadOnly && (
                   <button
                     onClick={() => onApplyStep(step)}
                     className="flex-shrink-0 p-1.5 rounded-full bg-fw-ctaPrimary text-white hover:bg-fw-ctaPrimaryHover"

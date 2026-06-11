@@ -42,6 +42,7 @@ interface AdvisorPanelProps {
   onResetSim: () => void;
   onTabChange?: (tab: AdvisorTab) => void;
   onOpenImport?: () => void;
+  isReadOnly?: boolean;
 }
 
 const SEVERITY_META: Record<FindingSeverity, {
@@ -82,7 +83,8 @@ export function AdvisorPanel({
   onSimulate,
   onResetSim,
   onTabChange,
-  onOpenImport
+  onOpenImport,
+  isReadOnly = false
 }: AdvisorPanelProps) {
   const [filter, setFilter] = useState<FindingSeverity | 'all'>('all');
   const [tab, setTab] = useState<AdvisorTab>('assess');
@@ -275,7 +277,7 @@ export function AdvisorPanel({
                               <span className="font-medium">Recommendation:</span> {finding.recommendation}
                             </p>
                           )}
-                          {finding.fix && (
+                          {finding.fix && !isReadOnly && (
                             <span className="inline-flex items-center gap-1.5 mt-2">
                               {isPreviewing ? (
                                 <>
@@ -337,6 +339,7 @@ export function AdvisorPanel({
 
           {tab === 'plan' && (
             <PlanTab
+              isReadOnly={isReadOnly}
               plan={plan}
               baselineGrade={assessment.grade}
               baselineCost={assessment.monthlyCost}

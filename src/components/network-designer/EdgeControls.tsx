@@ -23,6 +23,9 @@ export function EdgeControls({ edges, nodes, selectedEdge, isReadOnly = false, o
     return '#10b981'; // green-500
   };
 
+  // Gear pills avoid nodes AND each other - placed pills accumulate here
+  const placedPills: { x: number; y: number }[] = [];
+
   return (
     <div className="absolute inset-0 pointer-events-none">
       {edges.map(edge => {
@@ -49,8 +52,9 @@ export function EdgeControls({ edges, nodes, selectedEdge, isReadOnly = false, o
           nodes.some(n =>
             px > n.x - 28 && px < n.x + 92 &&
             py > n.y - 28 && py < n.y + 116
-          );
-        const T_CANDIDATES = [0.5, 0.42, 0.58, 0.34, 0.66, 0.26, 0.74];
+          ) ||
+          placedPills.some(p => Math.abs(p.x - px) < 46 && Math.abs(p.y - py) < 46);
+        const T_CANDIDATES = [0.5, 0.42, 0.58, 0.34, 0.66, 0.26, 0.74, 0.18, 0.82];
         let midX = (sourceX + targetX) / 2;
         let midY = (sourceY + targetY) / 2;
         for (const t of T_CANDIDATES) {
@@ -62,6 +66,7 @@ export function EdgeControls({ edges, nodes, selectedEdge, isReadOnly = false, o
             break;
           }
         }
+        placedPills.push({ x: midX, y: midY });
         
         const isSelected = selectedEdge === edge.id;
         
