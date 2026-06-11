@@ -229,6 +229,30 @@ test('pasting topology JSON imports and assesses it', async ({ page }) => {
   assertNoRestingOverlaps(await logicalPositions(page));
 });
 
+test('cloud discovery imports an estate and the advisor flags the CIDR overlap', async ({ page }) => {
+  await openDesigner(page);
+  await page.locator('button[title="Network Advisor"]').first().click();
+  await page.locator('button[title="Upload topology data (JSON or CSV)"]').click();
+  // Discover tab: pick a provider, scan a mock account
+  await page.getByRole('button', { name: 'Discover', exact: true }).click();
+  await page.getByLabel('Account ID').fill('4156-8721-0042');
+  await page.getByRole('button', { name: 'Scan account' }).click();
+  // scan animates ~2.7s, then the parse preview appears
+  await page.getByRole('button', { name: 'Import & analyze' }).click({ timeout: 10000 });
+  await expect(page.getByText('Topology Imported')).toBeVisible();
+  // discovered estate: core + hub + 2-4 VPCs, normalized and overlap-free
+  const count = await page.locator('.node-enter').count();
+  expect(count).toBeGreaterThanOrEqual(4);
+  assertNoRestingOverlaps(await logicalPositions(page));
+  // the deliberate 10.0.0.0/16 collision surfaces as an advisor error
+  const overlap = page.getByText(/Overlapping IP space/).first();
+  await expect(overlap).toBeVisible();
+  // one-click renumber resolves it
+  await page.getByRole('button', { name: /^Renumber to 10\./ }).first().click();
+  await expect(page.getByText('Fix Applied')).toBeVisible();
+  await expect(page.getByText(/Overlapping IP space/)).toHaveCount(0);
+});
+
 test('undo and redo unwind and replay node moves', async ({ page }) => {
   await openDesigner(page);
   const node = nodeByName(page, 'Firewall');

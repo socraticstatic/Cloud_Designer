@@ -14,7 +14,8 @@ export type FixAction =
   | { type: 'encrypt-edges'; edgeIds: string[] }
   | { type: 'set-resilience'; edgeIds: string[]; value: 'redundant' | 'ha' | 'dualdiverse' }
   | { type: 'add-redundant-node'; nodeId: string }
-  | { type: 'add-firewall' };
+  | { type: 'add-firewall' }
+  | { type: 'renumber-subnet'; nodeId: string; from: string; to: string };
 
 export interface Finding {
   id: string;
@@ -412,6 +413,46 @@ export function runAdvisor(nodes: NetworkNode[], edges: NetworkEdge[]): Assessme
     }
   });
 
+  // --- IP space: overlapping CIDRs across nodes ---
+  // The most common real-world cloud discovery failure. Pairwise-compare
+  // every subnet every node carries; overlaps get a one-click renumber.
+  {
+    const carriers = nodes
+      .filter(n => Array.isArray(n.config?.subnets) && n.config!.subnets.length > 0)
+      .map(n => ({ node: n, ranges: (n.config!.subnets as string[]).map(c => ({ cidr: c, range: cidrRange(c) })) }));
+    const allCidrs = new Set(carriers.flatMap(c => c.ranges.map(r => r.cidr)));
+    const reported = new Set<string>();
+    for (let i = 0; i < carriers.length; i++) {
+      for (let j = i + 1; j < carriers.length; j++) {
+        carriers[i].ranges.forEach(a => {
+          carriers[j].ranges.forEach(b => {
+            if (!a.range || !b.range) return;
+            if (a.range[0] <= b.range[1] && b.range[0] <= a.range[1]) {
+              const key = [carriers[i].node.id, carriers[j].node.id, a.cidr, b.cidr].join('|');
+              if (reported.has(key)) return;
+              reported.add(key);
+              const replacement = nextFreeCidr(allCidrs);
+              allCidrs.add(replacement);
+              add({
+                severity: 'error',
+                category: 'Architecture',
+                title: `Overlapping IP space: ${carriers[i].node.name} and ${carriers[j].node.name}`,
+                detail: `${carriers[i].node.name} uses ${a.cidr} and ${carriers[j].node.name} uses ${b.cidr} - the ranges collide. Routing between these environments is ambiguous and peering them will fail.`,
+                recommendation: `Renumber one side. ${replacement} is free in this design.`,
+                nodeIds: [carriers[i].node.id, carriers[j].node.id],
+                edgeIds: [],
+                fix: {
+                  label: `Renumber to ${replacement}`,
+                  action: { type: 'renumber-subnet', nodeId: carriers[j].node.id, from: b.cidr, to: replacement }
+                }
+              });
+            }
+          });
+        });
+      }
+    }
+  }
+
   // --- Cost advisory ---
   const monthlyCost = edges.reduce((sum, e) => sum + estimateEdgeCost(e), 0);
   edges.forEach(edge => {
@@ -535,6 +576,23 @@ export function applyFix(
         summary: `Added ${twin.name} and dual-homed ${twinEdges.length} connection${twinEdges.length > 1 ? 's' : ''}.`
       };
     }
+    case 'renumber-subnet': {
+      return {
+        nodes: nodes.map(n =>
+          n.id === action.nodeId
+            ? {
+                ...n,
+                config: {
+                  ...n.config,
+                  subnets: ((n.config?.subnets as string[]) ?? []).map(c => (c === action.from ? action.to : c))
+                }
+              }
+            : n
+        ),
+        edges,
+        summary: `Renumbered ${action.from} to ${action.to}.`
+      };
+    }
     case 'add-firewall': {
       const stamp = Date.now();
       const router = nodes.find(n => n.type === 'function' && (n.functionType === 'Router' || n.functionType === 'Cloud Router'));
@@ -590,6 +648,35 @@ export function applyFix(
 
 function neighborEdgesLocal(nodeId: string, edges: NetworkEdge[]): NetworkEdge[] {
   return edges.filter(e => e.source === nodeId || e.target === nodeId);
+}
+
+// CIDR helpers for overlap detection. Returns [start, end] as uint32,
+// or null for anything that doesn't parse as IPv4 CIDR.
+function cidrRange(cidr: string): [number, number] | null {
+  const m = cidr.trim().match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})\/(\d{1,2})$/);
+  if (!m) return null;
+  const octets = [+m[1], +m[2], +m[3], +m[4]];
+  const bits = +m[5];
+  if (octets.some(o => o > 255) || bits > 32) return null;
+  const base = ((octets[0] << 24) | (octets[1] << 16) | (octets[2] << 8) | octets[3]) >>> 0;
+  const mask = bits === 0 ? 0 : (~0 << (32 - bits)) >>> 0;
+  const start = (base & mask) >>> 0;
+  const end = (start + (bits === 32 ? 0 : (1 << (32 - bits)) - 1)) >>> 0;
+  return [start, end];
+}
+
+// Next unused 10.x.0.0/16 in this design
+function nextFreeCidr(used: Set<string>): string {
+  for (let x = 0; x < 256; x++) {
+    const candidate = `10.${x}.0.0/16`;
+    const candRange = cidrRange(candidate)!;
+    const collides = [...used].some(u => {
+      const r = cidrRange(u);
+      return r && candRange[0] <= r[1] && r[0] <= candRange[1];
+    });
+    if (!collides) return candidate;
+  }
+  return '192.168.0.0/16';
 }
 
 // Spiral out from the desired position until the spot is clear of every

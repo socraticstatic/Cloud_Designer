@@ -7,6 +7,8 @@ import { Z_INDEX } from '../../../constants';
 import { useModalA11y } from '../../../hooks/useModalA11y';
 import { parseTopologyFile, parseTopologyJSON, ParseResult } from './topologyParser';
 import { downloadSample } from './sampleTopologies';
+import { discoverAccount, discoverySteps, VPC_WORD } from './cloudDiscovery';
+import { Radar } from 'lucide-react';
 
 interface TopologyImportModalProps {
   isOpen: boolean;
@@ -16,7 +18,10 @@ interface TopologyImportModalProps {
 
 export function TopologyImportModal({ isOpen, onClose, onImport }: TopologyImportModalProps) {
   const dialogRef = useModalA11y(onClose, isOpen);
-  const [tab, setTab] = useState<'upload' | 'paste'>('upload');
+  const [tab, setTab] = useState<'upload' | 'paste' | 'discover'>('upload');
+  const [provider, setProvider] = useState<'AWS' | 'Azure' | 'Google' | 'Oracle'>('AWS');
+  const [accountId, setAccountId] = useState('');
+  const [scanStep, setScanStep] = useState(-1); // -1 idle, >=0 scanning
   const [pasted, setPasted] = useState('');
   const [result, setResult] = useState<ParseResult | null>(null);
   const [dragActive, setDragActive] = useState(false);
@@ -77,7 +82,7 @@ export function TopologyImportModal({ isOpen, onClose, onImport }: TopologyImpor
         <div className="px-6 py-5">
           {/* Tabs */}
           <div className="flex gap-1 border-b border-fw-border-secondary mb-5">
-            {([['upload', 'Upload file'], ['paste', 'Paste JSON']] as const).map(([key, label]) => (
+            {([['upload', 'Upload file'], ['paste', 'Paste JSON'], ['discover', 'Discover']] as const).map(([key, label]) => (
               <button
                 key={key}
                 onClick={() => { setTab(key); reset(); }}
@@ -92,6 +97,78 @@ export function TopologyImportModal({ isOpen, onClose, onImport }: TopologyImpor
               </button>
             ))}
           </div>
+
+          {tab === 'discover' && !result && (
+            <div>
+              <p className="text-xs text-fw-bodyLight leading-snug">
+                Connect to a cloud account and discover its live estate: {VPC_WORD[provider]}s, subnets,
+                instances, and tags become a topology the advisor can assess. Mocked for this proof of
+                concept - the same account always discovers the same environment.
+              </p>
+              <div className="grid grid-cols-2 gap-3 mt-4">
+                <div>
+                  <label className="block text-xs font-medium text-fw-heading mb-1">Provider</label>
+                  <select
+                    value={provider}
+                    onChange={e => setProvider(e.target.value as typeof provider)}
+                    className="w-full px-3 py-2 text-sm border border-fw-border-secondary rounded-lg bg-white"
+                    aria-label="Cloud provider"
+                    disabled={scanStep >= 0}
+                  >
+                    <option>AWS</option>
+                    <option>Azure</option>
+                    <option>Google</option>
+                    <option>Oracle</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-fw-heading mb-1">Account / subscription ID</label>
+                  <input
+                    value={accountId}
+                    onChange={e => setAccountId(e.target.value)}
+                    placeholder="e.g. 4156-8721-0042"
+                    className="w-full px-3 py-2 text-sm border border-fw-border-secondary rounded-lg"
+                    aria-label="Account ID"
+                    disabled={scanStep >= 0}
+                  />
+                </div>
+              </div>
+
+              {scanStep >= 0 ? (
+                <div className="mt-5 rounded-xl border border-fw-border-secondary bg-fw-wash px-4 py-4">
+                  {discoverySteps(provider, accountId, VPC_WORD[provider]).map((line, i) => (
+                    <p key={line} className={`text-xs py-0.5 flex items-center gap-2 ${
+                      i < scanStep ? 'text-fw-success' : i === scanStep ? 'text-fw-heading font-medium' : 'text-fw-disabled'
+                    }`}>
+                      {i < scanStep ? <CheckCircle2 className="h-3.5 w-3.5" /> : i === scanStep ? <Radar className="h-3.5 w-3.5 animate-spin" /> : <span className="w-3.5" />}
+                      {line}
+                    </p>
+                  ))}
+                </div>
+              ) : (
+                <button
+                  onClick={() => {
+                    setScanStep(0);
+                    const steps = discoverySteps(provider, accountId, VPC_WORD[provider]);
+                    steps.forEach((_, i) => {
+                      setTimeout(() => {
+                        setScanStep(i + 1);
+                        if (i === steps.length - 1) {
+                          setResult(discoverAccount(provider, accountId));
+                          setScanStep(-1);
+                        }
+                      }, 450 * (i + 1));
+                    });
+                  }}
+                  className="mt-5 inline-flex items-center gap-2 px-5 py-2 text-sm font-medium rounded-full bg-fw-ctaPrimary text-white hover:bg-fw-ctaPrimaryHover transition-colors"
+                  type="button"
+                >
+                  <Radar className="h-4 w-4" />
+                  Scan account
+                </button>
+              )}
+            </div>
+          )}
 
           {tab === 'upload' && !result && (
             <>
