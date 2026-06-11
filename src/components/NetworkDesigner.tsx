@@ -1001,9 +1001,11 @@ export function NetworkDesigner({
       const dx = x - current.x;
       const dy = y - current.y;
       if (dx === 0 && dy === 0) return prev;
-      // Clamp during drag too - nodes can't be parked under the toolbar
+      // Clamp during drag too - canvas content never crosses into chrome,
+      // even mid-gesture (group chips ride 46px above their topmost node)
+      const b = layoutBoundsNow();
       return prev.map(n => moveIds.includes(n.id)
-        ? { ...n, x: Math.max(0, n.x + dx), y: Math.max(0, Math.min(n.y + dy, canvasHeight - 180)) }
+        ? { ...n, x: Math.max(b.minX, Math.min(n.x + dx, b.maxX)), y: Math.max(b.minY, Math.min(n.y + dy, b.maxY)) }
         : n
       );
     });

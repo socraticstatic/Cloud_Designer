@@ -85,3 +85,14 @@ Audit rule: grep for `zIndex`/`z-[` outside this scale fails the build review.
 - Optical light/loss in circuits table is Infra-only synthetic detail
 - Regional metrics are mock telemetry (deterministic, hash-seeded)
 - Manage/Monitor/Configure nav are scope-explaining toasts (POC boundary)
+
+## Chrome-overlap audit (automated)
+
+Canvas content (nodes, group chips, group containers) must never rest
+overlapping the floating chrome (toolbar, status bar, name pill, filter,
+mode pill, rails, advisor dock, legend). `scripts/ui-chrome-audit.js`
+checks every pair: paste it into the browser console (or evaluate via
+CDP) with the Topo view open. Run it in BOTH states - advisor closed and
+open - after any change touching canvas layout, chrome, node placement,
+or the dock. It returns `{ pass, violations }`; a failing pair names the
+content element, the chrome element, and the overlap size.

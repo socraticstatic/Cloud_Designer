@@ -4,9 +4,12 @@
 
 import { NetworkNode } from '../types';
 
-// Node card is 64px plus its label zone; keep at least this much daylight
-export const MIN_GAP_X = 100;
-export const MIN_GAP_Y = 110;
+// Minimum daylight between resting nodes. This covers the full visual
+// envelope, not just the 64px card: name labels extend ~36px below and
+// can run ~150px wide, and a site chip rides ~46px above a group's
+// topmost node. Nothing a node carries may touch a neighbor's envelope.
+export const MIN_GAP_X = 150;
+export const MIN_GAP_Y = 155;
 
 export interface LayoutBounds {
   minX: number;
@@ -15,14 +18,19 @@ export interface LayoutBounds {
   maxY: number;
 }
 
-// Resting area inside the canvas: clear of the status bar (top), the
-// floating toolbar (bottom), the left rail, and the right zoom rail.
+// Resting area inside the canvas: clear of the chrome PLUS the decoration
+// a node can carry. A location-group chip renders ~46px above the group's
+// topmost node and the dashed container pads 28px on every side, so the
+// margins account for the full visual envelope, not just the 64px card:
+//   top:    status bar / back bar / filter (~125px) + chip clearance
+//   bottom: floating toolbar (~96px) + card + label + container padding
+//   left:   view rail column; right: zoom rail
 export function restingBounds(canvasWidth: number, canvasHeight: number): LayoutBounds {
   return {
-    minX: 90,
-    minY: 70,
-    maxX: Math.max(200, canvasWidth - 150),
-    maxY: Math.max(200, canvasHeight - 180)
+    minX: 140,
+    minY: 175,
+    maxX: Math.max(300, canvasWidth - 160),
+    maxY: Math.max(300, canvasHeight - 220)
   };
 }
 
