@@ -12,6 +12,7 @@ import {
   X, Share2, Shield, ArrowRight, ArrowLeft, Check, Zap, Settings, Network, Cog
 } from 'lucide-react';
 import { NetworkNode, NetworkEdge } from '../../types';
+import { useModalA11y } from '../../../hooks/useModalA11y';
 import { Z_INDEX } from '../../../constants';
 import { getProviderIcon } from '../../icons/ProviderIcons';
 
@@ -77,6 +78,7 @@ export function LastMileWizard({ edge, destination, onClose, onActivate }: LastM
   const [vifType, setVifType] = useState(existing?.vifType ?? 'Private VIF');
   const [serviceAccess, setServiceAccess] = useState(existing?.serviceAccess ?? 'Internet');
 
+  const dialogRef = useModalA11y(onClose);
   const identity = circuitIdentity(edge, destination);
   const ProviderIcon = getProviderIcon(destination.cloudProvider || destination.config?.provider);
   const subnetsValid = /^\d{1,3}(\.\d{1,3}){3}\/\d{1,2}$/.test(subnets.trim());
@@ -104,6 +106,7 @@ export function LastMileWizard({ edge, destination, onClose, onActivate }: LastM
       aria-label="Last Mile setup"
     >
       <div
+        ref={dialogRef}
         className="bg-white rounded-2xl shadow-2xl w-full max-w-[460px] max-h-[85vh] overflow-y-auto custom-scrollbar"
         onClick={(e) => e.stopPropagation()}
       >

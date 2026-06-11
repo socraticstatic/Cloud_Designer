@@ -4,6 +4,7 @@
 import { useState, useRef, useCallback } from 'react';
 import { X, UploadCloud, FileJson, FileSpreadsheet, Download, CheckCircle2, AlertTriangle } from 'lucide-react';
 import { Z_INDEX } from '../../../constants';
+import { useModalA11y } from '../../../hooks/useModalA11y';
 import { parseTopologyFile, parseTopologyJSON, ParseResult } from './topologyParser';
 import { downloadSample } from './sampleTopologies';
 
@@ -14,6 +15,7 @@ interface TopologyImportModalProps {
 }
 
 export function TopologyImportModal({ isOpen, onClose, onImport }: TopologyImportModalProps) {
+  const dialogRef = useModalA11y(onClose, isOpen);
   const [tab, setTab] = useState<'upload' | 'paste'>('upload');
   const [pasted, setPasted] = useState('');
   const [result, setResult] = useState<ParseResult | null>(null);
@@ -51,6 +53,7 @@ export function TopologyImportModal({ isOpen, onClose, onImport }: TopologyImpor
         className="bg-fw-base rounded-2xl shadow-xl w-[560px] max-w-[92vw] max-h-[85vh] overflow-y-auto custom-scrollbar"
         onClick={e => e.stopPropagation()}
         role="dialog"
+        ref={dialogRef}
         aria-label="Import network topology"
       >
         {/* Header */}

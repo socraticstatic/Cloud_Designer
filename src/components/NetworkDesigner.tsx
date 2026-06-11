@@ -246,8 +246,13 @@ export function NetworkDesigner({
       restoredRef.current = true;
       // Normalize on restore: legacy saves may carry overlapping or
       // off-canvas nodes (including under the floating toolbar)
-      setNodes(resolveAllOverlaps(rehydrateIcons(savedTopology.nodes), layoutBoundsNow()));
-      setEdges(seedAllEdgeMetrics(savedTopology.edges || []));
+      const restoredNodes = resolveAllOverlaps(rehydrateIcons(savedTopology.nodes), layoutBoundsNow());
+      const restoredEdges = seedAllEdgeMetrics(savedTopology.edges || []);
+      setNodes(restoredNodes);
+      setEdges(restoredEdges);
+      // Seed the undo stack - without this, the first cmd+Z after a reload
+      // unwinds to the stack's empty initial state and blanks the canvas
+      saveToHistory(restoredNodes, restoredEdges);
       if (savedTopology.name) setDesignName(savedTopology.name);
     }
     const savedTemplates = readStorage<CustomTemplate[]>(STORAGE_TEMPLATES);
@@ -751,6 +756,20 @@ export function NetworkDesigner({
       // mid-run would make it apply fixes against state it no longer holds
       if (applyAllActiveRef.current && (e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'z') {
         e.preventDefault();
+        return;
+      }
+      // Arrow keys nudge the selected node one grid step (a11y: keyboard
+      // users can reposition nodes without a mouse)
+      if (selectedNode && ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+        e.preventDefault();
+        const step = e.shiftKey ? 60 : 20;
+        const dx = e.key === 'ArrowLeft' ? -step : e.key === 'ArrowRight' ? step : 0;
+        const dy = e.key === 'ArrowUp' ? -step : e.key === 'ArrowDown' ? step : 0;
+        const b = layoutBoundsNow();
+        setNodes(prev => prev.map(n => n.id === selectedNode
+          ? { ...n, x: Math.max(b.minX, Math.min(n.x + dx, b.maxX)), y: Math.max(b.minY, Math.min(n.y + dy, b.maxY)) }
+          : n
+        ));
         return;
       }
       if ((e.key === 'Delete' || e.key === 'Backspace')) {

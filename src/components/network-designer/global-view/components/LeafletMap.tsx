@@ -133,7 +133,7 @@ export function LeafletMap({ nodes, edges, onNodeSelect, selectedNodeId, issueBa
         : '';
       // Advisor finding mark: severity-tinted border + alert dot on the chip
       const severityDot = severity
-        ? `<span style="width:8px;height:8px;border-radius:50%;background:${SEVERITY_COLOR[severity]};flex-shrink:0;" title="Advisor finding"></span>`
+        ? `<span style="width:12px;height:12px;border-radius:50%;background:${SEVERITY_COLOR[severity]};flex-shrink:0;color:white;font-size:9px;font-weight:800;line-height:12px;text-align:center;" title="Advisor finding" role="img" aria-label="Advisor ${severity} finding">${severity === 'recommendation' ? 'i' : '!'}</span>`
         : '';
       const borderColor = isSelected ? '#00388F' : severity ? SEVERITY_COLOR[severity] : '#DCDFE3';
       return L.divIcon({

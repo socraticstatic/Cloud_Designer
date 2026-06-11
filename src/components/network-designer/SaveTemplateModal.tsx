@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useModalA11y } from '../../hooks/useModalA11y';
 import { Save, X } from 'lucide-react';
 import { NetworkNode, NetworkEdge } from '../types';
 
@@ -9,6 +10,7 @@ interface SaveTemplateModalProps {
 }
 
 export function SaveTemplateModal({ isOpen, onClose, onSave }: SaveTemplateModalProps) {
+  const dialogRef = useModalA11y(onClose, isOpen);
   const [templateName, setTemplateName] = useState('');
   const [templateDescription, setTemplateDescription] = useState('');
   const [error, setError] = useState('');
@@ -32,7 +34,7 @@ export function SaveTemplateModal({ isOpen, onClose, onSave }: SaveTemplateModal
   };
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-[100]">
+    <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-[100]" ref={dialogRef} role="dialog" aria-label="Save template">
       <div className="bg-white rounded-lg shadow-xl w-full max-w-md p-6">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-semibold text-gray-900 flex items-center">

@@ -274,11 +274,15 @@ export const Node = memo(function Node({
         {/* Advisor issue badge - finding severity pinned to the node */}
         {issueBadge && !node.config?.routerRole && (
           <div
-            className={`absolute -top-2 -left-2 h-4 w-4 rounded-full border-2 border-white shadow ${
+            className={`absolute -top-2 -left-2 h-4 w-4 rounded-full border-2 border-white shadow flex items-center justify-center text-white text-[9px] font-black leading-none ${
               issueBadge === 'error' ? 'bg-red-600' : issueBadge === 'warning' ? 'bg-orange-500' : 'bg-blue-600'
             }`}
+            role="img"
+            aria-label={issueBadge === 'error' ? 'Critical finding' : issueBadge === 'warning' ? 'Warning' : 'Recommendation'}
             title={issueBadge === 'error' ? 'Critical finding' : issueBadge === 'warning' ? 'Warning' : 'Recommendation'}
-          />
+          >
+            {issueBadge === 'recommendation' ? 'i' : '!'}
+          </div>
         )}
 
         {/* Primary/secondary router role - NetBond redundancy pairing */}

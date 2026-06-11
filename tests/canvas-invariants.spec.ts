@@ -189,6 +189,47 @@ test('advisor findings surface on the Pano map as site severity marks', async ({
   await expect(marked.first()).toBeVisible();
 });
 
+test('undo and redo unwind and replay node moves', async ({ page }) => {
+  await openDesigner(page);
+  const node = nodeByName(page, 'Firewall');
+  const before = await node.boundingBox();
+  // move the node, then undo, then redo
+  await page.mouse.move(before!.x + 30, before!.y + 30);
+  await page.mouse.down();
+  await page.mouse.move(before!.x + 230, before!.y - 30, { steps: 10 });
+  await page.mouse.up();
+  await page.waitForTimeout(400);
+  const moved = await node.boundingBox();
+  expect(Math.abs(moved!.x - before!.x)).toBeGreaterThan(150);
+
+  await page.keyboard.press(process.platform === 'darwin' ? 'Meta+z' : 'Control+z');
+  await page.waitForTimeout(400);
+  const undone = await node.boundingBox();
+  expect(Math.abs(undone!.x - before!.x)).toBeLessThan(30);
+
+  await page.keyboard.press(process.platform === 'darwin' ? 'Meta+Shift+z' : 'Control+Shift+z');
+  await page.waitForTimeout(400);
+  const redone = await node.boundingBox();
+  expect(Math.abs(redone!.x - moved!.x)).toBeLessThan(30);
+});
+
+test('advisor fix preview ghosts, then apply commits the change', async ({ page }) => {
+  await openDesigner(page);
+  await page.locator('button[title="Network Advisor"]').first().click();
+  await expect(page.locator('[aria-label="Network Advisor"]')).toBeVisible();
+  // the fixture has a SPOF on the hub router - preview its fix
+  await page.getByText('Preview', { exact: true }).first().click();
+  // ghost node renders on canvas and the floating banner shows deltas
+  await expect(page.getByText(/Previewing:/)).toBeVisible();
+  await expect(page.getByText(/grade [A-F] → [A-F]/)).toBeVisible();
+  const nodesBefore = await page.locator('.node-enter').count();
+  // apply from the banner
+  await page.getByRole('button', { name: 'Apply', exact: true }).first().click();
+  await page.waitForTimeout(600);
+  await expect(page.locator('.node-enter')).toHaveCount(nodesBefore + 1);
+  await expect(page.getByText('Fix Applied')).toBeVisible();
+});
+
 test('opening a saved design normalizes it to the current canvas and fits', async ({ page }) => {
   // saved on some other (huge) canvas: positions far outside today's viewport
   const farFlung = {
