@@ -1,6 +1,6 @@
-// Overlap-free node placement. Nodes may pass over each other mid-drag,
-// but they never REST overlapping: drops, restores, and imports all run
-// through these helpers.
+// Overlap-free, in-bounds node placement. Nodes may pass over each other
+// mid-drag, but they never REST overlapping, off-canvas, or under the
+// floating chrome: drops, restores, imports, and fixes all run through here.
 
 import { NetworkNode } from '../types';
 
@@ -8,46 +8,74 @@ import { NetworkNode } from '../types';
 export const MIN_GAP_X = 100;
 export const MIN_GAP_Y = 110;
 
+export interface LayoutBounds {
+  minX: number;
+  minY: number;
+  maxX: number;
+  maxY: number;
+}
+
+// Resting area inside the canvas: clear of the status bar (top), the
+// floating toolbar (bottom), the left rail, and the right zoom rail.
+export function restingBounds(canvasWidth: number, canvasHeight: number): LayoutBounds {
+  return {
+    minX: 90,
+    minY: 70,
+    maxX: Math.max(200, canvasWidth - 150),
+    maxY: Math.max(200, canvasHeight - 180)
+  };
+}
+
+const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
+
+export function clampToBounds(x: number, y: number, b: LayoutBounds): { x: number; y: number } {
+  return { x: clamp(x, b.minX, b.maxX), y: clamp(y, b.minY, b.maxY) };
+}
+
 const collidesWith = (others: NetworkNode[], px: number, py: number) =>
   others.some(n => Math.abs(n.x - px) < MIN_GAP_X && Math.abs(n.y - py) < MIN_GAP_Y);
 
-// Nearest clear position via expanding ring search around the desired spot
+// Nearest clear in-bounds position via expanding ring search
 export function nearestClearSpot(
   x: number,
   y: number,
   others: NetworkNode[],
-  maxY: number
+  bounds: LayoutBounds
 ): { x: number; y: number } {
-  if (!collidesWith(others, x, y)) return { x, y };
-  for (let radius = 60; radius <= 600; radius += 30) {
+  const start = clampToBounds(x, y, bounds);
+  if (!collidesWith(others, start.x, start.y)) return start;
+  for (let radius = 60; radius <= 900; radius += 30) {
     for (let i = 0; i < 16; i++) {
       const angle = (Math.PI * 2 * i) / 16;
-      const px = Math.max(10, x + Math.cos(angle) * radius);
-      const py = Math.max(10, Math.min(maxY, y + Math.sin(angle) * radius));
-      if (!collidesWith(others, px, py)) return { x: px, y: py };
+      const p = clampToBounds(
+        start.x + Math.cos(angle) * radius,
+        start.y + Math.sin(angle) * radius,
+        bounds
+      );
+      if (!collidesWith(others, p.x, p.y)) return p;
     }
   }
-  return { x: x + 160, y };
+  return start;
 }
 
-// Re-place one node (after a drop) so it doesn't rest on any other
-export function resolveNodeOverlap(nodeId: string, nodes: NetworkNode[], maxY: number): NetworkNode[] {
+// Re-place one node (after a drop) so it rests clear and in-bounds
+export function resolveNodeOverlap(nodeId: string, nodes: NetworkNode[], bounds: LayoutBounds): NetworkNode[] {
   const node = nodes.find(n => n.id === nodeId);
   if (!node) return nodes;
   const others = nodes.filter(n => n.id !== nodeId);
-  const spot = nearestClearSpot(node.x, node.y, others, maxY);
+  const spot = nearestClearSpot(node.x, node.y, others, bounds);
   if (spot.x === node.x && spot.y === node.y) return nodes;
   return nodes.map(n => (n.id === nodeId ? { ...n, x: spot.x, y: spot.y } : n));
 }
 
-// Normalize a whole topology (restore/import): keep earlier nodes pinned,
-// slide each later node off anything it overlaps. Returns the same array
-// when nothing needed to move so callers can cheaply detect changes.
-export function resolveAllOverlaps(nodes: NetworkNode[], maxY: number): NetworkNode[] {
+// Normalize a whole topology (restore/import): keep earlier nodes pinned
+// where possible, clamp everything in-bounds, slide overlaps clear.
+// Returns the same array when nothing moved so callers detect changes cheaply.
+export function resolveAllOverlaps(nodes: NetworkNode[], bounds: LayoutBounds): NetworkNode[] {
   const placed: NetworkNode[] = [];
   let changed = false;
   nodes.forEach(node => {
-    const spot = nearestClearSpot(node.x, node.y, placed, maxY);
+    const spot = nearestClearSpot(node.x, node.y, placed, bounds);
     if (spot.x !== node.x || spot.y !== node.y) {
       changed = true;
       placed.push({ ...node, x: spot.x, y: spot.y });

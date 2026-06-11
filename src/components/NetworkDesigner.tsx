@@ -32,7 +32,7 @@ import { previewFix, scoreFixImpact, buildRemediationPlan, FixPreview, FixImpact
 import { simulateFailure, FailureResult } from './network-designer/advisor/failureSim';
 import { composeNarrative } from './network-designer/advisor/narrative';
 import { readHistory, appendHistory, HistoryPoint } from './network-designer/advisor/scoreHistory';
-import { resolveAllOverlaps, resolveNodeOverlap } from '../utils/nodeLayout';
+import { resolveAllOverlaps, resolveNodeOverlap, restingBounds } from '../utils/nodeLayout';
 import { ParseResult } from './network-designer/advisor/topologyParser';
 import { ArrowLeft, ChevronDown, ChevronUp, Eye, Pencil, Plus, Search, LayoutList, LayoutGrid, X } from 'lucide-react';
 
@@ -228,13 +228,20 @@ export function NetworkDesigner({
   });
   const restoredRef = useRef(false);
 
+  // Resting bounds for node placement, measured from the live canvas so
+  // they shrink when the advisor dock is open. clientWidth can be 0 before
+  // first layout - fall back to a sane default, never to a collapsed box.
+  const layoutBoundsNow = () =>
+    restingBounds(canvasRef.current?.clientWidth || 1300, canvasHeight);
+
   // Restore persisted state from browser cache on first mount
   useEffect(() => {
     const savedTopology = readStorage<{ nodes: NetworkNode[]; edges: NetworkEdge[]; name?: string }>(STORAGE_TOPOLOGY);
     if (savedTopology && savedTopology.nodes?.length) {
       restoredRef.current = true;
-      // Normalize on restore: legacy saves may carry overlapping nodes
-      setNodes(resolveAllOverlaps(rehydrateIcons(savedTopology.nodes), canvasHeight - 100));
+      // Normalize on restore: legacy saves may carry overlapping or
+      // off-canvas nodes (including under the floating toolbar)
+      setNodes(resolveAllOverlaps(rehydrateIcons(savedTopology.nodes), layoutBoundsNow()));
       setEdges(seedAllEdgeMetrics(savedTopology.edges || []));
       if (savedTopology.name) setDesignName(savedTopology.name);
     }
@@ -438,7 +445,7 @@ export function NetworkDesigner({
   }, [nodes, edges]);
 
   const handleImportTopology = (result: ParseResult) => {
-    const enriched = resolveAllOverlaps(ensureNodesHaveGeoData(result.nodes), canvasHeight - 100);
+    const enriched = resolveAllOverlaps(ensureNodesHaveGeoData(result.nodes), layoutBoundsNow());
     setNodes(enriched);
     setEdges(result.edges);
     saveToHistory(enriched, result.edges);
@@ -994,8 +1001,9 @@ export function NetworkDesigner({
       const dx = x - current.x;
       const dy = y - current.y;
       if (dx === 0 && dy === 0) return prev;
+      // Clamp during drag too - nodes can't be parked under the toolbar
       return prev.map(n => moveIds.includes(n.id)
-        ? { ...n, x: Math.max(0, n.x + dx), y: Math.max(0, Math.min(n.y + dy, canvasHeight - 84)) }
+        ? { ...n, x: Math.max(0, n.x + dx), y: Math.max(0, Math.min(n.y + dy, canvasHeight - 180)) }
         : n
       );
     });
@@ -1007,7 +1015,7 @@ export function NetworkDesigner({
   const handleNodeDragEnd = (nodeId?: string) => {
     let next = nodesRef.current;
     if (nodeId && !multiSelected.includes(nodeId)) {
-      next = resolveNodeOverlap(nodeId, next, canvasHeight - 100);
+      next = resolveNodeOverlap(nodeId, next, layoutBoundsNow());
       if (next !== nodesRef.current) {
         setNodes(next);
         nodesRef.current = next;
@@ -1663,6 +1671,7 @@ export function NetworkDesigner({
             onSimulate={handleSimulate}
             onResetSim={handleResetSim}
             onTabChange={() => { setFixPreviewState(null); setSimResult(null); setFocusedFinding(null); }}
+            onOpenImport={() => setShowImportModal(true)}
           />
         </div>
       </div>

@@ -5,7 +5,7 @@
 
 import { useState } from 'react';
 import {
-  X, RefreshCw, AlertOctagon, AlertCircle, Lightbulb, CheckCircle2, Sparkles, Eye
+  X, RefreshCw, AlertOctagon, AlertCircle, Lightbulb, CheckCircle2, Sparkles, Eye, Upload
 } from 'lucide-react';
 import { NetworkNode } from '../../../types';
 import { Assessment, Finding, FindingSeverity, toDimensions } from './advisorEngine';
@@ -41,6 +41,7 @@ interface AdvisorPanelProps {
   onSimulate: (nodeId: string) => void;
   onResetSim: () => void;
   onTabChange?: (tab: AdvisorTab) => void;
+  onOpenImport?: () => void;
 }
 
 const SEVERITY_META: Record<FindingSeverity, {
@@ -80,7 +81,8 @@ export function AdvisorPanel({
   onStopApplyAll,
   onSimulate,
   onResetSim,
-  onTabChange
+  onTabChange,
+  onOpenImport
 }: AdvisorPanelProps) {
   const [filter, setFilter] = useState<FindingSeverity | 'all'>('all');
   const [tab, setTab] = useState<AdvisorTab>('assess');
@@ -112,6 +114,16 @@ export function AdvisorPanel({
           <h2 className="text-base font-bold text-fw-heading">Network Advisor</h2>
         </div>
         <div className="flex items-center gap-1">
+          {onOpenImport && (
+            <button
+              onClick={onOpenImport}
+              className="p-2 rounded-lg text-fw-bodyLight hover:bg-fw-wash transition-colors"
+              title="Upload topology data (JSON or CSV)"
+              type="button"
+            >
+              <Upload className="h-4 w-4" />
+            </button>
+          )}
           <button
             onClick={onRerun}
             className="p-2 rounded-lg text-fw-bodyLight hover:bg-fw-wash transition-colors"
@@ -144,6 +156,16 @@ export function AdvisorPanel({
           >
             Analyze current design
           </button>
+          {onOpenImport && (
+            <button
+              onClick={onOpenImport}
+              className="mt-2 inline-flex items-center gap-1.5 px-5 py-2 text-sm font-medium rounded-full border border-fw-border-active text-fw-link hover:bg-fw-accent transition-colors"
+              type="button"
+            >
+              <Upload className="h-4 w-4" />
+              Upload topology data
+            </button>
+          )}
         </div>
       ) : (
         <>
