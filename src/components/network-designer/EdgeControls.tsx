@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo } from 'react';
 import { Settings } from 'lucide-react';
 import { NetworkEdge, NetworkNode } from '../types';
 import { Z_INDEX } from '../../constants';
@@ -11,7 +11,9 @@ interface EdgeControlsProps {
   onEdgeClick: (edge: NetworkEdge) => void;
 }
 
-export function EdgeControls({ edges, nodes, selectedEdge, isReadOnly = false, onEdgeClick }: EdgeControlsProps) {
+// Memoized: collision-aware pill placement is O(edges x nodes) and Canvas
+// re-renders on every transient state change (marquee, zoom, mouse pos)
+export const EdgeControls = memo(function EdgeControls({ edges, nodes, selectedEdge, isReadOnly = false, onEdgeClick }: EdgeControlsProps) {
   // Helper to find node by id
   const getNode = (id: string) => nodes.find(n => n.id === id);
   
@@ -118,4 +120,4 @@ export function EdgeControls({ edges, nodes, selectedEdge, isReadOnly = false, o
       })}
     </div>
   );
-}
+});

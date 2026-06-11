@@ -5,7 +5,7 @@
 //   - membership is the node's config.city (drop a node inside a group to adopt it)
 // Visual language per the SDCI Figma frames: colored city chip + dashed tinted container.
 
-import { useMemo, useState, useRef } from 'react';
+import { useMemo, useState, useRef, memo } from 'react';
 import { Check, Palette, Ungroup, X } from 'lucide-react';
 import { NetworkNode } from '../types';
 import { CANVAS_BOUNDS, Z_INDEX } from '../../constants';
@@ -69,7 +69,7 @@ interface LocationGroupsProps {
   onRecolorGroup?: (city: string, paletteIndex: number) => void;
 }
 
-export function LocationGroups({
+export const LocationGroups = memo(function LocationGroups({
   nodes,
   zoomLevel = 1,
   isReadOnly = false,
@@ -235,4 +235,4 @@ export function LocationGroups({
       </div>
     </>
   );
-}
+});
