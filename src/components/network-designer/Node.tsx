@@ -139,6 +139,7 @@ export const Node = memo(function Node({
         }}
         onMouseDown={(e) => {
           if (!isCreatingEdge && nodeRef.current && !isReadOnly) {
+            e.preventDefault(); // no native text-selection during the gesture
             e.stopPropagation();
             setShowTooltip(false);
             const rect = nodeRef.current.getBoundingClientRect();
@@ -199,7 +200,7 @@ export const Node = memo(function Node({
               {(() => {
                 const wordmark = getBrandWordmark(node.config?.provider || node.cloudProvider);
                 return wordmark
-                  ? <img src={wordmark} className="h-3.5 w-auto max-w-[96px] object-contain object-left mb-0.5" alt={node.config?.provider || ''} />
+                  ? <img src={wordmark} className="h-3.5 w-auto max-w-[96px] object-contain object-left mb-0.5 pointer-events-none select-none" draggable={false} alt={node.config?.provider || ''} />
                   : null;
               })()}
               <div className="text-sm font-medium text-gray-900 leading-tight">{node.name}</div>

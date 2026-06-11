@@ -91,6 +91,23 @@ test('slow deliberate drag tracks the cursor 1:1', async ({ page }) => {
   expect(Math.abs(after!.y - (before!.y - 60))).toBeLessThan(30);
 });
 
+test('nodes with image icons drag identically to svg-icon nodes', async ({ page }) => {
+  // The AT&T globe is an <img>; bare images start a NATIVE browser drag
+  // that hijacks the canvas gesture - the node moved 20px on a 200px drag
+  // while svg-icon nodes moved the full distance.
+  await openDesigner(page);
+  const node = nodeByName(page, 'AT&T Core');
+  const b = await node.boundingBox();
+  // grab dead-center of the icon, where the img lives
+  await page.mouse.move(b!.x + 32, b!.y + 28);
+  await page.mouse.down();
+  await page.mouse.move(b!.x + 32, b!.y - 90, { steps: 12 });
+  await page.mouse.up();
+  await page.waitForTimeout(400);
+  const after = await node.boundingBox();
+  expect(Math.abs((b!.y - 90) - after!.y)).toBeLessThan(30);
+});
+
 test('drag tracks the cursor IN FLIGHT - no rubber-banding', async ({ page }) => {
   // End-position checks pass even when the node visibly lags the cursor
   // behind a CSS transition. This measures tracking DURING the gesture:

@@ -25,7 +25,8 @@ export function MapBackground({ zoomLevel, panOffset }: MapBackgroundProps) {
       <img 
         src="https://upload.wikimedia.org/wikipedia/commons/8/80/World_map_-_low_resolution.svg"
         alt=""
-        className="absolute inset-0 w-full h-full object-cover"
+        draggable={false}
+        className="absolute inset-0 w-full h-full object-cover pointer-events-none select-none"
         style={{
           opacity: 0.2,
           zIndex: 6

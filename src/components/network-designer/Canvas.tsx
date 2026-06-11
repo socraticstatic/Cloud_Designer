@@ -263,6 +263,7 @@ export const Canvas = forwardRef<HTMLDivElement, CanvasProps>(({
     const el = e.target as HTMLElement;
     const onInteractive = el.closest('.pointer-events-auto, button, input, .edge-control');
     if (onInteractive || isReadOnly || isCreatingEdge || e.button !== 0 || e.altKey) return;
+    e.preventDefault(); // marquee must not smear native text selection
     const start = toCanvasPoint(e.clientX, e.clientY);
     setMarquee({ x1: start.x, y1: start.y, x2: start.x, y2: start.y });
 

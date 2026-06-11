@@ -80,7 +80,17 @@ export function getDatacenterIcon(provider?: string) {
 const BRAND_BASE = `${import.meta.env.BASE_URL}brands/`;
 
 export function AttGlobeIcon({ className = 'h-5 w-5' }: ProviderIconProps) {
-  return <img src={`${BRAND_BASE}att-globe.svg`} className={`${className} object-contain`} alt="" aria-hidden="true" />;
+  // draggable=false + pointer-events-none: a bare <img> starts a NATIVE
+  // browser image-drag that hijacks the canvas drag gesture
+  return (
+    <img
+      src={`${BRAND_BASE}att-globe.svg`}
+      className={`${className} object-contain pointer-events-none select-none`}
+      draggable={false}
+      alt=""
+      aria-hidden="true"
+    />
+  );
 }
 
 const WORDMARKS: Record<string, string> = {
