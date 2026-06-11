@@ -54,6 +54,22 @@
     });
   });
 
+  // Intra-node pass: no two text elements inside one node may superimpose
+  document.querySelectorAll('.node-enter').forEach(node => {
+    const leaves = [...node.querySelectorAll('span, button, div')]
+      .filter(c => (c.textContent || '').trim() && c.children.length === 0)
+      .map(c => ({ text: c.textContent.trim().slice(0, 16), r: c.getBoundingClientRect() }))
+      .filter(t => t.r.width > 0 && t.r.height > 0);
+    for (let i = 0; i < leaves.length; i++) {
+      for (let j = i + 1; j < leaves.length; j++) {
+        const hit = intersect(leaves[i].r, leaves[j].r, 2);
+        if (hit) {
+          violations.push({ content: `node label "${leaves[i].text}"`, chrome: `node label "${leaves[j].text}"`, overlap: hit });
+        }
+      }
+    }
+  });
+
   const result = { pass: violations.length === 0, checked: { content: content.length, chrome: chrome.length }, violations };
   console.table(violations);
   return JSON.stringify(result, null, 1);

@@ -166,6 +166,57 @@ async function chromeViolations(page: Page) {
   });
 }
 
+// Intra-node overlap audit: no two text elements INSIDE one node may
+// superimpose. Found in UAT: a fresh unconfigured node rendered its
+// region sublabel and Configure action in the same slot, both unreadable.
+async function intraNodeOverlaps(page: Page) {
+  return page.evaluate(() => {
+    const violations: string[] = [];
+    document.querySelectorAll('.node-enter').forEach(node => {
+      const leaves = [...node.querySelectorAll('span, button, div')]
+        .filter(c => (c.textContent || '').trim() && c.children.length === 0)
+        .map(c => ({ text: c.textContent!.trim().slice(0, 16), r: c.getBoundingClientRect() }))
+        .filter(t => t.r.width > 0 && t.r.height > 0);
+      for (let i = 0; i < leaves.length; i++) {
+        for (let j = i + 1; j < leaves.length; j++) {
+          const a = leaves[i].r, b = leaves[j].r;
+          const w = Math.min(a.right, b.right) - Math.max(a.left, b.left);
+          const h = Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top);
+          if (w > 2 && h > 2) {
+            violations.push(`"${leaves[i].text}" overlaps "${leaves[j].text}"`);
+          }
+        }
+      }
+    });
+    return violations;
+  });
+}
+
+test('node labels never overlap across the visual state matrix', async ({ page }) => {
+  await openDesigner(page);
+  // state 1: configured nodes with region sublabels (the fixture)
+  expect(await intraNodeOverlaps(page)).toEqual([]);
+
+  // state 2: fresh unconfigured node from the toolbar (the UAT bug:
+  // region sublabel and Configure action shared the same slot)
+  await page.getByRole('button', { name: 'Cloud', exact: true }).click();
+  await page.getByRole('button', { name: 'AWS', exact: true }).first().click();
+  await expect(page.locator('.node-enter')).toHaveCount(FIXTURE.nodes.length + 1);
+  await page.waitForTimeout(500);
+  expect(await intraNodeOverlaps(page)).toEqual([]);
+
+  // state 3: advisor open - issue badges + spotlight active
+  await page.locator('button[title="Network Advisor"]').first().click();
+  await expect(page.locator('[aria-label="Network Advisor"]')).toBeVisible();
+  await page.waitForTimeout(900);
+  expect(await intraNodeOverlaps(page)).toEqual([]);
+
+  // state 4: card display mode - wordmarks, names, status rows
+  await page.locator('button[title="Switch to detail cards"]').click();
+  await page.waitForTimeout(500);
+  expect(await intraNodeOverlaps(page)).toEqual([]);
+});
+
 test('no canvas content under chrome - advisor closed and open', async ({ page }) => {
   await openDesigner(page);
   expect(await chromeViolations(page)).toEqual([]);

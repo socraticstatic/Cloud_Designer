@@ -96,3 +96,15 @@ CDP) with the Topo view open. Run it in BOTH states - advisor closed and
 open - after any change touching canvas layout, chrome, node placement,
 or the dock. It returns `{ pass, violations }`; a failing pair names the
 content element, the chrome element, and the overlap size.
+
+## Intra-component overlap audit (automated)
+
+No two text elements INSIDE one node may superimpose, across the full
+visual state matrix: fresh unconfigured node (Configure action), configured
+node (region sublabel), advisor open (badges/spotlight), card display mode
+(wordmark + name + status). Covered by the 'node labels never overlap'
+Playwright test and the intra-node pass in scripts/ui-chrome-audit.js.
+Found in UAT: an unconfigured node rendered its region sublabel and
+Configure action in the same slot, both unreadable - element-level overlap
+inside a component envelope is part of the standing audit, not just
+component-vs-component and component-vs-chrome.

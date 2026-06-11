@@ -318,8 +318,10 @@ export const Node = memo(function Node({
           </>
         )}
 
-        {/* Region sublabel - per Figma node spec */}
-        {displayMode === 'icon' && (node.config?.region || node.config?.city) &&
+        {/* Region sublabel - per Figma node spec. The Configure action owns
+            this slot while the node is unconfigured; both rendering at once
+            superimposed two unreadable labels. */}
+        {displayMode === 'icon' && !needsConfig && (node.config?.region || node.config?.city) &&
           (node.config?.region || node.config?.city)?.toLowerCase() !== node.name.toLowerCase() && !isEditingName && (
           <div
             className="absolute -bottom-10 left-1/2 transform -translate-x-1/2 whitespace-nowrap text-[9px] tracking-wider uppercase text-gray-400 pointer-events-none"
