@@ -23,7 +23,7 @@ jobs:
         with:
           urls: |
             https://socraticstatic.github.io/Cloud_Designer/
-          configPath: './.pa11yci'
+          configPath: './.lighthouserc.json'
           uploadArtifacts: true
           temporaryPublicStorage: true
           
