@@ -91,6 +91,37 @@ test('slow deliberate drag tracks the cursor 1:1', async ({ page }) => {
   expect(Math.abs(after!.y - (before!.y - 60))).toBeLessThan(30);
 });
 
+test('drag tracks the cursor IN FLIGHT - no rubber-banding', async ({ page }) => {
+  // End-position checks pass even when the node visibly lags the cursor
+  // behind a CSS transition. This measures tracking DURING the gesture:
+  // before the fix the node trailed 271px on this motion.
+  await openDesigner(page);
+  const node = nodeByName(page, 'Firewall');
+  const b = await node.boundingBox();
+  await page.mouse.move(b!.x + 30, b!.y + 30);
+  await page.mouse.down();
+  await page.mouse.move(b!.x + 330, b!.y + 30, { steps: 25 });
+  const mid = await node.boundingBox(); // measured immediately, no settle
+  await page.mouse.up();
+  expect(Math.abs((b!.x + 300) - mid!.x)).toBeLessThan(40);
+});
+
+test('imported cloud routers carry the AT&T Cloud Router glyph', async ({ page }) => {
+  // covers fresh parses AND legacy persisted nodes (pre-mapping) - both
+  // resolve through rehydrateIcons' migration
+  const legacy = {
+    name: 'Legacy', nodes: [
+      { id: 'cr', type: 'function', functionType: 'Router', x: 400, y: 300, name: 'Primary Cloud Router', status: 'inactive', config: { configured: true } }
+    ], edges: []
+  };
+  await page.addInitScript(f => localStorage.setItem('cloud-designer:topology', JSON.stringify(f)), legacy);
+  await page.goto('/');
+  const node = page.locator('.node-enter').first();
+  await expect(node).toBeVisible();
+  // the CloudRouterIcon svg signature: viewBox "2 2 28 28"
+  await expect(node.locator('svg[viewBox="2 2 28 28"]')).toHaveCount(1);
+});
+
 test('dropping a node onto another slides it to a clear spot', async ({ page }) => {
   await openDesigner(page);
   const dragged = nodeByName(page, 'Azure');

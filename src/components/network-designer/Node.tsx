@@ -112,7 +112,8 @@ export const Node = memo(function Node({
           absolute flex items-center justify-center node-enter pointer-events-auto
           ${dimmed ? 'opacity-25' : 'opacity-100'}
           ${displayMode === 'card' ? 'h-16 px-3 gap-2.5 bg-white' : `w-16 h-16 ${background}`}
-          rounded-lg transition-all duration-200 select-none
+          rounded-lg select-none
+          ${isDragging ? '' : 'transition-all duration-200'}
           ${isReadOnly ? 'cursor-default' : isCreatingEdge ? 'cursor-crosshair' : isDragging ? 'cursor-grabbing' : 'cursor-grab'}
           ${isDragging ? 'shadow-lg scale-105' : 'shadow-sm hover:shadow-md'}
           border-2 ${highlight ? HIGHLIGHT_RING[highlight] : isSelected ? 'border-fw-border-active' : isMultiSelected ? 'border-blue-400 ring-2 ring-blue-300/50' : isCreatingEdge ? 'border-blue-400 border-dashed' : needsConfig ? 'border-orange-400' : 'border-gray-200'}

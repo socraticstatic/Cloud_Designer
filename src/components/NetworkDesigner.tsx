@@ -65,12 +65,21 @@ function stripIcons(nodes: NetworkNode[]) {
 }
 
 function rehydrateIcons(nodes: NetworkNode[]): NetworkNode[] {
-  return nodes.map(node => ({
-    ...node,
-    icon: getNodeIcon(node.type, node.functionType, node.config?.networkType, node.config),
-    // legacy nodes predate the configured flag - treat them as configured
-    config: { ...node.config, configured: node.config?.configured ?? true }
-  }));
+  return nodes.map(node => {
+    // legacy imports parsed 'cloud router' as a plain Router - upgrade so
+    // the node carries the AT&T Cloud Router glyph
+    const functionType =
+      node.functionType === 'Router' && !node.config?.routerType && /cloud\s*router/i.test(node.name)
+        ? ('Cloud Router' as NetworkNode['functionType'])
+        : node.functionType;
+    return {
+      ...node,
+      ...(functionType ? { functionType } : {}),
+      icon: getNodeIcon(node.type, functionType, node.config?.networkType, node.config),
+      // legacy nodes predate the configured flag - treat them as configured
+      config: { ...node.config, configured: node.config?.configured ?? true }
+    };
+  });
 }
 
 function readStorage<T>(key: string): T | null {
