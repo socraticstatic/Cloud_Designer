@@ -49,6 +49,7 @@ export function Toolbar({
 }: ToolbarProps) {
   // State to track which dropdown is open
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+  const [confirmClear, setConfirmClear] = useState(false);
   const toolbarRef = useRef<HTMLDivElement>(null);
 
   // Menu items with icons
@@ -388,22 +389,22 @@ export function Toolbar({
         </div>
       </>
 
-      {/* Clear Canvas */}
+      {/* Clear Canvas - destructive, so it confirms before acting */}
       {onClearCanvas && (
           <div className="relative group">
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                if (hasConnections && onClearCanvas) {
-                  onClearCanvas();
-                }
+                if (hasConnections) setConfirmClear(v => !v);
               }}
               disabled={!hasConnections}
               className={`
                 p-2 rounded-lg transition-colors
                 ${!hasConnections
                   ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                  : confirmClear
+                    ? 'bg-fw-error-bg text-fw-error'
+                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
                 }
               `}
               title="Clear Canvas"
@@ -411,9 +412,43 @@ export function Toolbar({
             >
               <Trash2 className="h-5 w-5" />
             </button>
-            <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 text-xs text-white bg-gray-900 rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-              Clear canvas
-            </div>
+            {!confirmClear && (
+              <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 text-xs text-white bg-gray-900 rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                Clear canvas
+              </div>
+            )}
+            {confirmClear && (
+              <>
+                {/* invisible backdrop - clicking anywhere else cancels */}
+                <div className="fixed inset-0" onClick={() => setConfirmClear(false)} />
+                <div
+                  className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-60 bg-white rounded-xl shadow-lg border border-fw-border-secondary p-3"
+                  role="alertdialog"
+                  aria-label="Confirm clear canvas"
+                >
+                  <p className="text-xs font-medium text-fw-heading">Clear the entire canvas?</p>
+                  <p className="text-[11px] text-fw-bodyLight mt-1 leading-snug">
+                    Every node and connection is removed. Undo can bring it back.
+                  </p>
+                  <div className="flex justify-end gap-2 mt-2.5">
+                    <button
+                      onClick={() => setConfirmClear(false)}
+                      className="px-3 py-1.5 rounded-full text-xs font-medium bg-fw-wash text-fw-body hover:bg-fw-neutral transition-colors"
+                      type="button"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={() => { setConfirmClear(false); onClearCanvas(); }}
+                      className="px-3 py-1.5 rounded-full text-xs font-medium bg-fw-error text-white hover:opacity-90 transition-opacity"
+                      type="button"
+                    >
+                      Clear canvas
+                    </button>
+                  </div>
+                </div>
+              </>
+            )}
           </div>
       )}
 

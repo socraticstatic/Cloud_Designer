@@ -176,6 +176,24 @@ test('no canvas content under chrome - advisor closed and open', async ({ page }
   expect(await chromeViolations(page)).toEqual([]);
 });
 
+test('clear canvas requires confirmation', async ({ page }) => {
+  await openDesigner(page);
+  const trash = page.locator('button[title="Clear Canvas"]');
+  // first click only opens the confirm - nothing is deleted
+  await trash.click();
+  const dialog = page.getByRole('alertdialog', { name: 'Confirm clear canvas' });
+  await expect(dialog).toBeVisible();
+  await expect(page.locator('.node-enter')).toHaveCount(FIXTURE.nodes.length);
+  // cancel keeps everything
+  await dialog.getByRole('button', { name: 'Cancel' }).click();
+  await expect(dialog).toBeHidden();
+  await expect(page.locator('.node-enter')).toHaveCount(FIXTURE.nodes.length);
+  // confirm actually clears
+  await trash.click();
+  await dialog.getByRole('button', { name: 'Clear canvas' }).click();
+  await expect(page.locator('.node-enter')).toHaveCount(0);
+});
+
 test('advisor is reachable in Read mode, with mutations hidden', async ({ page }) => {
   await openDesigner(page);
   await page.getByRole('button', { name: 'Read', exact: true }).click();
