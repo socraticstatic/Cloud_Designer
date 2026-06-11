@@ -18,6 +18,8 @@ interface NodeProps {
   dimmed?: boolean;
   onAnchorDown?: (e: React.MouseEvent) => void;
   onClick: () => void;
+  // Plain click: select only (keyboard target), no config panel
+  onSelect?: () => void;
   onDragStart: () => void;
   onDragEnd: () => void;
   onDrag: (x: number, y: number) => void;
@@ -46,6 +48,7 @@ export const Node = memo(function Node({
   dimmed = false,
   onAnchorDown,
   onClick,
+  onSelect,
   onDragStart,
   onDragEnd,
   onDrag,
@@ -125,9 +128,13 @@ export const Node = memo(function Node({
         onMouseEnter={() => !isReadOnly && !isDragging && setShowTooltip(true)}
         onMouseLeave={() => setShowTooltip(false)}
         onClick={(e) => {
-          if (isCreatingEdge && !isReadOnly) {
-            e.stopPropagation();
+          if (isReadOnly) return;
+          e.stopPropagation();
+          if (isCreatingEdge) {
             onClick();
+          } else {
+            // select without opening config - double-click opens it
+            onSelect?.();
           }
         }}
         onDoubleClick={(e) => {

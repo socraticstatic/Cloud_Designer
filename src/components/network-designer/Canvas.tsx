@@ -15,6 +15,8 @@ interface CanvasProps {
   edgeStart: string | null;
   isReadOnly?: boolean;
   onNodeClick: (node: NetworkNode | null) => void;
+  // Plain click: select only, no config panel
+  onNodeSelect?: (node: NetworkNode) => void;
   onNodeDrag: (nodeId: string, x: number, y: number) => void;
   onNodeDragEnd: (nodeId?: string) => void;
   onEdgeClick: (edge: NetworkEdge | null) => void;
@@ -60,6 +62,7 @@ export const Canvas = forwardRef<HTMLDivElement, CanvasProps>(({
   edgeStart,
   isReadOnly = false,
   onNodeClick,
+  onNodeSelect,
   onNodeDrag,
   onNodeDragEnd,
   onEdgeClick,
@@ -226,10 +229,13 @@ export const Canvas = forwardRef<HTMLDivElement, CanvasProps>(({
         // Calculate new zoom level
         const newZoomLevel = Math.max(0.5, Math.min(zoomLevel + delta, 2));
         
-        // Calculate new pan offset to zoom towards/away from mouse position
+        // Calculate new pan offset to zoom towards/away from mouse position.
+        // Pan is CANVAS-relative, so the cursor must be too - using raw
+        // clientX/Y shifted content by the canvas's viewport offset
+        // (header height + rail width) on every wheel tick.
         if (newZoomLevel !== zoomLevel) {
-          const newPanX = e.clientX - mouseX * newZoomLevel;
-          const newPanY = e.clientY - mouseY * newZoomLevel;
+          const newPanX = (e.clientX - rect.left) - mouseX * newZoomLevel;
+          const newPanY = (e.clientY - rect.top) - mouseY * newZoomLevel;
           setPanOffset({ x: newPanX, y: newPanY });
           setZoomLevel(newZoomLevel);
         }
@@ -584,6 +590,7 @@ export const Canvas = forwardRef<HTMLDivElement, CanvasProps>(({
               dimmed={dimmedNodeIds.includes(node.id)}
               onAnchorDown={(e) => handleAnchorDown(node.id, e)}
               onClick={() => onNodeClick(node)}
+              onSelect={() => onNodeSelect?.(node)}
               onDragStart={() => setIsDragging(true)}
               onDragEnd={() => {
                 setIsDragging(false);

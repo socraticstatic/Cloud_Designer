@@ -738,3 +738,57 @@ test('group drag at fitted zoom stays in bounds without deforming', async ({ pag
     expect(box!.y, `${name} went under the top chrome`).toBeGreaterThan(60);
   }
 });
+
+test('ctrl+wheel zoom keeps the content under the cursor', async ({ page }) => {
+  // the pan recompute once mixed viewport and canvas coordinates - every
+  // wheel tick shifted content by the canvas's offset from the viewport
+  await openDesigner(page);
+  const hub = nodeByName(page, 'HubRouter');
+  const b0 = await hub.boundingBox();
+  const cx = b0!.x + b0!.width / 2, cy = b0!.y + b0!.height / 2;
+  await page.mouse.move(cx, cy);
+  await page.keyboard.down('Control');
+  await page.mouse.wheel(0, -120);
+  await page.waitForTimeout(150);
+  await page.mouse.wheel(0, -120);
+  await page.keyboard.up('Control');
+  await page.waitForTimeout(300);
+  const b1 = await hub.boundingBox();
+  const drift = Math.hypot(b1!.x + b1!.width / 2 - cx, b1!.y + b1!.height / 2 - cy);
+  expect(drift, `zoom target drifted ${Math.round(drift)}px from the cursor`).toBeLessThan(15);
+});
+
+test('click selects a node for keyboard ops: nudge, delete, undo restores', async ({ page }) => {
+  // plain click only selected while CREATING AN EDGE - arrows, Delete and
+  // cmd+D silently did nothing. And undo from a fresh reload unwound past
+  // the restored state to the stack's empty floor, blanking the canvas.
+  await openDesigner(page);
+  const fw = nodeByName(page, 'Firewall');
+  const b0 = await fw.boundingBox();
+  await fw.click();
+  // arrow nudge moves the selection one grid step
+  await page.keyboard.press('ArrowRight');
+  await expect(async () => {
+    const b1 = await fw.boundingBox();
+    expect(b1!.x - b0!.x).toBeGreaterThan(10);
+  }).toPass({ timeout: 2000 });
+  // no config panel opened by the plain click
+  await expect(page.locator('[style*="width: 380px"]')).toHaveCount(0);
+  // Delete removes it
+  await page.keyboard.press('Delete');
+  await expect(page.locator('.node-enter')).toHaveCount(FIXTURE.nodes.length - 1);
+  // undo restores it - and does NOT blank the canvas
+  await page.keyboard.press('Meta+z');
+  await expect(page.locator('.node-enter')).toHaveCount(FIXTURE.nodes.length);
+  // a second undo hits the restored floor: still a full canvas, never zero
+  await page.keyboard.press('Meta+z');
+  await page.waitForTimeout(300);
+  await expect(page.locator('.node-enter')).toHaveCount(FIXTURE.nodes.length);
+});
+
+test('bare cmd+Z right after reload never blanks the canvas', async ({ page }) => {
+  await openDesigner(page);
+  await page.keyboard.press('Meta+z');
+  await page.waitForTimeout(300);
+  await expect(page.locator('.node-enter')).toHaveCount(FIXTURE.nodes.length);
+});

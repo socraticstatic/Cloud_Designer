@@ -24,6 +24,16 @@ export function useSelectionManager(nodes: NetworkNode[], edges: NetworkEdge[]) 
     setShowEdgeConfig(false);
   };
   
+  // Select without opening the config panel - a plain click selects (so
+  // keyboard ops have a target: arrows nudge, Delete removes, cmd+D
+  // duplicates); double-click opens configuration
+  const selectNodeOnly = (node: NetworkNode) => {
+    setSelectedNode(node.id);
+    setSelectedEdge(null);
+    setShowNodeConfig(false);
+    setShowEdgeConfig(false);
+  };
+
   // Handle edge selection
   const handleEdgeSelection = (edge: NetworkEdge | null) => {
     if (!edge) {
@@ -54,6 +64,7 @@ export function useSelectionManager(nodes: NetworkNode[], edges: NetworkEdge[]) 
     showNodeConfig,
     showEdgeConfig,
     handleNodeSelection,
+    selectNodeOnly,
     handleEdgeSelection,
     clearSelection,
     setShowNodeConfig,

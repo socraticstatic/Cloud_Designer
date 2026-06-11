@@ -14,6 +14,13 @@ export function useNetworkHistory() {
     currentIndex: 0
   });
 
+  // Replace the stack's floor with this state. On restore, appending via
+  // saveToHistory left the empty initial entry underneath - the first
+  // cmd+Z after a reload unwound to it and blanked the canvas.
+  const resetHistory = (newNodes: NetworkNode[], newEdges: NetworkEdge[]) => {
+    setHistory({ nodes: [newNodes], edges: [newEdges], currentIndex: 0 });
+  };
+
   const saveToHistory = (newNodes: NetworkNode[], newEdges: NetworkEdge[]) => {
     setHistory({
       nodes: [...history.nodes.slice(0, history.currentIndex + 1), newNodes],
@@ -48,6 +55,7 @@ export function useNetworkHistory() {
   const canRedo = history.currentIndex < history.nodes.length - 1;
 
   return {
+    resetHistory,
     saveToHistory,
     undo,
     redo,

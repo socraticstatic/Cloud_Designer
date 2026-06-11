@@ -142,7 +142,7 @@ export function NetworkDesigner({
   const [showSaveTemplateModal, setShowSaveTemplateModal] = useState(false);
   
   // Network history management
-  const { saveToHistory, undo, redo, canUndo, canRedo } = useNetworkHistory();
+  const { resetHistory, saveToHistory, undo, redo, canUndo, canRedo } = useNetworkHistory();
   
   // Network state management
   const {
@@ -169,6 +169,7 @@ export function NetworkDesigner({
     showNodeConfig,
     showEdgeConfig,
     handleNodeSelection,
+    selectNodeOnly,
     handleEdgeSelection,
     clearSelection,
     setShowNodeConfig,
@@ -277,9 +278,10 @@ export function NetworkDesigner({
       const restoredEdges = seedAllEdgeMetrics(savedTopology.edges || []);
       setNodes(restoredNodes);
       setEdges(restoredEdges);
-      // Seed the undo stack - without this, the first cmd+Z after a reload
-      // unwinds to the stack's empty initial state and blanks the canvas
-      saveToHistory(restoredNodes, restoredEdges);
+      // Replace the undo stack's floor - appending left the empty initial
+      // entry underneath, so the first cmd+Z after a reload still blanked
+      // the canvas
+      resetHistory(restoredNodes, restoredEdges);
       if (savedTopology.name) setDesignName(savedTopology.name);
       if (savedTopology.provenance) setProvenance(savedTopology.provenance);
     }
@@ -642,6 +644,7 @@ export function NetworkDesigner({
         setShowImportModal(false);
         setFocusedFinding(null);
         setMultiSelected([]);
+        clearSelection(); // drop selection + close config panels
         return;
       }
       if (typing || isReadOnly) return;
@@ -1204,6 +1207,7 @@ export function NetworkDesigner({
             edgeStart={edgeStart}
             isReadOnly={isReadOnly}
             onNodeClick={handleNodeClick}
+            onNodeSelect={(node) => { if (!isCreatingEdge) selectNodeOnly(node); }}
             onNodeDrag={handleNodeDrag}
             onNodeDragEnd={handleNodeDragEnd}
             onEdgeClick={handleEdgeSelection}
