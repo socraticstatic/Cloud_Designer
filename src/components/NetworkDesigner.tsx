@@ -254,11 +254,15 @@ export function NetworkDesigner({
   });
   const restoredRef = useRef(false);
 
+  // Live canvas view (zoom/pan) - drag clamps map screen-space chrome
+  // margins through it into logical coordinates
+  const canvasViewRef = useRef({ zoom: 1, panX: 0, panY: 0 });
+
   // Resting bounds for node placement, measured from the live canvas so
-  // they shrink when the advisor dock is open. clientWidth can be 0 before
-  // first layout - fall back to a sane default, never to a collapsed box.
+  // they shrink when the advisor dock is open and track zoom/pan.
+  // clientWidth can be 0 before first layout - fall back to a sane default.
   const layoutBoundsNow = () =>
-    restingBounds(canvasRef.current?.clientWidth || 1300, canvasHeight);
+    restingBounds(canvasRef.current?.clientWidth || 1300, canvasHeight, canvasViewRef.current);
 
   // Restore persisted state from browser cache on first mount
   useEffect(() => {
@@ -1209,6 +1213,7 @@ export function NetworkDesigner({
             changedEdgeIds={fixPreviewState?.preview.changedEdgeIds}
             issueBadges={issueBadges}
             fitSignal={fitSignal}
+            onViewChange={(v) => { canvasViewRef.current = v; }}
             ref={canvasRef}
           />
         );

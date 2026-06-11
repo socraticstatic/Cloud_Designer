@@ -91,6 +91,43 @@ test('slow deliberate drag tracks the cursor 1:1', async ({ page }) => {
   expect(Math.abs(after!.y - (before!.y - 60))).toBeLessThan(30);
 });
 
+test('drag at fitted zoom: no walls inside the visible canvas, no grab-yank', async ({ page }) => {
+  // Drag clamps mapped screen margins into logical space assuming zoom 1.
+  // After the advisor auto-fit (zoom < 1), the clamps became invisible
+  // walls INSIDE the visible canvas: drops landed short, and grabbing a
+  // node beyond the zoom-1 wall yanked it sideways instantly.
+  await openDesigner(page);
+  await page.locator('button[title="Network Advisor"]').first().click();
+  await expect(page.locator('[aria-label="Network Advisor"]')).toBeVisible();
+  await page.waitForTimeout(1400); // dock transition + auto-fit
+
+  // grab-yank check: press and wiggle 6px - the node must not leap
+  const fw = nodeByName(page, 'Firewall');
+  const b0 = await fw.boundingBox();
+  await page.mouse.move(b0!.x + 25, b0!.y + 25);
+  await page.mouse.down();
+  await page.mouse.move(b0!.x + 31, b0!.y + 25, { steps: 2 });
+  const wiggled = await fw.boundingBox();
+  expect(Math.abs(wiggled!.x - b0!.x), 'grab must not yank the node').toBeLessThan(30);
+  // drag far past the bottom wall: the clamp must stop the node at the
+  // SCREEN-correct toolbar clearance (canvasHeight - 220 in screen px),
+  // not at zoom-1's imaginary wall location
+  await page.mouse.move(b0!.x + 25, b0!.y + 400, { steps: 12 });
+  await page.mouse.up();
+  await page.waitForTimeout(150);
+  const atDrop = await fw.boundingBox();
+  await page.waitForTimeout(700);
+  const settled = await fw.boundingBox();
+  expect(Math.abs(settled!.y - atDrop!.y), 'no teleport after drop').toBeLessThan(25);
+  const canvas = await page.evaluate(() => {
+    const el = document.querySelector('.relative.overflow-hidden.bg-gray-50')!;
+    const r = el.getBoundingClientRect();
+    return { top: r.top, height: r.height };
+  });
+  const wallScreen = canvas.top + canvas.height - 220;
+  expect(Math.abs(settled!.y - wallScreen), 'wall sits at the screen-correct clearance').toBeLessThan(35);
+});
+
 test('nodes with image icons drag identically to svg-icon nodes', async ({ page }) => {
   // The AT&T globe is an <img>; bare images start a NATIVE browser drag
   // that hijacks the canvas gesture - the node moved 20px on a 200px drag

@@ -25,12 +25,32 @@ export interface LayoutBounds {
 //   top:    status bar / back bar / filter (~125px) + chip clearance
 //   bottom: floating toolbar (~96px) + card + label + container padding
 //   left:   view rail column; right: zoom rail
-export function restingBounds(canvasWidth: number, canvasHeight: number): LayoutBounds {
+export interface CanvasView {
+  zoom: number;
+  panX: number;
+  panY: number;
+}
+
+// The chrome margins are SCREEN pixels; node coordinates are LOGICAL.
+// screen = logical * zoom + pan, so a screen margin M maps to the logical
+// constraint (M - pan) / zoom. Clamping with zoom-1 math built invisible
+// walls inside the visible canvas at fitted zooms and yanked nodes
+// sideways on grab.
+export function restingBounds(
+  canvasWidth: number,
+  canvasHeight: number,
+  view: CanvasView = { zoom: 1, panX: 0, panY: 0 }
+): LayoutBounds {
+  const { zoom, panX, panY } = view;
+  const minX = (140 - panX) / zoom;
+  const minY = (175 - panY) / zoom;
+  const maxX = (canvasWidth - 160 - panX) / zoom;
+  const maxY = (canvasHeight - 220 - panY) / zoom;
   return {
-    minX: 140,
-    minY: 175,
-    maxX: Math.max(300, canvasWidth - 160),
-    maxY: Math.max(300, canvasHeight - 220)
+    minX,
+    minY,
+    maxX: Math.max(minX + 200, maxX),
+    maxY: Math.max(minY + 200, maxY)
   };
 }
 

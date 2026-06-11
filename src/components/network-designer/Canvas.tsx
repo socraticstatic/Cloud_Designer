@@ -44,6 +44,8 @@ interface CanvasProps {
   issueBadges?: Record<string, 'error' | 'warning' | 'recommendation'>;
   // Bump to request a fit-to-screen (e.g. after the advisor dock resizes the canvas)
   fitSignal?: number;
+  // Reports zoom/pan so logical-space clamps can map screen margins correctly
+  onViewChange?: (view: { zoom: number; panX: number; panY: number }) => void;
 }
 
 // Memoized Edge renderer for better performance
@@ -83,7 +85,8 @@ export const Canvas = forwardRef<HTMLDivElement, CanvasProps>(({
   ghostEdges = [],
   changedEdgeIds = [],
   issueBadges = {},
-  fitSignal = 0
+  fitSignal = 0,
+  onViewChange
 }, ref) => {
   const internalCanvasRef = useRef<HTMLDivElement>(null);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
@@ -101,6 +104,12 @@ export const Canvas = forwardRef<HTMLDivElement, CanvasProps>(({
 
   // Use provided ref or internal ref
   const canvasRef = ref as RefObject<HTMLDivElement> || internalCanvasRef;
+
+  // Report the live view to the owner (drag clamps depend on it)
+  useEffect(() => {
+    onViewChange?.({ zoom: zoomLevel, panX: panOffset.x, panY: panOffset.y });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [zoomLevel, panOffset]);
 
   // Gesture listeners (marquee, drag-to-connect) outlive the render they
   // started in - they must read nodes through a ref, never the closure.
@@ -586,8 +595,10 @@ export const Canvas = forwardRef<HTMLDivElement, CanvasProps>(({
                 const validY = typeof y === 'number' ? y : 0;
                 
                 // Apply bounds to keep nodes within the canvas
-                const boundedX = Math.max(0, Math.min(validX, (canvasRef.current?.clientWidth || 0) / zoomLevel - 64));
-                const boundedY = Math.max(0, Math.min(validY, maxY - 64));
+                // generous world guard only - the owner applies the
+                // view-aware clamp (screen margins mapped through zoom/pan)
+                const boundedX = Math.max(0, Math.min(validX, 6000));
+                const boundedY = Math.max(0, Math.min(validY, 6000));
                 
                 // Snap to grid if enabled
                 const snappedX = snapToGrid ? Math.round(boundedX / gridSize) * gridSize : boundedX;
