@@ -18,6 +18,7 @@ interface NodeConfigPanelProps {
   onUpdate: (updates: Partial<NetworkNode>) => void;
   onDelete: (nodeId: string) => void;
   containerRef: React.RefObject<HTMLElement>;
+  getView?: () => { zoom: number; panX: number; panY: number };
 }
 
 export function NodeConfigPanel({
@@ -26,7 +27,8 @@ export function NodeConfigPanel({
   onClose,
   onUpdate,
   onDelete,
-  containerRef
+  containerRef,
+  getView
 }: NodeConfigPanelProps) {
   const [activeTab, setActiveTab] = useState<'connectivity' | 'routing' | 'security'>('connectivity');
   const [cloudRegions, setCloudRegions] = useState<CloudRegionLocation[]>([]);
@@ -738,6 +740,7 @@ export function NodeConfigPanel({
       isVisible={isVisible}
       onClose={onClose}
       anchorPosition={{ x: node.x, y: node.y }}
+      getView={getView}
       containerRef={containerRef}
     >
       <div className="space-y-4">

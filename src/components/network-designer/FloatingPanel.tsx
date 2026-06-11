@@ -7,6 +7,10 @@ interface FloatingPanelProps {
   isVisible: boolean;
   onClose: () => void;
   anchorPosition: { x: number, y: number };
+  // Live canvas view - anchorPosition is LOGICAL, panel layout is SCREEN.
+  // Without the conversion the panel opened hundreds of px from its anchor
+  // at fitted zooms.
+  getView?: () => { zoom: number; panX: number; panY: number };
   children: ReactNode;
   containerRef?: React.RefObject<HTMLElement>;
 }
@@ -16,6 +20,7 @@ export function FloatingPanel({
   isVisible,
   onClose,
   anchorPosition,
+  getView,
   children,
   containerRef
 }: FloatingPanelProps) {
@@ -70,15 +75,20 @@ export function FloatingPanel({
         console.warn('Error getting container dimensions, using fallback', e);
       }
       
+      // Map the logical anchor through the live view into screen space
+      const view = getView?.() ?? { zoom: 1, panX: 0, panY: 0 };
+      const ax = anchorPosition.x * view.zoom + view.panX;
+      const ay = anchorPosition.y * view.zoom + view.panY;
+
       // Default position is to the right of the node
-      let x = anchorPosition.x + 70; // Node width + some spacing
-      let y = anchorPosition.y;
+      let x = ax + 70 * view.zoom; // node width + spacing, scaled
+      let y = ay;
 
       // Check if panel would go off the right edge or overlap zoom controls
       const rightBound = containerRect.width - CANVAS_SAFE_AREA.RIGHT;
       if (x + panelWidth > rightBound) {
         // Position to the left of the node
-        x = Math.max(CANVAS_SAFE_AREA.LEFT, anchorPosition.x - panelWidth - 20);
+        x = Math.max(CANVAS_SAFE_AREA.LEFT, ax - panelWidth - 20);
       }
 
       // Get the available height in the viewport, respecting chrome safe areas
@@ -93,7 +103,7 @@ export function FloatingPanel({
         panel.style.overflowY = 'auto';
 
         // Center the panel vertically as much as possible
-        let centerY = anchorPosition.y - (availableHeight / 2);
+        let centerY = ay - (availableHeight / 2);
 
         // Clamp within safe area
         centerY = Math.max(safeTop, Math.min(containerRect.height - safeBottom - availableHeight, centerY));

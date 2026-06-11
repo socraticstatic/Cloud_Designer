@@ -11,6 +11,7 @@ interface EdgeConfigPanelProps {
   containerRef: React.RefObject<HTMLElement>;
   // Opens the Last Mile wizard - offered when the edge lands on a cloud
   onOpenLastMile?: () => void;
+  getView?: () => { zoom: number; panX: number; panY: number };
 }
 
 export function EdgeConfigPanel({
@@ -21,7 +22,8 @@ export function EdgeConfigPanel({
   onUpdate,
   onDelete,
   containerRef,
-  onOpenLastMile
+  onOpenLastMile,
+  getView
 }: EdgeConfigPanelProps) {
   if (!edge) return null;
 
@@ -54,6 +56,7 @@ export function EdgeConfigPanel({
       isVisible={isVisible}
       onClose={onClose}
       anchorPosition={{ x: midX, y: midY }}
+      getView={getView}
       containerRef={containerRef}
     >
       <div className="overflow-y-auto custom-scrollbar">

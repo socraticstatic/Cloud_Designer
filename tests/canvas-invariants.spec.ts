@@ -659,3 +659,82 @@ test('advisor opens with assessment and an upload entry point', async ({ page })
   await panel.locator('button[title="Upload topology data (JSON or CSV)"]').click();
   await expect(page.getByText('Import network topology')).toBeVisible();
 });
+
+test('edge config panel opens near its gear at fitted zoom', async ({ page }) => {
+  // FloatingPanel once treated the LOGICAL anchor as screen px - at fitted
+  // zoom the panel opened 415px from the gear that summoned it.
+  await openDesigner(page);
+  await page.locator('button[title="Network Advisor"]').first().click();
+  // the advisor triggers fit-to-view ~350ms after opening; wait for the
+  // fit to actually MOVE the canvas, then for it to settle - a stability
+  // poll alone can pass before the animation has even started
+  const gearLoc = page.locator('[title^="Direct Connect"]').first();
+  const initial = await gearLoc.boundingBox();
+  await expect(async () => {
+    const cur = await gearLoc.boundingBox();
+    expect(Math.hypot(cur!.x - initial!.x, cur!.y - initial!.y)).toBeGreaterThan(2);
+  }).toPass({ timeout: 8000 });
+  let prev = await gearLoc.boundingBox();
+  await expect(async () => {
+    await page.waitForTimeout(250);
+    const cur = await gearLoc.boundingBox();
+    const moved = Math.hypot(cur!.x - prev!.x, cur!.y - prev!.y);
+    prev = cur;
+    expect(moved).toBeLessThan(0.5);
+  }).toPass({ timeout: 8000 });
+  await gearLoc.click();
+  await expect(page.getByText('Connection Configuration').first()).toBeVisible();
+  // the panel eases into place (left/top transition 150ms) - poll until
+  // it has settled beside its anchor instead of measuring mid-flight
+  await expect(async () => {
+    // the full panel (fixed 380px width), not just its header text
+    const p = await page.locator('[style*="width: 380px"]').first().boundingBox();
+    const gear = await gearLoc.boundingBox();
+    const gearCx = gear!.x + gear!.width / 2;
+    const gearCy = gear!.y + gear!.height / 2;
+    // horizontally adjacent: the panel sits beside its anchor (right or,
+    // when the canvas is narrow, flipped left) - never across the canvas
+    const hGap = gearCx < p!.x ? p!.x - gearCx
+      : gearCx > p!.x + p!.width ? gearCx - (p!.x + p!.width) : 0;
+    expect(hGap, `panel is ${Math.round(hGap)}px horizontally away from its gear`).toBeLessThan(150);
+    // vertically: the gear falls within (or near) the panel's span
+    const vGap = gearCy < p!.y ? p!.y - gearCy
+      : gearCy > p!.y + p!.height ? gearCy - (p!.y + p!.height) : 0;
+    expect(vGap, `panel is ${Math.round(vGap)}px vertically away from its gear`).toBeLessThan(100);
+  }).toPass({ timeout: 5000 });
+});
+
+test('group drag at fitted zoom stays in bounds without deforming', async ({ page }) => {
+  await openDesigner(page);
+  await page.locator('button[title="Network Advisor"]').first().click();
+  await page.waitForTimeout(1400);
+  const chip = page.locator('[title="Drag to move site - click to edit"]').first();
+  const c0 = await chip.boundingBox();
+  const before = await logicalPositions(page);
+  const members = before.filter(n => /AT&T Core|HubRouter|Firewall/.test(n.name));
+  const spreadBefore = {
+    x: Math.max(...members.map(m => m.x)) - Math.min(...members.map(m => m.x)),
+    y: Math.max(...members.map(m => m.y)) - Math.min(...members.map(m => m.y))
+  };
+  // shove the group hard toward the top-left wall
+  await page.mouse.move(c0!.x + 15, c0!.y + 8);
+  await page.mouse.down();
+  await page.mouse.move(c0!.x - 1200, c0!.y - 900, { steps: 15 });
+  await page.mouse.up();
+  await page.waitForTimeout(400);
+  const after = await logicalPositions(page);
+  const membersAfter = after.filter(n => /AT&T Core|HubRouter|Firewall/.test(n.name));
+  const spreadAfter = {
+    x: Math.max(...membersAfter.map(m => m.x)) - Math.min(...membersAfter.map(m => m.x)),
+    y: Math.max(...membersAfter.map(m => m.y)) - Math.min(...membersAfter.map(m => m.y))
+  };
+  // the wall must not squash the cluster - relative geometry is preserved
+  expect(Math.abs(spreadAfter.x - spreadBefore.x)).toBeLessThan(2);
+  expect(Math.abs(spreadAfter.y - spreadBefore.y)).toBeLessThan(2);
+  // and every member still renders inside the visible canvas
+  for (const name of ['AT&T Core', 'HubRouter', 'Firewall']) {
+    const box = await nodeByName(page, name).boundingBox();
+    expect(box!.x, `${name} left the canvas left edge`).toBeGreaterThan(0);
+    expect(box!.y, `${name} went under the top chrome`).toBeGreaterThan(60);
+  }
+});

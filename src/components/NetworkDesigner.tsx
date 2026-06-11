@@ -539,11 +539,24 @@ export function NetworkDesigner({
   // --- Interactive location groups (sites) ---
 
   const handleMoveGroup = useCallback((memberIds: string[], dx: number, dy: number) => {
-    setNodes(prev => prev.map(n =>
-      memberIds.includes(n.id)
-        ? { ...n, x: n.x + dx, y: Math.min(Math.max(n.y + dy, 20), CANVAS_BOUNDS.MAX_Y - 84) }
-        : n
-    ));
+    // View-aware clamp, same law as single-node drags
+    // (screen = logical*zoom+pan). The delta is clamped for the GROUP -
+    // per-member clamping would deform the cluster against the walls.
+    const b = layoutBoundsNow();
+    setNodes(prev => {
+      const members = prev.filter(n => memberIds.includes(n.id));
+      if (members.length === 0) return prev;
+      const minX = Math.min(...members.map(n => n.x));
+      const maxX = Math.max(...members.map(n => n.x));
+      const minY = Math.min(...members.map(n => n.y));
+      const maxY = Math.max(...members.map(n => n.y));
+      const cdx = Math.min(Math.max(dx, b.minX - minX), b.maxX - maxX);
+      const cdy = Math.min(Math.max(dy, b.minY - minY), b.maxY - maxY);
+      if (cdx === 0 && cdy === 0) return prev;
+      return prev.map(n =>
+        memberIds.includes(n.id) ? { ...n, x: n.x + cdx, y: n.y + cdy } : n
+      );
+    });
   }, [setNodes]);
 
   const handleMoveGroupEnd = useCallback(() => {
@@ -1585,6 +1598,7 @@ export function NetworkDesigner({
               onUpdate={(updates) => updateNode(selectedNodeObject.id, updates)}
               onDelete={deleteNode}
               containerRef={canvasRef}
+              getView={() => canvasViewRef.current}
             />
           )
         )}
@@ -1600,6 +1614,7 @@ export function NetworkDesigner({
             onUpdate={(updates) => updateEdge(selectedEdgeObject.id, updates)}
             onDelete={() => deleteEdge(selectedEdgeObject.id)}
             containerRef={canvasRef}
+            getView={() => canvasViewRef.current}
           />
         )}
         
