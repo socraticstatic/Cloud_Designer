@@ -650,6 +650,73 @@ function neighborEdgesLocal(nodeId: string, edges: NetworkEdge[]): NetworkEdge[]
   return edges.filter(e => e.source === nodeId || e.target === nodeId);
 }
 
+// --- Address plan: the full IP inventory, not just the conflicts ---
+// The Assess tab only mentions IP space when ranges collide; a reviewer
+// asking "what about addressing?" deserves the whole picture - every
+// range each environment carries, with conflicts marked in place.
+export interface AddressRow {
+  nodeId: string;
+  nodeName: string;
+  site: string | null;
+  provider: string | null;
+  cidr: string;
+  valid: boolean;
+  conflicts: { nodeId: string; nodeName: string; cidr: string }[];
+}
+
+export interface AddressPlan {
+  rows: AddressRow[];
+  conflictPairs: number;
+  nextFree: string | null;
+  /** nodes that carry no subnet data at all */
+  unaddressed: number;
+}
+
+export function buildAddressPlan(nodes: NetworkNode[]): AddressPlan {
+  const carriers = nodes
+    .filter(n => Array.isArray(n.config?.subnets) && n.config!.subnets.length > 0)
+    .map(n => ({ node: n, ranges: (n.config!.subnets as string[]).map(c => ({ cidr: c, range: cidrRange(c) })) }));
+
+  const rows: AddressRow[] = carriers.flatMap(c =>
+    c.ranges.map(r => ({
+      nodeId: c.node.id,
+      nodeName: c.node.name,
+      site: c.node.config?.city ?? null,
+      provider: c.node.config?.provider ?? c.node.cloudProvider ?? null,
+      cidr: r.cidr,
+      valid: r.range !== null,
+      conflicts: [] as AddressRow['conflicts']
+    }))
+  );
+
+  // Same cross-node pairwise semantics as the overlap finding
+  const seenPairs = new Set<string>();
+  for (let i = 0; i < carriers.length; i++) {
+    for (let j = i + 1; j < carriers.length; j++) {
+      carriers[i].ranges.forEach(a => {
+        carriers[j].ranges.forEach(b => {
+          if (!a.range || !b.range) return;
+          if (a.range[0] <= b.range[1] && b.range[0] <= a.range[1]) {
+            seenPairs.add([carriers[i].node.id, carriers[j].node.id, a.cidr, b.cidr].join('|'));
+            rows.find(r => r.nodeId === carriers[i].node.id && r.cidr === a.cidr)!
+              .conflicts.push({ nodeId: carriers[j].node.id, nodeName: carriers[j].node.name, cidr: b.cidr });
+            rows.find(r => r.nodeId === carriers[j].node.id && r.cidr === b.cidr)!
+              .conflicts.push({ nodeId: carriers[i].node.id, nodeName: carriers[i].node.name, cidr: a.cidr });
+          }
+        });
+      });
+    }
+  }
+
+  const allCidrs = new Set(rows.map(r => r.cidr));
+  return {
+    rows,
+    conflictPairs: seenPairs.size,
+    nextFree: rows.length > 0 ? nextFreeCidr(allCidrs) : null,
+    unaddressed: nodes.length - carriers.length
+  };
+}
+
 // CIDR helpers for overlap detection. Returns [start, end] as uint32,
 // or null for anything that doesn't parse as IPv4 CIDR.
 function cidrRange(cidr: string): [number, number] | null {

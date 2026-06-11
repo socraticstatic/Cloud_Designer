@@ -792,3 +792,58 @@ test('bare cmd+Z right after reload never blanks the canvas', async ({ page }) =
   await page.waitForTimeout(300);
   await expect(page.locator('.node-enter')).toHaveCount(FIXTURE.nodes.length);
 });
+
+test('advisor IP Plan tab: empty state and single tab row', async ({ page }) => {
+  await openDesigner(page);
+  await page.locator('button[title="Network Advisor"]').first().click();
+  // base fixture carries no subnet data - the tab must say so, not show nothing
+  await page.getByRole('button', { name: 'IP Plan' }).click();
+  await expect(page.getByText('No IP addressing data in this design yet', { exact: false })).toBeVisible();
+
+  // the five tabs share one row - no wrap inside the 400px panel
+  const tabTops = await page.evaluate(() => {
+    const panel = document.querySelector('[aria-label="Network Advisor"]')!;
+    return [...panel.querySelectorAll('button')]
+      .filter(b => ['Assess', 'Paths', 'IP Plan', 'Plan', 'Simulate'].includes(b.textContent!.replace(/\d+$/, '').trim()))
+      .map(b => b.getBoundingClientRect().top);
+  });
+  expect(tabTops.length).toBeGreaterThanOrEqual(5);
+  expect(Math.max(...tabTops) - Math.min(...tabTops), 'advisor tabs wrapped to a second row').toBeLessThan(5);
+});
+
+test('advisor IP Plan tab: full address inventory with in-place renumber', async ({ page }) => {
+  // clean start (no seeded fixture: addInitScript re-seeds on reload and
+  // would wipe the discovered estate when we test reload survival below)
+  await page.goto('/');
+  await page.getByRole('button', { name: /Discover Connect a cloud account/ }).click();
+  await page.getByRole('button', { name: 'Try the demo account' }).click();
+  await page.getByRole('button', { name: 'Import & analyze' }).click({ timeout: 10000 });
+  await expect(page.getByText('Topology Imported')).toBeVisible();
+
+  // the plan shows the inventory with the conflict marked in place
+  await page.getByRole('button', { name: 'IP Plan' }).click();
+  const tabPanel = page.locator('[data-testid="addressing-tab"]');
+  await expect(tabPanel.getByText(/conflict/).first()).toBeVisible();
+  await expect(tabPanel.locator('text=10.0.0.0/16').first()).toBeVisible();
+  // clear ranges are labeled too - the plan is an inventory, not an error list
+  await expect(tabPanel.getByText('Clear', { exact: true }).first()).toBeVisible();
+
+  // renumber straight from the plan
+  await tabPanel.getByText(/^Renumber to 10\./).first().click();
+  await expect(page.getByText('Fix Applied')).toBeVisible();
+  await expect(tabPanel.getByText('Address plan is clean', { exact: false })).toBeVisible();
+
+  // the renumber persisted - clean plan survives a reload
+  // (persistence is debounced 500ms; wait for the write, not a timer)
+  await page.waitForFunction(() => {
+    const saved = localStorage.getItem('cloud-designer:topology');
+    if (!saved) return false;
+    const subnets = JSON.parse(saved).nodes.flatMap((n: any) => n.config?.subnets ?? []);
+    return new Set(subnets).size === subnets.length; // no duplicate ranges left
+  }, { timeout: 5000 });
+  await page.reload();
+  await expect(page.locator('.node-enter').first()).toBeVisible();
+  await page.locator('button[title="Network Advisor"]').first().click();
+  await page.getByRole('button', { name: 'IP Plan' }).click();
+  await expect(page.locator('[data-testid="addressing-tab"]').getByText('Address plan is clean', { exact: false })).toBeVisible();
+});

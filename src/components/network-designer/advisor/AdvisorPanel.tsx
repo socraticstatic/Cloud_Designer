@@ -1,7 +1,9 @@
 // Network Advisor panel v2 - canvas-fused consultative experience.
-// Three tabs: Assess (grade ring, dimensions, narrative, findings with
-// fix preview), Plan (ordered remediation playbook), Simulate (what-if
-// failure analysis). Severity language follows the SDCI Figma legend.
+// Tabs: Assess (grade ring, dimensions, narrative, findings with fix
+// preview), Paths (policy-scored cloud-to-cloud routes), IP Plan (full
+// address inventory with in-place renumber), Plan (ordered remediation
+// playbook), Simulate (what-if failure analysis). Severity language
+// follows the SDCI Figma legend.
 
 import { useState } from 'react';
 import {
@@ -17,8 +19,9 @@ import { PlanTab } from './PlanTab';
 import { PathsTab } from './PathsTab';
 import { CloudPath, PathPolicy } from './pathEngine';
 import { SimulateTab } from './SimulateTab';
+import { AddressingTab } from './AddressingTab';
 
-export type AdvisorTab = 'assess' | 'paths' | 'plan' | 'simulate';
+export type AdvisorTab = 'assess' | 'paths' | 'addressing' | 'plan' | 'simulate';
 
 interface AdvisorPanelProps {
   assessment: Assessment | null;
@@ -116,6 +119,7 @@ export function AdvisorPanel({
   const dimensions = assessment ? toDimensions(assessment) : null;
   const previousDims = history.length >= 2 ? history[history.length - 2].dimensions : null;
   const fixableCount = findings.filter(f => f.fix).length;
+  const cidrConflicts = findings.filter(f => f.fix?.action.type === 'renumber-subnet').length;
 
   return (
     <div
@@ -193,6 +197,7 @@ export function AdvisorPanel({
             {([
               ['assess', 'Assess', null],
               ['paths', 'Paths', cloudPaths.length || null],
+              ['addressing', 'IP Plan', cidrConflicts || null],
               ['plan', 'Plan', fixableCount || null],
               ['simulate', 'Simulate', null]
             ] as const).map(([key, label, badge]) => (
@@ -372,6 +377,17 @@ export function AdvisorPanel({
               onPolicyChange={onPolicyChange}
               onFocusPath={onFocusPath}
               focusedPathId={focusedPath?.id ?? null}
+            />
+          )}
+
+          {tab === 'addressing' && (
+            <AddressingTab
+              nodes={nodes}
+              findings={findings}
+              isReadOnly={isReadOnly}
+              onApplyFix={onApplyFix}
+              onFocusFinding={onFocusFinding}
+              focusedFindingId={focusedFindingId}
             />
           )}
 
