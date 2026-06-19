@@ -248,13 +248,19 @@ export function AdvisorPanel({
                 </div>
               </div>
 
+              {/* One scroll region for narrative + filters + findings. Keeping
+                  the narrative as a pinned sibling stole ~137px and squeezed
+                  the findings list into a tiny ~150px box on laptop-height
+                  panels. Now the narrative scrolls away, the filters stay
+                  reachable via sticky, and the findings claim the rest. */}
+              <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar">
               {/* Narrative */}
               <div className="px-4 py-3 border-b border-fw-border-secondary bg-fw-wash/50">
                 <NarrativeBlock text={narrative} />
               </div>
 
               {/* Severity filter */}
-              <div className="flex gap-1.5 px-4 py-2.5 flex-wrap border-b border-fw-border-secondary">
+              <div className="sticky top-0 z-10 bg-fw-base flex gap-1.5 px-4 py-2.5 flex-wrap border-b border-fw-border-secondary">
                 <button
                   onClick={() => setFilter('all')}
                   className={`px-2.5 py-1 rounded-full text-xs font-medium transition-colors ${
@@ -279,7 +285,7 @@ export function AdvisorPanel({
               </div>
 
               {/* Findings list */}
-              <div className="flex-1 overflow-y-auto custom-scrollbar px-3 py-3 space-y-2">
+              <div className="px-3 py-3 space-y-2">
                 {visible.length === 0 && (
                   <p className="text-sm text-fw-bodyLight text-center mt-8">No findings in this category.</p>
                 )}
@@ -366,6 +372,7 @@ export function AdvisorPanel({
                     </button>
                   );
                 })}
+              </div>
               </div>
             </>
           )}

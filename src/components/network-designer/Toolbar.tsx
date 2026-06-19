@@ -1,5 +1,5 @@
 import { Server, Cloud, Network, Plus, Undo, Play, Check, Save, Trash2, Shield, Activity, PanelRight, Menu, Database, Globe, Lock, Feather as Ethernet, Wifi, LayoutGrid as Layout, UploadCloud, Sparkles } from 'lucide-react';
-import { CloudRouterIcon } from '../icons/CloudRouterIcon';
+import { GatewayIcon } from '../icons/GatewayIcon';
 import { NetworkNode } from '../types';
 import { useState, useEffect, useRef } from 'react';
 import {
@@ -131,18 +131,18 @@ export function Toolbar({
       {/* Small separator line */}
       <div className="h-8 w-px bg-gray-200"></div>
       
-      {/* Cloud Router Button */}
+      {/* Gateway Button */}
       <button
         onClick={(e) => {
           e.stopPropagation();
-          handleNodeSelect('function', 'Cloud Router');
+          handleNodeSelect('function', 'Gateway');
         }}
         className="px-3 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg flex items-center space-x-2 transition-colors whitespace-nowrap"
-        title="Add Cloud Router"
+        title="Add Gateway"
         type="button"
       >
-        <CloudRouterIcon className="h-5 w-5" />
-        <span className={labelCls}>Cloud Router</span>
+        <GatewayIcon className="h-5 w-5" />
+        <span className={labelCls}>Gateway</span>
       </button>
       
       {/* Small separator line */}

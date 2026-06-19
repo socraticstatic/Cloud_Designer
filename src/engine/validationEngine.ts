@@ -13,10 +13,10 @@ export interface ValidationIssue {
   edgeId?: string;
 }
 
-function isCloudRouter(node: NetworkNode): boolean {
+function isGateway(node: NetworkNode): boolean {
   return node.type === 'function' &&
-    (node.functionType === 'Router' || node.functionType === 'Cloud Router') &&
-    (node.config?.routerType === 'cloud' || node.name?.toLowerCase().includes('cloud router'));
+    (node.functionType === 'Router' || node.functionType === 'Gateway') &&
+    (node.config?.routerType === 'cloud' || /gateway|cloud router/.test(node.name?.toLowerCase() ?? ''));
 }
 
 function isIPE(node: NetworkNode): boolean {
@@ -38,7 +38,7 @@ export function validateTopology(nodes: NetworkNode[], edges: NetworkEdge[]): Va
   const issues: ValidationIssue[] = [];
   if (nodes.length === 0) return issues;
 
-  const cloudRouters = nodes.filter(isCloudRouter);
+  const gateways = nodes.filter(isGateway);
   const ipeNodes = nodes.filter(isIPE);
   const destinations = nodes.filter(n => n.type === 'destination');
   const datacenters = nodes.filter(n => n.type === 'datacenter');
@@ -59,25 +59,25 @@ export function validateTopology(nodes: NetworkNode[], edges: NetworkEdge[]): Va
     }
   });
 
-  // Cloud destination with no path to a Cloud Router
+  // Cloud destination with no path to a Gateway
   destinations.forEach(dest => {
     const neighbors = getNeighborIds(dest.id, edges);
     const hasRouterPath = neighbors.some(nid => {
       const neighbor = nodes.find(n => n.id === nid);
-      return neighbor && isCloudRouter(neighbor);
+      return neighbor && isGateway(neighbor);
     });
     if (!hasRouterPath && getConnectedEdges(dest.id, edges).length > 0) {
       issues.push({
         id: `dest-no-router-${dest.id}`,
         severity: 'error',
-        message: `${dest.name} is not connected to a Cloud Router`,
+        message: `${dest.name} is not connected to a Gateway`,
         nodeId: dest.id,
       });
     }
   });
 
-  // Cloud Router with no connection to AT&T Core (IPE)
-  cloudRouters.forEach(cr => {
+  // Gateway with no connection to AT&T Core (IPE)
+  gateways.forEach(cr => {
     const neighbors = getNeighborIds(cr.id, edges);
     const hasIPE = neighbors.some(nid => {
       const neighbor = nodes.find(n => n.id === nid);
@@ -102,7 +102,7 @@ export function validateTopology(nodes: NetworkNode[], edges: NetworkEdge[]): Va
         issues.push({
           id: `dc-direct-cloud-${dc.id}-${nid}`,
           severity: 'error',
-          message: `${dc.name} is directly connected to ${neighbor.name} - route through a Cloud Router`,
+          message: `${dc.name} is directly connected to ${neighbor.name} - route through a Gateway`,
           nodeId: dc.id,
         });
       }
@@ -124,8 +124,8 @@ export function validateTopology(nodes: NetworkNode[], edges: NetworkEdge[]): Va
     }
   });
 
-  // No redundancy on critical links (Cloud Router to IPE)
-  cloudRouters.forEach(cr => {
+  // No redundancy on critical links (Gateway to IPE)
+  gateways.forEach(cr => {
     const ipeEdges = edges.filter(e => {
       const otherId = e.source === cr.id ? e.target : (e.target === cr.id ? e.source : null);
       if (!otherId) return false;
@@ -154,11 +154,11 @@ export function validateTopology(nodes: NetworkNode[], edges: NetworkEdge[]): Va
   // --- INFO ---
 
   // Suggest dual-diverse if multiple cloud destinations
-  if (destinations.length >= 2 && cloudRouters.length === 1) {
+  if (destinations.length >= 2 && gateways.length === 1) {
     issues.push({
       id: 'suggest-dual-router',
       severity: 'info',
-      message: 'Multiple cloud destinations with a single Cloud Router - consider adding a second for resilience',
+      message: 'Multiple cloud destinations with a single Gateway - consider adding a second for resilience',
     });
   }
 

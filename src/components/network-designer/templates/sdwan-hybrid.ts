@@ -86,7 +86,7 @@ export const sdwanHybridTemplate: Template = {
       functionType: 'Router',
       x: 420,
       y: 300,
-      name: 'Cloud Router',
+      name: 'Gateway',
       icon: Router,
       status: 'inactive',
       config: {

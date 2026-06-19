@@ -66,12 +66,17 @@ function stripIcons(nodes: NetworkNode[]) {
 
 function rehydrateIcons(nodes: NetworkNode[]): NetworkNode[] {
   return nodes.map(node => {
-    // legacy imports parsed 'cloud router' as a plain Router - upgrade so
-    // the node carries the AT&T Cloud Router glyph
-    const functionType =
-      node.functionType === 'Router' && !node.config?.routerType && /cloud\s*router/i.test(node.name)
-        ? ('Cloud Router' as NetworkNode['functionType'])
-        : node.functionType;
+    // Normalize legacy topologies: the node type was renamed Cloud Router ->
+    // Gateway, but saved/imported designs still carry the old literal. Also
+    // upgrade legacy imports that parsed a gateway as a plain Router so the
+    // node carries the AT&T Gateway glyph.
+    const legacyType = node.functionType as string | undefined;
+    const functionType: NetworkNode['functionType'] =
+      legacyType === 'Cloud Router'
+        ? 'Gateway'
+        : node.functionType === 'Router' && !node.config?.routerType && /cloud\s*router|gateway/i.test(node.name)
+          ? 'Gateway'
+          : node.functionType;
     return {
       ...node,
       ...(functionType ? { functionType } : {}),
@@ -724,16 +729,16 @@ export function NetworkDesigner({
         : {};
   
   // Handle default network setup completion
-  const handleDefaultNetworkSetup = (cloudRouterName: string) => {
+  const handleDefaultNetworkSetup = (gatewayName: string) => {
     const center = getSafeCenter(800, CANVAS_BOUNDS.MAX_Y);
     // Create default nodes
-    const cloudRouter: NetworkNode = {
-      id: `node-${Date.now()}-cloud-router`,
+    const gateway: NetworkNode = {
+      id: `node-${Date.now()}-gateway`,
       type: 'function',
       functionType: 'Router',
       x: center.x + 100,
       y: center.y,
-      name: cloudRouterName,
+      name: gatewayName,
       icon: getNodeIcon('function', 'Router', undefined, { routerType: 'cloud' }),
       status: 'inactive',
       config: {
@@ -760,7 +765,7 @@ export function NetworkDesigner({
     const connection: NetworkEdge = {
       id: `edge-${Date.now()}-default`,
       source: attCore.id,
-      target: cloudRouter.id,
+      target: gateway.id,
       type: 'MPLS',
       bandwidth: '10 Gbps',
       status: 'inactive',
@@ -770,16 +775,16 @@ export function NetworkDesigner({
     };
     
     // Set the default network
-    setNodes([attCore, cloudRouter]);
+    setNodes([attCore, gateway]);
     setEdges([connection]);
-    saveToHistory([attCore, cloudRouter], [connection]);
+    saveToHistory([attCore, gateway], [connection]);
     
     setShowDefaultSetup(false);
     
     window.addToast({
       type: 'success',
       title: 'Default Network Created',
-      message: 'Your network has been initialized with a cloud router connected to AT&T Core',
+      message: 'Your network has been initialized with a gateway connected to AT&T Core',
       duration: 3000
     });
   };

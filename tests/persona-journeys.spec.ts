@@ -53,7 +53,7 @@ test('Priya the architect designs a multicloud topology from scratch', async ({ 
   await page.getByRole('button', { name: /Create.*Start from scratch/s }).click();
 
   // names her hub and creates the foundation
-  await page.getByLabel(/name your cloud router/i).fill('Priya Hub');
+  await page.getByLabel(/name your gateway/i).fill('Priya Hub');
   await page.getByRole('button', { name: 'Create Network' }).click();
   await expect(nodeByName(page, 'AT&T Core')).toBeVisible();
   await expect(nodeByName(page, 'Priya Hub')).toBeVisible();

@@ -63,7 +63,7 @@ export function useNetworkManager(
     }
 
     // Find existing node positions by role
-    const cloudRouters = nodes.filter(n => n.type === 'function' && (n.functionType === 'Router' || n.functionType === 'Cloud Router'));
+    const gateways = nodes.filter(n => n.type === 'function' && (n.functionType === 'Router' || n.functionType === 'Gateway'));
     const ipeNodes = nodes.filter(n => n.type === 'network' && n.config?.networkType === 'at&t core');
     const allX = nodes.map(n => n.x);
     const allY = nodes.map(n => n.y);
@@ -72,7 +72,7 @@ export function useNetworkManager(
     const maxX = Math.max(...allX);
     const minX = Math.min(...allX);
 
-    // Cloud destinations: place to the right of Cloud Routers
+    // Cloud destinations: place to the right of Gateways
     if (type === 'destination') {
       const rightX = Math.min(maxX + 150, safe.maxX - 64);
       const yOffset = nodes.filter(n => n.type === 'destination').length * 100;

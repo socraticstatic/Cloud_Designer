@@ -60,7 +60,7 @@ export const DEFAULT_NETWORK_CONFIG = {
     networkType: 'at&t core',
     provider: 'AT&T'
   },
-  CLOUD_ROUTER: {
+  GATEWAY: {
     routerType: 'cloud'
   },
   DEFAULT_CONNECTION: {

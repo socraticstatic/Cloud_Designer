@@ -5,7 +5,7 @@ export const SAMPLE_JSON = `{
   "nodes": [
     { "id": "core", "name": "AT&T Core", "type": "core" },
     { "id": "inet", "name": "Internet Edge", "type": "internet" },
-    { "id": "cr1", "name": "Primary Cloud Router", "type": "cloud router", "region": "US East", "city": "Ashburn" },
+    { "id": "cr1", "name": "Primary Gateway", "type": "gateway", "region": "US East", "city": "Ashburn" },
     { "id": "aws1", "name": "AWS Production", "type": "cloud", "provider": "AWS", "region": "us-east-1", "city": "Ashburn" },
     { "id": "azure1", "name": "Azure DR", "type": "cloud", "provider": "Azure", "region": "East US 2", "city": "Richmond" },
     { "id": "dc1", "name": "Equinix DA1", "type": "datacenter", "provider": "Equinix", "city": "Dallas" }
@@ -20,10 +20,10 @@ export const SAMPLE_JSON = `{
 }`;
 
 export const SAMPLE_CSV = `source,target,type,bandwidth,encrypted,resilience
-AT&T Core,Primary Cloud Router,MPLS,10 Gbps,true,redundant
-Internet Edge,Primary Cloud Router,Internet,1 Gbps,false,single
-Primary Cloud Router,AWS Production,Direct Connect,10 Gbps,true,single
-Primary Cloud Router,Azure DR,ExpressRoute,1 Gbps,true,single
+AT&T Core,Primary Gateway,MPLS,10 Gbps,true,redundant
+Internet Edge,Primary Gateway,Internet,1 Gbps,false,single
+Primary Gateway,AWS Production,Direct Connect,10 Gbps,true,single
+Primary Gateway,Azure DR,ExpressRoute,1 Gbps,true,single
 AT&T Core,Equinix Dallas Datacenter,Ethernet,10 Gbps,false,single`;
 
 export function downloadSample(kind: 'json' | 'csv') {

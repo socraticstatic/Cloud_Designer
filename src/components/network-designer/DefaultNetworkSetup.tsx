@@ -1,7 +1,7 @@
 import React from 'react';
 import { useState, useEffect } from 'react';
 import { Router, Network, ArrowRight, Sparkles, Globe, Upload, Brain, FileImage, Zap, LayoutGrid as Layout, Cloud, FolderOpen, Clock, Trash2 } from 'lucide-react';
-import { CloudRouterIcon } from '../icons/CloudRouterIcon';
+import { GatewayIcon } from '../icons/GatewayIcon';
 import { Radar } from 'lucide-react';
 import { TopologyThumbnail } from './TopologyThumbnail';
 import { NetworkNode, NetworkEdge } from '../../types';
@@ -11,7 +11,7 @@ import { demoNodes, demoEdges } from '../../data/demoTopology';
 interface DefaultNetworkSetupProps {
   onOpenDiscover?: () => void;
   isOpen: boolean;
-  onComplete: (cloudRouterName: string) => void;
+  onComplete: (gatewayName: string) => void;
   onApplyTemplate?: (nodes: NetworkNode[], edges: NetworkEdge[], name?: string) => void;
 }
 
@@ -40,7 +40,7 @@ interface SavedTopology {
 
 export function DefaultNetworkSetup({ isOpen, onComplete, onApplyTemplate, onOpenDiscover }: DefaultNetworkSetupProps) {
   const [setupMode, setSetupMode] = useState<SetupMode>('selection');
-  const [cloudRouterName, setCloudRouterName] = useState('');
+  const [gatewayName, setGatewayName] = useState('');
   const [error, setError] = useState('');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -265,7 +265,7 @@ export function DefaultNetworkSetup({ isOpen, onComplete, onApplyTemplate, onOpe
     {
       id: 'internet-to-cloud',
       name: 'Internet to Cloud',
-      description: 'AT&T Core through Cloud Router to AWS',
+      description: 'AT&T Core through Gateway to AWS',
       preview: {
         icons: [
           { icon: Globe, color: 'text-orange-500' },
@@ -288,12 +288,12 @@ export function DefaultNetworkSetup({ isOpen, onComplete, onApplyTemplate, onOpe
           }
         },
         {
-          id: 'cloud-router-template',
+          id: 'gateway-template',
           type: 'function',
           functionType: 'Router',
           x: 400,
           y: 350,
-          name: 'Cloud Router',
+          name: 'Gateway',
           icon: Cloud,
           status: 'inactive',
           config: {
@@ -319,14 +319,14 @@ export function DefaultNetworkSetup({ isOpen, onComplete, onApplyTemplate, onOpe
         {
           id: 'att-to-router-template',
           source: 'att-core-template',
-          target: 'cloud-router-template',
+          target: 'gateway-template',
           type: 'MPLS',
           bandwidth: '10 Gbps',
           status: 'inactive'
         },
         {
           id: 'router-to-cloud-template',
-          source: 'cloud-router-template',
+          source: 'gateway-template',
           target: 'aws-cloud-template',
           type: 'Direct Connect',
           bandwidth: '10 Gbps',
@@ -360,12 +360,12 @@ export function DefaultNetworkSetup({ isOpen, onComplete, onApplyTemplate, onOpe
           }
         },
         {
-          id: 'cloud-router-mc-template',
+          id: 'gateway-mc-template',
           type: 'function',
           functionType: 'Router',
           x: 350,
           y: 350,
-          name: 'Cloud Router',
+          name: 'Gateway',
           icon: Cloud,
           status: 'inactive',
           config: {
@@ -404,14 +404,14 @@ export function DefaultNetworkSetup({ isOpen, onComplete, onApplyTemplate, onOpe
         {
           id: 'att-to-router-mc-template',
           source: 'att-core-mc-template',
-          target: 'cloud-router-mc-template',
+          target: 'gateway-mc-template',
           type: 'MPLS',
           bandwidth: '10 Gbps',
           status: 'inactive'
         },
         {
           id: 'router-to-aws-mc-template',
-          source: 'cloud-router-mc-template',
+          source: 'gateway-mc-template',
           target: 'aws-cloud-mc-template',
           type: 'Direct Connect',
           bandwidth: '10 Gbps',
@@ -419,7 +419,7 @@ export function DefaultNetworkSetup({ isOpen, onComplete, onApplyTemplate, onOpe
         },
         {
           id: 'router-to-azure-mc-template',
-          source: 'cloud-router-mc-template',
+          source: 'gateway-mc-template',
           target: 'azure-cloud-mc-template',
           type: 'ExpressRoute',
           bandwidth: '10 Gbps',
@@ -565,7 +565,7 @@ export function DefaultNetworkSetup({ isOpen, onComplete, onApplyTemplate, onOpe
         { id: 'internet-sdwan', type: 'network' as const, x: 80, y: 400, name: 'Internet', icon: Globe, status: 'inactive' as const, config: { networkType: 'internet' } },
         { id: 'sdwan-edge', type: 'function' as const, functionType: 'SDWAN' as const, x: 240, y: 250, name: 'SD-WAN Edge', icon: Cloud, status: 'inactive' as const, config: { sdwanRole: 'edge' } },
         { id: 'fw-sdwan', type: 'function' as const, functionType: 'Firewall' as const, x: 240, y: 380, name: 'Firewall', icon: Cloud, status: 'inactive' as const, config: { firewallType: 'ngfw', inspectionLevel: 'deep' } },
-        { id: 'cr-sdwan', type: 'function' as const, functionType: 'Router' as const, x: 420, y: 300, name: 'Cloud Router', icon: Cloud, status: 'inactive' as const, config: { routerType: 'cloud', routingProtocol: 'bgp', fastReroute: true, bfd: true } },
+        { id: 'cr-sdwan', type: 'function' as const, functionType: 'Router' as const, x: 420, y: 300, name: 'Gateway', icon: Cloud, status: 'inactive' as const, config: { routerType: 'cloud', routingProtocol: 'bgp', fastReroute: true, bfd: true } },
         { id: 'aws-sdwan', type: 'destination' as const, cloudProvider: 'AWS', x: 600, y: 220, name: 'AWS', icon: Cloud, status: 'inactive' as const, config: { provider: 'AWS', region: 'us-east-1' } },
         { id: 'azure-sdwan', type: 'destination' as const, cloudProvider: 'Azure', x: 600, y: 380, name: 'Azure', icon: Cloud, status: 'inactive' as const, config: { provider: 'Azure', region: 'East US' } }
       ],
@@ -582,7 +582,7 @@ export function DefaultNetworkSetup({ isOpen, onComplete, onApplyTemplate, onOpe
     {
       id: 'dual-diverse-ha',
       name: 'Dual-Diverse HA',
-      description: 'Dual IPE, dual Cloud Routers, BFD fast reroute',
+      description: 'Dual IPE, dual Gateways, BFD fast reroute',
       preview: {
         icons: [
           { icon: Globe, color: 'text-orange-500' },
@@ -595,8 +595,8 @@ export function DefaultNetworkSetup({ isOpen, onComplete, onApplyTemplate, onOpe
         { id: 'ipe-chi', type: 'network' as const, x: 60, y: 420, name: 'AT&T Core - Chicago', icon: Globe, status: 'inactive' as const, config: { networkType: 'at&t core', city: 'Chicago' } },
         { id: 'fw-p', type: 'function' as const, functionType: 'Firewall' as const, x: 210, y: 180, name: 'Firewall Primary', icon: Cloud, status: 'inactive' as const, config: { firewallType: 'ngfw', highAvailability: true } },
         { id: 'fw-s', type: 'function' as const, functionType: 'Firewall' as const, x: 210, y: 420, name: 'Firewall Secondary', icon: Cloud, status: 'inactive' as const, config: { firewallType: 'ngfw', highAvailability: true } },
-        { id: 'cr-p', type: 'function' as const, functionType: 'Router' as const, x: 380, y: 220, name: 'Cloud Router Primary', icon: Cloud, status: 'inactive' as const, config: { routerType: 'cloud', routingProtocol: 'bgp', fastReroute: true, bfd: true } },
-        { id: 'cr-s', type: 'function' as const, functionType: 'Router' as const, x: 380, y: 380, name: 'Cloud Router Secondary', icon: Cloud, status: 'inactive' as const, config: { routerType: 'cloud', routingProtocol: 'bgp', fastReroute: true, bfd: true } },
+        { id: 'cr-p', type: 'function' as const, functionType: 'Router' as const, x: 380, y: 220, name: 'Gateway Primary', icon: Cloud, status: 'inactive' as const, config: { routerType: 'cloud', routingProtocol: 'bgp', fastReroute: true, bfd: true } },
+        { id: 'cr-s', type: 'function' as const, functionType: 'Router' as const, x: 380, y: 380, name: 'Gateway Secondary', icon: Cloud, status: 'inactive' as const, config: { routerType: 'cloud', routingProtocol: 'bgp', fastReroute: true, bfd: true } },
         { id: 'aws-dd', type: 'destination' as const, cloudProvider: 'AWS', x: 560, y: 220, name: 'AWS', icon: Cloud, status: 'inactive' as const, config: { provider: 'AWS', region: 'us-east-1' } },
         { id: 'azure-dd', type: 'destination' as const, cloudProvider: 'Azure', x: 560, y: 380, name: 'Azure', icon: Cloud, status: 'inactive' as const, config: { provider: 'Azure', region: 'East US' } }
       ],
@@ -619,17 +619,17 @@ export function DefaultNetworkSetup({ isOpen, onComplete, onApplyTemplate, onOpe
   const handleUserSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!cloudRouterName.trim()) {
-      setError('Cloud router name is required');
+    if (!gatewayName.trim()) {
+      setError('Gateway name is required');
       return;
     }
     
-    onComplete(cloudRouterName.trim());
+    onComplete(gatewayName.trim());
     resetForm();
   };
 
   const handleInputChange = (value: string) => {
-    setCloudRouterName(value);
+    setGatewayName(value);
     if (error) {
       setError('');
     }
@@ -660,7 +660,7 @@ export function DefaultNetworkSetup({ isOpen, onComplete, onApplyTemplate, onOpe
       const aiGeneratedName = `AI Router ${Date.now().toString().slice(-4)}`;
       
       setAiSuggestedName(aiGeneratedName);
-      setCloudRouterName(aiGeneratedName);
+      setGatewayName(aiGeneratedName);
       setAiProcessingComplete(true);
       
       window.addToast({
@@ -684,8 +684,8 @@ export function DefaultNetworkSetup({ isOpen, onComplete, onApplyTemplate, onOpe
   };
 
   const handleCompleteAISetup = () => {
-    if (!cloudRouterName.trim()) {
-      setError('Cloud router name is required');
+    if (!gatewayName.trim()) {
+      setError('Gateway name is required');
       return;
     }
 
@@ -706,13 +706,13 @@ export function DefaultNetworkSetup({ isOpen, onComplete, onApplyTemplate, onOpe
         }
       };
 
-      const cloudRouter: NetworkNode = {
-        id: `node-${timestamp}-cloud-router`,
+      const gateway: NetworkNode = {
+        id: `node-${timestamp}-gateway`,
         type: 'function',
         functionType: 'Router',
         x: 450,
         y: 350,
-        name: cloudRouterName.trim(),
+        name: gatewayName.trim(),
         icon: getNodeIcon('function', 'Router', undefined, { routerType: 'cloud' }),
         status: 'inactive',
         config: {
@@ -753,7 +753,7 @@ export function DefaultNetworkSetup({ isOpen, onComplete, onApplyTemplate, onOpe
         {
           id: `edge-${timestamp}-1`,
           source: attCore.id,
-          target: cloudRouter.id,
+          target: gateway.id,
           type: 'MPLS',
           bandwidth: '10 Gbps',
           status: 'inactive',
@@ -763,7 +763,7 @@ export function DefaultNetworkSetup({ isOpen, onComplete, onApplyTemplate, onOpe
         },
         {
           id: `edge-${timestamp}-2`,
-          source: cloudRouter.id,
+          source: gateway.id,
           target: datacenter.id,
           type: 'Ethernet',
           bandwidth: '10 Gbps',
@@ -774,7 +774,7 @@ export function DefaultNetworkSetup({ isOpen, onComplete, onApplyTemplate, onOpe
         },
         {
           id: `edge-${timestamp}-3`,
-          source: cloudRouter.id,
+          source: gateway.id,
           target: cloudProvider.id,
           type: 'Direct Connect',
           bandwidth: '10 Gbps',
@@ -785,9 +785,9 @@ export function DefaultNetworkSetup({ isOpen, onComplete, onApplyTemplate, onOpe
         }
       ];
 
-      onApplyTemplate([attCore, cloudRouter, datacenter, cloudProvider], edges);
+      onApplyTemplate([attCore, gateway, datacenter, cloudProvider], edges);
     } else {
-      onComplete(cloudRouterName.trim());
+      onComplete(gatewayName.trim());
     }
 
     resetForm();
@@ -862,7 +862,7 @@ export function DefaultNetworkSetup({ isOpen, onComplete, onApplyTemplate, onOpe
   };
 
   const resetForm = () => {
-    setCloudRouterName('');
+    setGatewayName('');
     setError('');
     setSelectedFile(null);
     setAiProcessingComplete(false);
@@ -895,11 +895,11 @@ export function DefaultNetworkSetup({ isOpen, onComplete, onApplyTemplate, onOpe
               >
                 <div className="flex-1 flex flex-col">
                   <div className="mx-auto w-12 h-12 bg-fuchsia-50 rounded-xl flex items-center justify-center mb-2 group-hover:bg-fuchsia-100 transition-all">
-                    <CloudRouterIcon className="h-7 w-7 text-fuchsia-600" />
+                    <GatewayIcon className="h-7 w-7 text-fuchsia-600" />
                   </div>
                   <h3 className="text-lg font-semibold text-gray-900 mb-2 text-center">Create</h3>
                   <p className="text-gray-600 text-xs leading-relaxed text-center flex-1">
-                    Start from scratch: AT&T Core plus your named cloud router.
+                    Start from scratch: AT&T Core plus your named gateway.
                   </p>
                 </div>
                 <div className="mt-2 flex justify-center">
@@ -1020,20 +1020,20 @@ export function DefaultNetworkSetup({ isOpen, onComplete, onApplyTemplate, onOpe
                     <div className="w-10 h-10 bg-slate-100 rounded-lg flex items-center justify-center mb-1">
                       <Router className="h-5 w-5 text-slate-600" />
                     </div>
-                    <span className="text-xs font-medium text-gray-600">Cloud Router</span>
+                    <span className="text-xs font-medium text-gray-600">Gateway</span>
                   </div>
                 </div>
               </div>
 
               <form onSubmit={handleUserSubmit} className="space-y-3">
                 <div>
-                  <label htmlFor="cloudRouterName" className="block text-sm font-medium text-gray-700 mb-1.5">
-                    Name Your Cloud Router *
+                  <label htmlFor="gatewayName" className="block text-sm font-medium text-gray-700 mb-1.5">
+                    Name Your Gateway *
                   </label>
                   <input
                     type="text"
-                    id="cloudRouterName"
-                    value={cloudRouterName}
+                    id="gatewayName"
+                    value={gatewayName}
                     onChange={(e) => handleInputChange(e.target.value)}
                     placeholder="e.g., Main Gateway Router, Enterprise Hub"
                     className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-slate-500 focus:border-slate-500 text-sm ${
@@ -1186,13 +1186,13 @@ export function DefaultNetworkSetup({ isOpen, onComplete, onApplyTemplate, onOpe
                   </div>
 
                   <div className="mb-4">
-                    <label htmlFor="aiCloudRouterName" className="block text-sm font-medium text-gray-700 mb-2">
-                      Name Your Main Cloud Router *
+                    <label htmlFor="aiGatewayName" className="block text-sm font-medium text-gray-700 mb-2">
+                      Name Your Main Gateway *
                     </label>
                     <input
                       type="text"
-                      id="aiCloudRouterName"
-                      value={cloudRouterName}
+                      id="aiGatewayName"
+                      value={gatewayName}
                       onChange={(e) => handleInputChange(e.target.value)}
                       placeholder="e.g., Main Gateway Router, HQ Router"
                       className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-slate-500 focus:border-slate-500 ${
@@ -1213,7 +1213,7 @@ export function DefaultNetworkSetup({ isOpen, onComplete, onApplyTemplate, onOpe
                       onClick={() => {
                         setAiProcessingComplete(false);
                         setSelectedFile(null);
-                        setCloudRouterName('');
+                        setGatewayName('');
                         setError('');
                       }}
                       className="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors"

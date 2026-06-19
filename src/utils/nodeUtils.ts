@@ -1,12 +1,12 @@
 import { Server, Cloud, Router, Network, Shield, Activity, PanelRight, Menu, Database, Globe, Lock, Feather as Ethernet, Wifi } from 'lucide-react';
-import { CloudRouterIcon } from '../components/icons/CloudRouterIcon';
+import { GatewayIcon } from '../components/icons/GatewayIcon';
 import { getProviderIcon, getDatacenterIcon, AttGlobeIcon } from '../components/icons/ProviderIcons';
 import { NetworkNode } from '../types';
 
 export const getFunctionIcon = (functionType: string, config?: any) => {
   switch (functionType) {
-    case 'Cloud Router': return CloudRouterIcon;
-    case 'Router': return config?.routerType === 'cloud' ? CloudRouterIcon : Router;
+    case 'Gateway': return GatewayIcon;
+    case 'Router': return config?.routerType === 'cloud' ? GatewayIcon : Router;
     case 'SDWAN': return PanelRight;
     case 'Firewall': return Shield;
     case 'VNF': return Activity;
@@ -43,7 +43,7 @@ export const getNodeIcon = (type: NetworkNode['type'], functionType?: string, ne
 
 export const getNodeDisplayName = (type: NetworkNode['type'], functionType?: string, networkType?: string, provider?: string): string => {
   if (type === 'function') {
-    return functionType === 'Cloud Router' ? 'Cloud Router' : functionType || 'Function';
+    return functionType === 'Gateway' ? 'Gateway' : functionType || 'Function';
   } else if (type === 'destination' && provider) {
     return provider === 'Google' ? 'Google Cloud' : provider;
   } else if (networkType) {
@@ -55,21 +55,21 @@ export const getNodeDisplayName = (type: NetworkNode['type'], functionType?: str
 
 // Node colors per the SDCI Figma "Network Designer | Nodes" spec:
 // white cards, type-tinted icons; AT&T Core globe in functional blue,
-// Cloud Router in magenta, clouds in functional blue.
+// Gateway in magenta, clouds in functional blue.
 export const getNodeColors = (node: NetworkNode) => {
-  const isCloudRouter =
+  const isGateway =
     node.type === 'function' &&
-    (node.functionType === 'Cloud Router' || (node.functionType === 'Router' && node.config?.routerType === 'cloud'));
+    (node.functionType === 'Gateway' || (node.functionType === 'Router' && node.config?.routerType === 'cloud'));
 
   const getBackgroundColor = () => {
-    if (isCloudRouter) return 'bg-fuchsia-50';
+    if (isGateway) return 'bg-fuchsia-50';
     if (node.type === 'network') return 'bg-cobalt-100';
     if (node.type === 'destination') return 'bg-cobalt-100';
     return 'bg-white';
   };
 
   const getIconColor = () => {
-    if (isCloudRouter) return 'text-fuchsia-600';
+    if (isGateway) return 'text-fuchsia-600';
     if (node.type === 'network') return 'text-cobalt-700';
     if (node.type === 'destination') {
       const p = (node.config?.provider || node.cloudProvider || '').toLowerCase();

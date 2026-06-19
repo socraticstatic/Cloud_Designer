@@ -3,7 +3,7 @@ import { Template } from './types';
 
 export const cloudToCloudLocalTemplate: Template = {
   name: 'Cloud to Cloud - Local',
-  description: 'AT&T Core through Cloud Router to multiple cloud providers',
+  description: 'AT&T Core through Gateway to multiple cloud providers',
   preview: {
     icons: [
       { type: 'col', icons: [
@@ -34,12 +34,12 @@ export const cloudToCloudLocalTemplate: Template = {
       }
     },
     {
-      id: 'cloud-router-1',
+      id: 'gateway-1',
       type: 'function',
       functionType: 'Router',
       x: 250,
       y: 200,
-      name: 'Cloud Router',
+      name: 'Gateway',
       icon: Router,
       status: 'inactive',
       config: {
@@ -80,7 +80,7 @@ export const cloudToCloudLocalTemplate: Template = {
     {
       id: 'att-to-router',
       source: 'att-core-1',
-      target: 'cloud-router-1',
+      target: 'gateway-1',
       type: 'MPLS',
       bandwidth: '10 Gbps',
       status: 'inactive',
@@ -90,7 +90,7 @@ export const cloudToCloudLocalTemplate: Template = {
     },
     {
       id: 'router-to-aws',
-      source: 'cloud-router-1',
+      source: 'gateway-1',
       target: 'aws-cloud-1',
       type: 'Direct Connect',
       bandwidth: '10 Gbps',
@@ -101,7 +101,7 @@ export const cloudToCloudLocalTemplate: Template = {
     },
     {
       id: 'router-to-azure',
-      source: 'cloud-router-1',
+      source: 'gateway-1',
       target: 'azure-cloud-1',
       type: 'ExpressRoute',
       bandwidth: '10 Gbps',

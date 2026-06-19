@@ -1,9 +1,9 @@
-// The canonical AT&T Cloud Router glyph - circle ring with four outward
+// The canonical AT&T Gateway glyph - circle ring with four outward
 // chevrons ("four-way-control" in the SDCI Figma). Ported from the
 // NetBond Advanced repo (att-netbond-sdci AttIcon set) so the designer
 // uses the real mark, not a stand-in.
 
-interface CloudRouterIconProps {
+interface GatewayIconProps {
   className?: string;
 }
 
@@ -15,7 +15,7 @@ const PATHS = [
   'M11.3 17.2V15.5H14.3V17.2H11.3L12.9 18.8L11.7 20L8 16.3L11.7 12.6L12.9 13.8L11.3 15.5Z'
 ];
 
-export function CloudRouterIcon({ className = 'h-5 w-5' }: CloudRouterIconProps) {
+export function GatewayIcon({ className = 'h-5 w-5' }: GatewayIconProps) {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"

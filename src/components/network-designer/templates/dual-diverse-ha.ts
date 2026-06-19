@@ -3,7 +3,7 @@ import { Template } from './types';
 
 export const dualDiverseHATemplate: Template = {
   name: 'Dual-Diverse HA',
-  description: 'Dual IPE sites, dual Cloud Routers, dual-diverse paths with BFD fast reroute',
+  description: 'Dual IPE sites, dual Gateways, dual-diverse paths with BFD fast reroute',
   preview: {
     icons: [
       { type: 'col', icons: [
@@ -89,7 +89,7 @@ export const dualDiverseHATemplate: Template = {
       functionType: 'Router',
       x: 380,
       y: 220,
-      name: 'Cloud Router Primary',
+      name: 'Gateway Primary',
       icon: Router,
       status: 'inactive',
       config: {
@@ -106,7 +106,7 @@ export const dualDiverseHATemplate: Template = {
       functionType: 'Router',
       x: 380,
       y: 380,
-      name: 'Cloud Router Secondary',
+      name: 'Gateway Secondary',
       icon: Router,
       status: 'inactive',
       config: {
@@ -201,7 +201,7 @@ export const dualDiverseHATemplate: Template = {
       status: 'inactive',
       config: { resilience: 'dualdiverse', bfd: true }
     },
-    // Cross-connect between Cloud Routers
+    // Cross-connect between Gateways
     {
       id: 'edge-cr-cross',
       source: 'cr-primary',

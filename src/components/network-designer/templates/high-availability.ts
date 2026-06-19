@@ -3,7 +3,7 @@ import { Template } from './types';
 
 export const highAvailabilityTemplate: Template = {
   name: 'High Availability',
-  description: 'AT&T Core with redundant Cloud Router connectivity for high availability',
+  description: 'AT&T Core with redundant Gateway connectivity for high availability',
   preview: {
     icons: [
       { type: 'col', icons: [
@@ -34,12 +34,12 @@ export const highAvailabilityTemplate: Template = {
       }
     },
     {
-      id: 'primary-cloud-router',
+      id: 'primary-gateway',
       type: 'function',
       functionType: 'Router',
       x: 250,
       y: 150,
-      name: 'Primary Cloud Router',
+      name: 'Primary Gateway',
       icon: Router,
       status: 'inactive',
       config: {
@@ -51,12 +51,12 @@ export const highAvailabilityTemplate: Template = {
       }
     },
     {
-      id: 'secondary-cloud-router',
+      id: 'secondary-gateway',
       type: 'function',
       functionType: 'Router',
       x: 250,
       y: 300,
-      name: 'Secondary Cloud Router',
+      name: 'Secondary Gateway',
       icon: Router,
       status: 'inactive',
       config: {
@@ -85,7 +85,7 @@ export const highAvailabilityTemplate: Template = {
     {
       id: 'att-to-primary',
       source: 'att-core-1',
-      target: 'primary-cloud-router',
+      target: 'primary-gateway',
       type: 'MPLS',
       bandwidth: '10 Gbps',
       status: 'inactive',
@@ -97,7 +97,7 @@ export const highAvailabilityTemplate: Template = {
     {
       id: 'att-to-secondary',
       source: 'att-core-1',
-      target: 'secondary-cloud-router',
+      target: 'secondary-gateway',
       type: 'MPLS',
       bandwidth: '10 Gbps',
       status: 'inactive',
@@ -108,7 +108,7 @@ export const highAvailabilityTemplate: Template = {
     },
     {
       id: 'primary-to-cloud',
-      source: 'primary-cloud-router',
+      source: 'primary-gateway',
       target: 'aws-cloud-1',
       type: 'Direct Connect',
       bandwidth: '10 Gbps',
@@ -120,7 +120,7 @@ export const highAvailabilityTemplate: Template = {
     },
     {
       id: 'secondary-to-cloud',
-      source: 'secondary-cloud-router',
+      source: 'secondary-gateway',
       target: 'aws-cloud-1',
       type: 'Direct Connect',
       bandwidth: '10 Gbps',
@@ -132,8 +132,8 @@ export const highAvailabilityTemplate: Template = {
     },
     {
       id: 'router-interconnect',
-      source: 'primary-cloud-router',
-      target: 'secondary-cloud-router',
+      source: 'primary-gateway',
+      target: 'secondary-gateway',
       type: 'Direct Connect',
       bandwidth: '10 Gbps',
       status: 'inactive',

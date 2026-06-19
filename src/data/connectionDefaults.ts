@@ -31,9 +31,9 @@ function isIPE(sig: NodeSignature): boolean {
   return sig.type === 'network' && (sig.networkType === 'at&t core' || sig.networkType === 'AT&T Core');
 }
 
-function isCloudRouter(node: NetworkNode): boolean {
-  return node.type === 'function' && (node.functionType === 'Router' || node.functionType === 'Cloud Router') &&
-    (node.config?.routerType === 'cloud' || node.name?.toLowerCase().includes('cloud router'));
+function isGateway(node: NetworkNode): boolean {
+  return node.type === 'function' && (node.functionType === 'Router' || node.functionType === 'Gateway') &&
+    (node.config?.routerType === 'cloud' || /gateway|cloud router/.test(node.name?.toLowerCase() ?? ''));
 }
 
 function isCloudDestination(sig: NodeSignature): boolean {
@@ -68,13 +68,13 @@ export function getEdgeDefaults(source: NetworkNode, target: NetworkNode): EdgeD
   const srcSig = getNodeSignature(source);
   const tgtSig = getNodeSignature(target);
 
-  // IPE <-> Cloud Router: MPLS backbone
-  if ((isIPE(srcSig) && isCloudRouter(target)) || (isCloudRouter(source) && isIPE(tgtSig))) {
+  // IPE <-> Gateway: MPLS backbone
+  if ((isIPE(srcSig) && isGateway(target)) || (isGateway(source) && isIPE(tgtSig))) {
     return { type: 'MPLS', bandwidth: '10 Gbps', resilience: 'redundant', description: 'AVPN backbone link' };
   }
 
-  // Cloud Router <-> Cloud Destination: NetBond interconnect
-  if (isCloudRouter(source) && isCloudDestination(tgtSig)) {
+  // Gateway <-> Cloud Destination: NetBond interconnect
+  if (isGateway(source) && isCloudDestination(tgtSig)) {
     const provider = target.cloudProvider || target.config?.provider || '';
     const interconnect = CLOUD_INTERCONNECT_MAP[provider];
     if (interconnect) {
@@ -82,7 +82,7 @@ export function getEdgeDefaults(source: NetworkNode, target: NetworkNode): EdgeD
     }
     return { type: 'Direct Connect', bandwidth: '10 Gbps', description: 'Cloud interconnect' };
   }
-  if (isCloudDestination(srcSig) && isCloudRouter(target)) {
+  if (isCloudDestination(srcSig) && isGateway(target)) {
     const provider = source.cloudProvider || source.config?.provider || '';
     const interconnect = CLOUD_INTERCONNECT_MAP[provider];
     if (interconnect) {
@@ -91,8 +91,8 @@ export function getEdgeDefaults(source: NetworkNode, target: NetworkNode): EdgeD
     return { type: 'Direct Connect', bandwidth: '10 Gbps', description: 'Cloud interconnect' };
   }
 
-  // Cloud Router <-> Datacenter: Ethernet
-  if ((isCloudRouter(source) && isDatacenter(tgtSig)) || (isDatacenter(srcSig) && isCloudRouter(target))) {
+  // Gateway <-> Datacenter: Ethernet
+  if ((isGateway(source) && isDatacenter(tgtSig)) || (isDatacenter(srcSig) && isGateway(target))) {
     return { type: 'Ethernet', bandwidth: '10 Gbps', description: 'Cross-connect to datacenter' };
   }
 
@@ -101,13 +101,13 @@ export function getEdgeDefaults(source: NetworkNode, target: NetworkNode): EdgeD
     return { type: 'MPLS', bandwidth: '1 Gbps', description: 'SD-WAN MPLS underlay' };
   }
 
-  // SD-WAN <-> Cloud Router: overlay tunnel
-  if ((isSDWAN(srcSig) && isCloudRouter(target)) || (isCloudRouter(source) && isSDWAN(tgtSig))) {
+  // SD-WAN <-> Gateway: overlay tunnel
+  if ((isSDWAN(srcSig) && isGateway(target)) || (isGateway(source) && isSDWAN(tgtSig))) {
     return { type: 'VPN', bandwidth: '1 Gbps', description: 'SD-WAN overlay tunnel' };
   }
 
-  // Firewall <-> Cloud Router: Ethernet
-  if ((isFirewall(srcSig) && isCloudRouter(target)) || (isCloudRouter(source) && isFirewall(tgtSig))) {
+  // Firewall <-> Gateway: Ethernet
+  if ((isFirewall(srcSig) && isGateway(target)) || (isGateway(source) && isFirewall(tgtSig))) {
     return { type: 'Ethernet', bandwidth: '10 Gbps', description: 'Security inspection path' };
   }
 
@@ -121,9 +121,9 @@ export function getEdgeDefaults(source: NetworkNode, target: NetworkNode): EdgeD
     return { type: 'MPLS', bandwidth: '1 Gbps', description: 'FlexWare to IPE transport' };
   }
 
-  // FlexWare <-> Cloud Router
-  if ((isFlexWare(srcSig) && isCloudRouter(target)) || (isCloudRouter(source) && isFlexWare(tgtSig))) {
-    return { type: 'Ethernet', bandwidth: '1 Gbps', description: 'FlexWare to Cloud Router' };
+  // FlexWare <-> Gateway
+  if ((isFlexWare(srcSig) && isGateway(target)) || (isGateway(source) && isFlexWare(tgtSig))) {
+    return { type: 'Ethernet', bandwidth: '1 Gbps', description: 'FlexWare to Gateway' };
   }
 
   // Network node (Internet/VPN/Ethernet) <-> anything: use network type defaults
@@ -145,22 +145,22 @@ export function getAutoConnectTarget(
 ): { targetNode: NetworkNode; edgeDefaults: EdgeDefaults; message: string } | null {
   const newSig = getNodeSignature(newNode);
 
-  // Cloud destination added -> connect to Cloud Router
+  // Cloud destination added -> connect to Gateway
   if (isCloudDestination(newSig)) {
-    const cloudRouter = existingNodes.find(n => isCloudRouter(n));
-    if (cloudRouter) {
-      const defaults = getEdgeDefaults(cloudRouter, newNode);
+    const gateway = existingNodes.find(n => isGateway(n));
+    if (gateway) {
+      const defaults = getEdgeDefaults(gateway, newNode);
       const provider = newNode.cloudProvider || newNode.config?.provider || 'Cloud';
       return {
-        targetNode: cloudRouter,
+        targetNode: gateway,
         edgeDefaults: defaults,
-        message: `Connect ${provider} to ${cloudRouter.name} via ${defaults.type}?`
+        message: `Connect ${provider} to ${gateway.name} via ${defaults.type}?`
       };
     }
   }
 
   // Function node added -> connect to IPE
-  if (newSig.type === 'function' && newSig.functionType !== 'Router' && newSig.functionType !== 'Cloud Router') {
+  if (newSig.type === 'function' && newSig.functionType !== 'Router' && newSig.functionType !== 'Gateway') {
     const ipe = existingNodes.find(n => {
       const sig = getNodeSignature(n);
       return isIPE(sig);
@@ -175,15 +175,15 @@ export function getAutoConnectTarget(
     }
   }
 
-  // Datacenter added -> connect to Cloud Router
+  // Datacenter added -> connect to Gateway
   if (isDatacenter(newSig)) {
-    const cloudRouter = existingNodes.find(n => isCloudRouter(n));
-    if (cloudRouter) {
-      const defaults = getEdgeDefaults(cloudRouter, newNode);
+    const gateway = existingNodes.find(n => isGateway(n));
+    if (gateway) {
+      const defaults = getEdgeDefaults(gateway, newNode);
       return {
-        targetNode: cloudRouter,
+        targetNode: gateway,
         edgeDefaults: defaults,
-        message: `Connect ${newNode.name} to ${cloudRouter.name} via ${defaults.type}?`
+        message: `Connect ${newNode.name} to ${gateway.name} via ${defaults.type}?`
       };
     }
   }

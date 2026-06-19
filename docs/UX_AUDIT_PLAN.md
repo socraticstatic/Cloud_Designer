@@ -65,7 +65,7 @@ Audit rule: grep for `zIndex`/`z-[` outside this scale fails the build review.
 - Edges: clean lines, no mid-line tags, no arrowheads; legend colors only
   (active green #2D7E24, error #C70032, warn #EA712F, dashed = unconfigured)
 - Nodes: 64px white/tinted cards, status dot top-right, region sublabel
-  (never duplicating the name), magenta cloud router, cobalt core
+  (never duplicating the name), magenta gateway, cobalt core
 - Chrome: stats pill = bandwidth | nodes | connections | active | refresh
   (nothing else); toolbar labels match frames verbatim ("Templates");
   Save updates CTA rounded-full cobalt; rail = slim, headerless

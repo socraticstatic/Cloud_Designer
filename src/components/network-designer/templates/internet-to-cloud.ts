@@ -3,7 +3,7 @@ import { Template } from './types';
 
 export const internetToCloudTemplate: Template = {
   name: 'Internet to Cloud',
-  description: 'AT&T Core through Cloud Router to cloud services',
+  description: 'AT&T Core through Gateway to cloud services',
   preview: {
     icons: [
       { type: 'col', icons: [
@@ -33,12 +33,12 @@ export const internetToCloudTemplate: Template = {
       }
     },
     {
-      id: 'cloud-router-1',
+      id: 'gateway-1',
       type: 'function',
       functionType: 'Router',
       x: 300,
       y: 200,
-      name: 'Cloud Router',
+      name: 'Gateway',
       icon: Router,
       status: 'inactive',
       config: {
@@ -66,7 +66,7 @@ export const internetToCloudTemplate: Template = {
     {
       id: 'att-to-router',
       source: 'att-core-1',
-      target: 'cloud-router-1',
+      target: 'gateway-1',
       type: 'MPLS',
       bandwidth: '10 Gbps',
       status: 'inactive',
@@ -76,7 +76,7 @@ export const internetToCloudTemplate: Template = {
     },
     {
       id: 'router-to-cloud',
-      source: 'cloud-router-1',
+      source: 'gateway-1',
       target: 'aws-cloud-1',
       type: 'Direct Connect',
       bandwidth: '10 Gbps',

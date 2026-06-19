@@ -120,7 +120,7 @@ export function runAdvisor(nodes: NetworkNode[], edges: NetworkEdge[]): Assessme
   const destinations = nodes.filter(n => n.type === 'destination');
   const firewalls = nodes.filter(n => n.type === 'function' && n.functionType === 'Firewall');
   const internetNodes = nodes.filter(n => n.type === 'network' && n.config?.networkType === 'internet');
-  const routers = nodes.filter(n => n.type === 'function' && (n.functionType === 'Router' || n.functionType === 'Cloud Router'));
+  const routers = nodes.filter(n => n.type === 'function' && (n.functionType === 'Router' || n.functionType === 'Gateway'));
 
   // --- Resiliency: single points of failure ---
   const spofs = findArticulationPoints(nodes, edges);
@@ -182,7 +182,7 @@ export function runAdvisor(nodes: NetworkNode[], edges: NetworkEdge[]): Assessme
       category: 'Security',
       title: 'Internet-facing topology has no firewall',
       detail: 'Internet transport reaches cloud workloads with no inspection point anywhere in the path.',
-      recommendation: 'Insert a firewall function (NGFW or cloud-native equivalent) between the internet edge and your cloud routers.',
+      recommendation: 'Insert a firewall function (NGFW or cloud-native equivalent) between the internet edge and your gateways.',
       nodeIds: internetNodes.map(n => n.id),
       edgeIds: [],
       fix: { label: 'Add firewall', action: { type: 'add-firewall' } }
@@ -246,15 +246,15 @@ export function runAdvisor(nodes: NetworkNode[], edges: NetworkEdge[]): Assessme
     });
   }
 
-  // --- Architecture: multi-cloud without a cloud router hub ---
+  // --- Architecture: multi-cloud without a gateway hub ---
   const cloudProviders = new Set(destinations.map(d => d.cloudProvider || d.config?.provider).filter(Boolean));
   if (cloudProviders.size >= 2 && routers.length === 0) {
     add({
       severity: 'recommendation',
       category: 'Architecture',
       title: 'Multi-cloud without a routing hub',
-      detail: `Workloads span ${cloudProviders.size} cloud providers but there is no cloud router to hub them. Inter-cloud traffic likely hairpins or rides the public internet.`,
-      recommendation: 'Add a Cloud Router so inter-cloud traffic stays on the private backbone with one policy point.',
+      detail: `Workloads span ${cloudProviders.size} cloud providers but there is no gateway to hub them. Inter-cloud traffic likely hairpins or rides the public internet.`,
+      recommendation: 'Add a Gateway so inter-cloud traffic stays on the private backbone with one policy point.',
       nodeIds: destinations.map(d => d.id),
       edgeIds: []
     });
@@ -595,7 +595,7 @@ export function applyFix(
     }
     case 'add-firewall': {
       const stamp = Date.now();
-      const router = nodes.find(n => n.type === 'function' && (n.functionType === 'Router' || n.functionType === 'Cloud Router'));
+      const router = nodes.find(n => n.type === 'function' && (n.functionType === 'Router' || n.functionType === 'Gateway'));
       const internet = nodes.find(n => n.type === 'network' && n.config?.networkType === 'internet');
       const anchor = router ?? nodes[0];
       const fwSpot = findClearSpot(

@@ -166,7 +166,7 @@ export function PhysicalRackView({
           const isExpanded = expandedDevices.has(node.id);
           const isSelected = node.id === selectedDeviceId;
           // Use the node's actual canvas icon (provider marks, AT&T globe,
-          // cloud router glyph) so Infra and Topo tell one visual story
+          // gateway glyph) so Infra and Topo tell one visual story
           const IconComponent = node.icon ?? getDeviceIcon(node);
 
           return (

@@ -2,7 +2,7 @@
 export interface NetworkNode {
   id: string;
   type: 'function' | 'destination' | 'network' | 'datacenter';
-  functionType?: 'Router' | 'Cloud Router' | 'SDWAN' | 'Firewall' | 'VNF' | 'VNAT' | 'FlexWare';
+  functionType?: 'Router' | 'Gateway' | 'SDWAN' | 'Firewall' | 'VNF' | 'VNAT' | 'FlexWare';
   cloudProvider?: string;
   x: number;
   y: number;

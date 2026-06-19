@@ -1,7 +1,7 @@
 // Mock cloud-account discovery - the vDiscovery-style import path.
 // Given a provider and an account id, deterministically "discovers" a
 // plausible environment: VPCs/VNETs with regions, subnets, and tags,
-// hubbed behind a cloud router on the AT&T core. Everything derives from
+// hubbed behind a gateway on the AT&T core. Everything derives from
 // a hash of the account id so the same account always discovers the same
 // estate. Two VPCs deliberately share a CIDR: overlapping IP space is the
 // most common real-world discovery failure, and our advisor flags it.

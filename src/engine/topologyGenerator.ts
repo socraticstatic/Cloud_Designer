@@ -122,8 +122,8 @@ function generateCostOptimized(intent: TopologyIntent): TopologyCandidate {
   });
   nodes.push(ipe);
 
-  // Single Cloud Router
-  const cr = createNode('function', 'Cloud Router', startX + spacing, baseY, {
+  // Single Gateway
+  const cr = createNode('function', 'Gateway', startX + spacing, baseY, {
     routerType: 'cloud',
     routingProtocol: 'bgp',
   }, 'Router');
@@ -188,8 +188,8 @@ function generateBalanced(intent: TopologyIntent): TopologyCandidate {
     ipeNodes.push(ipe);
   });
 
-  // Cloud Router
-  const cr = createNode('function', 'Cloud Router', startX + spacing, baseY, {
+  // Gateway
+  const cr = createNode('function', 'Gateway', startX + spacing, baseY, {
     routerType: 'cloud',
     routingProtocol: 'bgp',
     fastReroute: true,
@@ -266,14 +266,14 @@ function generateResilient(intent: TopologyIntent): TopologyCandidate {
     ipeNodes.push(ipe);
   });
 
-  // Dual Cloud Routers
-  const cr1 = createNode('function', 'Cloud Router Primary', startX + spacing, baseY - 80, {
+  // Dual Gateways
+  const cr1 = createNode('function', 'Gateway Primary', startX + spacing, baseY - 80, {
     routerType: 'cloud',
     routingProtocol: 'bgp',
     fastReroute: true,
     bfd: true,
   }, 'Router');
-  const cr2 = createNode('function', 'Cloud Router Secondary', startX + spacing, baseY + 80, {
+  const cr2 = createNode('function', 'Gateway Secondary', startX + spacing, baseY + 80, {
     routerType: 'cloud',
     routingProtocol: 'bgp',
     fastReroute: true,
@@ -326,7 +326,7 @@ function generateResilient(intent: TopologyIntent): TopologyCandidate {
   return {
     id: 'resilient',
     name: 'Resilience Optimized',
-    description: 'Maximum redundancy. Dual-diverse paths, dual Cloud Routers, dual firewalls, BFD fast reroute across all links.',
+    description: 'Maximum redundancy. Dual-diverse paths, dual Gateways, dual firewalls, BFD fast reroute across all links.',
     nodes,
     edges,
     stats: {
@@ -352,13 +352,13 @@ export function applyRecommendation(
 
   switch (recType) {
     case 'redundant': {
-      // Add a second Cloud Router and cross-connect
+      // Add a second Gateway and cross-connect
       const existingCR = nodes.find(n =>
-        n.type === 'function' && (n.functionType === 'Router' || n.functionType === 'Cloud Router') &&
-        (n.config?.routerType === 'cloud' || n.name?.toLowerCase().includes('cloud router'))
+        n.type === 'function' && (n.functionType === 'Router' || n.functionType === 'Gateway') &&
+        (n.config?.routerType === 'cloud' || /gateway|cloud router/.test(n.name?.toLowerCase() ?? ''))
       );
       if (existingCR) {
-        const cr2 = createNode('function', 'Cloud Router Secondary', existingCR.x, existingCR.y + 150, {
+        const cr2 = createNode('function', 'Gateway Secondary', existingCR.x, existingCR.y + 150, {
           routerType: 'cloud',
           routingProtocol: 'bgp',
           fastReroute: true,
@@ -389,10 +389,10 @@ export function applyRecommendation(
     }
 
     case 'security': {
-      // Add a firewall between IPE and Cloud Router
+      // Add a firewall between IPE and Gateway
       const ipe = nodes.find(n => n.config?.networkType === 'at&t core');
       const cr = nodes.find(n =>
-        n.type === 'function' && (n.functionType === 'Router' || n.functionType === 'Cloud Router')
+        n.type === 'function' && (n.functionType === 'Router' || n.functionType === 'Gateway')
       );
       if (ipe && cr) {
         const fw = createNode('function', 'Firewall', (ipe.x + cr.x) / 2, Math.max(ipe.y, cr.y) + 120, {
@@ -411,14 +411,14 @@ export function applyRecommendation(
       // Add a second site with IPE + CR
       const existingIPE = nodes.find(n => n.config?.networkType === 'at&t core');
       const existingCR = nodes.find(n =>
-        n.type === 'function' && (n.functionType === 'Router' || n.functionType === 'Cloud Router')
+        n.type === 'function' && (n.functionType === 'Router' || n.functionType === 'Gateway')
       );
       if (existingIPE && existingCR) {
         const ipe2 = createNode('network', 'AT&T Core - Chicago', existingIPE.x, existingIPE.y + 200, {
           networkType: 'at&t core',
           city: 'Chicago',
         });
-        const cr2 = createNode('function', 'Cloud Router DR', existingCR.x, existingCR.y + 200, {
+        const cr2 = createNode('function', 'Gateway DR', existingCR.x, existingCR.y + 200, {
           routerType: 'cloud',
           routingProtocol: 'bgp',
         }, 'Router');

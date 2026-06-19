@@ -112,14 +112,14 @@ export const demoNodes: NetworkNode[] = [
       highAvailability: true,
     },
   },
-  // Cloud Router Primary (Dallas)
+  // Gateway Primary (Dallas)
   {
     id: 'demo-cr-primary',
     type: 'function',
     functionType: 'Router',
     x: 380,
     y: 240,
-    name: 'Cloud Router Primary',
+    name: 'Gateway Primary',
     icon: Router,
     status: 'active',
     config: {
@@ -133,14 +133,14 @@ export const demoNodes: NetworkNode[] = [
       longitude: -96.7970,
     },
   },
-  // Cloud Router Secondary (Chicago)
+  // Gateway Secondary (Chicago)
   {
     id: 'demo-cr-secondary',
     type: 'function',
     functionType: 'Router',
     x: 380,
     y: 420,
-    name: 'Cloud Router Secondary',
+    name: 'Gateway Secondary',
     icon: Router,
     status: 'active',
     config: {

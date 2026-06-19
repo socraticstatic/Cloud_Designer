@@ -39,7 +39,7 @@ export function TemplatesDrawer({
     {
       id: 'internet-to-cloud',
       name: 'Internet to Cloud',
-      description: 'AT&T Core through Cloud Router to cloud services',
+      description: 'AT&T Core through Gateway to cloud services',
       nodes: [
         {
           id: 'att-core-template',
@@ -56,12 +56,12 @@ export function TemplatesDrawer({
           }
         },
         {
-          id: 'cloud-router-template',
+          id: 'gateway-template',
           type: 'function',
           functionType: 'Router',
           x: 400,
           y: 200,
-          name: 'Cloud Router',
+          name: 'Gateway',
           icon: Router,
           status: 'inactive',
           config: {
@@ -88,14 +88,14 @@ export function TemplatesDrawer({
         {
           id: 'att-to-router-template',
           source: 'att-core-template',
-          target: 'cloud-router-template',
+          target: 'gateway-template',
           type: 'MPLS',
           bandwidth: '10 Gbps',
           status: 'inactive'
         },
         {
           id: 'router-to-cloud-template',
-          source: 'cloud-router-template',
+          source: 'gateway-template',
           target: 'aws-cloud-template',
           type: 'Direct Connect',
           bandwidth: '10 Gbps',
@@ -106,7 +106,7 @@ export function TemplatesDrawer({
     {
       id: 'cloud-to-cloud',
       name: 'Cloud to Cloud - Local',
-      description: 'AT&T Core through Cloud Router to multiple cloud providers',
+      description: 'AT&T Core through Gateway to multiple cloud providers',
       nodes: [
         {
           id: 'att-core-cc-template',
@@ -123,12 +123,12 @@ export function TemplatesDrawer({
           }
         },
         {
-          id: 'cloud-router-cc-template',
+          id: 'gateway-cc-template',
           type: 'function',
           functionType: 'Router',
           x: 300,
           y: 200,
-          name: 'Cloud Router',
+          name: 'Gateway',
           icon: Router,
           status: 'inactive',
           config: {
@@ -168,14 +168,14 @@ export function TemplatesDrawer({
         {
           id: 'att-to-router-cc-template',
           source: 'att-core-cc-template',
-          target: 'cloud-router-cc-template',
+          target: 'gateway-cc-template',
           type: 'MPLS',
           bandwidth: '10 Gbps',
           status: 'inactive'
         },
         {
           id: 'router-to-aws-cc-template',
-          source: 'cloud-router-cc-template',
+          source: 'gateway-cc-template',
           target: 'aws-cloud-cc-template',
           type: 'Direct Connect',
           bandwidth: '10 Gbps',
@@ -183,7 +183,7 @@ export function TemplatesDrawer({
         },
         {
           id: 'router-to-azure-cc-template',
-          source: 'cloud-router-cc-template',
+          source: 'gateway-cc-template',
           target: 'azure-cloud-cc-template',
           type: 'ExpressRoute',
           bandwidth: '10 Gbps',
@@ -194,7 +194,7 @@ export function TemplatesDrawer({
     {
       id: 'high-availability',
       name: 'High Availability',
-      description: 'AT&T Core with redundant Cloud Router connectivity for high availability',
+      description: 'AT&T Core with redundant Gateway connectivity for high availability',
       nodes: [
         {
           id: 'att-core-ha-template',
@@ -211,12 +211,12 @@ export function TemplatesDrawer({
           }
         },
         {
-          id: 'primary-cloud-router-ha-template',
+          id: 'primary-gateway-ha-template',
           type: 'function',
           functionType: 'Router',
           x: 400,
           y: 100,
-          name: 'Primary Cloud Router',
+          name: 'Primary Gateway',
           icon: Router,
           status: 'inactive',
           config: {
@@ -228,12 +228,12 @@ export function TemplatesDrawer({
           }
         },
         {
-          id: 'secondary-cloud-router-ha-template',
+          id: 'secondary-gateway-ha-template',
           type: 'function',
           functionType: 'Router',
           x: 400,
           y: 300,
-          name: 'Secondary Cloud Router',
+          name: 'Secondary Gateway',
           icon: Router,
           status: 'inactive',
           config: {
@@ -262,7 +262,7 @@ export function TemplatesDrawer({
         {
           id: 'att-to-primary-ha-template',
           source: 'att-core-ha-template',
-          target: 'primary-cloud-router-ha-template',
+          target: 'primary-gateway-ha-template',
           type: 'MPLS',
           bandwidth: '10 Gbps',
           status: 'inactive',
@@ -274,7 +274,7 @@ export function TemplatesDrawer({
         {
           id: 'att-to-secondary-ha-template',
           source: 'att-core-ha-template',
-          target: 'secondary-cloud-router-ha-template',
+          target: 'secondary-gateway-ha-template',
           type: 'MPLS',
           bandwidth: '10 Gbps',
           status: 'inactive',
@@ -285,7 +285,7 @@ export function TemplatesDrawer({
         },
         {
           id: 'primary-to-cloud-ha-template',
-          source: 'primary-cloud-router-ha-template',
+          source: 'primary-gateway-ha-template',
           target: 'aws-cloud-ha-template',
           type: 'Direct Connect',
           bandwidth: '10 Gbps',
@@ -297,7 +297,7 @@ export function TemplatesDrawer({
         },
         {
           id: 'secondary-to-cloud-ha-template',
-          source: 'secondary-cloud-router-ha-template',
+          source: 'secondary-gateway-ha-template',
           target: 'aws-cloud-ha-template',
           type: 'Direct Connect',
           bandwidth: '10 Gbps',
@@ -309,8 +309,8 @@ export function TemplatesDrawer({
         },
         {
           id: 'router-interconnect-ha-template',
-          source: 'primary-cloud-router-ha-template',
-          target: 'secondary-cloud-router-ha-template',
+          source: 'primary-gateway-ha-template',
+          target: 'secondary-gateway-ha-template',
           type: 'Direct Connect',
           bandwidth: '10 Gbps',
           status: 'inactive',

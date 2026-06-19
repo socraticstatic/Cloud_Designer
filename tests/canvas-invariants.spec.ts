@@ -160,19 +160,19 @@ test('drag tracks the cursor IN FLIGHT - no rubber-banding', async ({ page }) =>
   expect(Math.abs((b!.x + 300) - mid!.x)).toBeLessThan(40);
 });
 
-test('imported cloud routers carry the AT&T Cloud Router glyph', async ({ page }) => {
+test('imported gateways carry the AT&T Gateway glyph', async ({ page }) => {
   // covers fresh parses AND legacy persisted nodes (pre-mapping) - both
   // resolve through rehydrateIcons' migration
   const legacy = {
     name: 'Legacy', nodes: [
-      { id: 'cr', type: 'function', functionType: 'Router', x: 400, y: 300, name: 'Primary Cloud Router', status: 'inactive', config: { configured: true } }
+      { id: 'cr', type: 'function', functionType: 'Router', x: 400, y: 300, name: 'Primary Gateway', status: 'inactive', config: { configured: true } }
     ], edges: []
   };
   await page.addInitScript(f => localStorage.setItem('cloud-designer:topology', JSON.stringify(f)), legacy);
   await page.goto('/');
   const node = page.locator('.node-enter').first();
   await expect(node).toBeVisible();
-  // the CloudRouterIcon svg signature: viewBox "2 2 28 28"
+  // the GatewayIcon svg signature: viewBox "2 2 28 28"
   await expect(node.locator('svg[viewBox="2 2 28 28"]')).toHaveCount(1);
 });
 

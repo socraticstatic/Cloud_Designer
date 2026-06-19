@@ -68,7 +68,7 @@ export function simulateFailure(
   // (AT&T Core, else any router, else the largest component).
   const anchor =
     survivors.find(n => n.type === 'network' && n.config?.networkType === 'at&t core') ??
-    survivors.find(n => n.type === 'function' && (n.functionType === 'Router' || n.functionType === 'Cloud Router'));
+    survivors.find(n => n.type === 'function' && (n.functionType === 'Router' || n.functionType === 'Gateway'));
   let liveComponent: number;
   if (anchor) {
     liveComponent = componentOf.get(anchor.id)!;

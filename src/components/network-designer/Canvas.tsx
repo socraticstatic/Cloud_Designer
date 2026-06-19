@@ -440,10 +440,16 @@ export const Canvas = forwardRef<HTMLDivElement, CanvasProps>(({
           onRecolorGroup={onRecolorGroup}
         />
 
-        {/* SVG Layer for Edges - Only visual representation */}
-        <svg 
-          className="absolute inset-0" 
-          style={{ zIndex: Z_INDEX.EDGES, pointerEvents: 'none' }}
+        {/* SVG Layer for Edges - Only visual representation.
+            overflow:visible is REQUIRED: the svg box is only canvas-sized
+            (100% x 100%), but edge endpoints use logical node coordinates
+            that can sit far outside that box once the user zooms out, pans,
+            or shrinks the window. A default (clipping) svg would hide those
+            connectors while the nodes - drawn in an overflow-visible div -
+            stayed put, so lines appeared to "not adjust" on resize/zoom. */}
+        <svg
+          className="absolute inset-0"
+          style={{ zIndex: Z_INDEX.EDGES, pointerEvents: 'none', overflow: 'visible' }}
           width="100%"
           height="100%"
         >
