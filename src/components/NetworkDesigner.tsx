@@ -77,8 +77,13 @@ function rehydrateIcons(nodes: NetworkNode[]): NetworkNode[] {
         : node.functionType === 'Router' && !node.config?.routerType && /cloud\s*router|gateway/i.test(node.name)
           ? 'Gateway'
           : node.functionType;
+    // Display names persisted before the rename still read "Cloud Router"
+    // (e.g. "Cloud Router Primary"). Rewrite them to "Gateway" on load so
+    // saved designs and seeded demos carry the new term everywhere.
+    const name = node.name?.replace(/cloud\s*router/gi, 'Gateway') ?? node.name;
     return {
       ...node,
+      ...(name ? { name } : {}),
       ...(functionType ? { functionType } : {}),
       icon: getNodeIcon(node.type, functionType, node.config?.networkType, node.config),
       // legacy nodes predate the configured flag - treat them as configured
@@ -1660,8 +1665,9 @@ export function NetworkDesigner({
           }}
           onApplyTemplate={(templateNodes, templateEdges, name) => {
             // Saved positions came from whatever canvas they were drawn on -
+            // rehydrate (icons + legacy Cloud Router -> Gateway normalization),
             // normalize into the CURRENT bounds, then fit to screen
-            const placed = resolveAllOverlaps(templateNodes, layoutBoundsNow());
+            const placed = resolveAllOverlaps(rehydrateIcons(templateNodes), layoutBoundsNow());
             setNodes(placed);
             setEdges(templateEdges);
             if (name) setDesignName(name);
