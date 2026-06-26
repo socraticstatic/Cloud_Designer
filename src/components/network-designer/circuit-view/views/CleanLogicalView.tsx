@@ -141,6 +141,8 @@ function TopologyDiagram({
             onMouseEnter={() => setHoveredDevice(node.id)}
             onMouseLeave={() => setHoveredDevice(null)}
           >
+            {/* Native tooltip so truncated labels are still readable */}
+            <title>{node.name}{node.status ? ` (${node.status})` : ''}</title>
             {/* Selection pulse ring */}
             {isSelected && (
               <circle r={36} fill={colors.stroke} fillOpacity={0.1} stroke={colors.stroke} strokeWidth={2} strokeOpacity={0.4} />

@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { BrainCircuit as CircuitIcon } from 'lucide-react';
+import { useState, useEffect, useMemo } from 'react';
+import { BrainCircuit as CircuitIcon, ArrowLeft, Search, X, Sparkles } from 'lucide-react';
 import type { NetworkNode, NetworkEdge } from '../../types';
 import { Breadcrumb } from './components/Breadcrumb';
 import { RightDetailPanel } from './components/RightDetailPanel';
@@ -22,15 +22,29 @@ interface CircuitViewProps {
   onZoomOut: () => void;
   // Advisor findings per node - devices carrying findings get severity marks
   issueBadges?: Record<string, 'error' | 'warning' | 'recommendation'>;
+  // Infra owns its whole frame - these drive its self-contained top bar so
+  // it needs none of the canvas-editing chrome
+  onBack?: () => void;
+  designName?: string;
+  designStatus?: 'draft' | 'saved';
+  openIssueCount?: number;
+  onOpenAdvisor?: () => void;
+  // When the advisor floats as an overlay (narrow viewports) it covers the
+  // right edge - reserve that width so the top-bar controls stay clickable
+  advisorOccludesRight?: boolean;
 }
 
 // ─── Circuit table for "Circuits" view mode ──────────────────────────────────
 function CircuitsTable({
   circuits,
   nodes,
+  onSelectCircuit,
+  selectedCircuit,
 }: {
   circuits: CircuitType[];
   nodes: NetworkNode[];
+  onSelectCircuit: (id: string) => void;
+  selectedCircuit: string | null;
 }) {
   const getNodeName = (portId: string) => {
     const nodeId = portId.split('-port-')[0];
@@ -70,7 +84,11 @@ function CircuitsTable({
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {circuits.map(circuit => (
-                  <tr key={circuit.id} className="hover:bg-gray-50 transition-colors">
+                  <tr
+                    key={circuit.id}
+                    onClick={() => onSelectCircuit(circuit.id)}
+                    className={`cursor-pointer transition-colors ${selectedCircuit === circuit.id ? 'bg-blue-50' : 'hover:bg-gray-50'}`}
+                  >
                     <td className="px-4 py-3 font-medium text-gray-900">
                       {getNodeName(circuit.sourcePort)}
                     </td>
@@ -140,12 +158,21 @@ export function CircuitView({
   selectedNode,
   onNodeSelect,
   onZoomOut,
-  issueBadges = {}
+  issueBadges = {},
+  onBack,
+  designName,
+  designStatus,
+  openIssueCount = 0,
+  onOpenAdvisor,
+  advisorOccludesRight = false
 }: CircuitViewProps) {
+  // Space the advisor overlay steals from the right edge on narrow viewports
+  const reserveRight = advisorOccludesRight ? 'calc(min(400px, 92vw) + 0.75rem)' : undefined;
   const [selectedDevice, setSelectedDevice] = useState<string | null>(selectedNode);
   const [selectedPort, setSelectedPort] = useState<string | null>(null);
   const [selectedCircuit, setSelectedCircuit] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>({ mode: 'rack' });
+  const [filterQuery, setFilterQuery] = useState('');
 
   useEffect(() => {
     if (selectedNode) setSelectedDevice(selectedNode);
@@ -216,10 +243,17 @@ export function CircuitView({
         id: `circuit-${edge.id}`,
         sourcePort: sourcePortId,
         targetPort: targetPortId,
+        // Map the logical connection type to a physical circuit class. Cloud
+        // on-ramps (Direct Connect, ExpressRoute, Interconnect, FastConnect)
+        // and Ethernet ride ethernet; MPLS/AVPN ride MPLS; fiber is dark
+        // fiber; only genuinely optical/unknown links fall back to wavelength.
         type:
           edge.type.includes('Fiber') ? 'dark-fiber' :
-          edge.type.includes('MPLS') ? 'mpls' :
-          edge.type.includes('Direct') ? 'ethernet' : 'wave',
+          (edge.type.includes('MPLS') || edge.type.includes('AVPN')) ? 'mpls' :
+          (edge.type.includes('Direct') || edge.type.includes('Express') ||
+           edge.type.includes('Interconnect') || edge.type.includes('FastConnect') ||
+           edge.type.includes('Ethernet') || edge.type.includes('SD-WAN') ||
+           edge.type.includes('VPN') || edge.type.includes('Internet')) ? 'ethernet' : 'wave',
         capacity: edge.bandwidth,
         status: edge.status as 'active' | 'inactive',
         metrics: edge.status === 'active' ? (() => {
@@ -246,6 +280,33 @@ export function CircuitView({
   const devicePorts: DevicePortsMap = {};
   nodes.forEach(node => { devicePorts[node.id] = generatePorts(node.id); });
   const circuits = generateCircuits();
+
+  // Device filter narrows the lists/table only - the health strip always
+  // reports the full inventory so the summary never lies
+  const q = filterQuery.trim().toLowerCase();
+  const nameOf = (id: string) => nodes.find(n => n.id === id)?.name ?? id;
+  const filteredNodes = q ? nodes.filter(n => n.name.toLowerCase().includes(q)) : nodes;
+  const filteredCircuits = q
+    ? circuits.filter(c => {
+        const s = nameOf(c.sourcePort.split('-port-')[0]).toLowerCase();
+        const t = nameOf(c.targetPort.split('-port-')[0]).toLowerCase();
+        return s.includes(q) || t.includes(q);
+      })
+    : circuits;
+
+  // Whole-inventory health for the top strip (independent of the filter)
+  const health = useMemo(() => {
+    const allPorts = Object.values(devicePorts).flat();
+    return {
+      devices: nodes.length,
+      activeDevices: nodes.filter(n => n.status === 'active' || (devicePorts[n.id] || []).some(p => p.status === 'active')).length,
+      ports: allPorts.length,
+      activePorts: allPorts.filter(p => p.status === 'active').length,
+      circuits: circuits.length,
+      activeCircuits: circuits.filter(c => c.status === 'active').length,
+      errorPorts: allPorts.filter(p => p.status === 'error').length,
+    };
+  }, [nodes, devicePorts, circuits]);
 
   const selectedNodeData = nodes.find(n => n.id === selectedDevice) ?? null;
   const selectedCircuitData = selectedCircuit ? circuits.find(c => c.id === selectedCircuit) ?? null : null;
@@ -291,20 +352,118 @@ export function CircuitView({
 
   return (
     <div className="flex flex-col w-full h-full bg-gray-50" style={{ paddingLeft: CANVAS_SAFE_AREA.LEFT }}>
-      {/* Top bar: breadcrumb */}
-      <div className="flex-shrink-0 bg-white border-b border-gray-200 px-6 py-4">
-        <Breadcrumb
-          selectedDevice={selectedDevice}
-          selectedPort={selectedPort}
-          selectedCircuit={selectedCircuit}
-          onNavigate={handleNavigate}
-        />
+      {/* Dedicated Infra top bar - Infra owns its whole frame, so it carries
+          its own Back + identity + view switch + advisor instead of borrowing
+          the canvas-editing chrome (which is hidden here). */}
+      <div
+        className="flex-shrink-0 bg-white border-b border-gray-200 px-6 py-2.5 flex items-center gap-3 transition-[padding] duration-300"
+        style={{ paddingRight: reserveRight }}
+      >
+        {onBack && (
+          <button
+            onClick={onBack}
+            className="flex items-center gap-1.5 text-sm font-medium text-fw-link hover:text-fw-linkHover transition-colors flex-shrink-0"
+            type="button"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back
+          </button>
+        )}
+        <div className="h-5 w-px bg-gray-200 flex-shrink-0" />
+        <div className="flex items-center gap-2 min-w-0 flex-shrink">
+          <span className="text-sm font-semibold text-gray-900 truncate">{designName ?? 'Infrastructure'}</span>
+          {designStatus && (
+            <span className="px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wide bg-gray-100 text-gray-500 flex-shrink-0">
+              {designStatus}
+            </span>
+          )}
+        </div>
+        {hasDetail && (
+          <div className="hidden lg:flex items-center min-w-0">
+            <Breadcrumb
+              selectedDevice={selectedDevice}
+              selectedPort={selectedPort}
+              selectedCircuit={selectedCircuit}
+              onNavigate={handleNavigate}
+              rootLabel={viewMode.mode === 'physical' ? 'Circuits' : viewMode.mode === 'logical' ? 'Topology' : 'Rack View'}
+            />
+          </div>
+        )}
+
+        <div className="flex-1" />
+
+        {nodes.length > 0 && (
+          <>
+            {/* Device filter - the canvas node filter is gone here, so Infra
+                gets its own way to narrow a big inventory */}
+            <div className="flex items-center gap-1.5 bg-gray-100 rounded-lg px-2.5 py-1 flex-shrink-0 focus-within:ring-2 focus-within:ring-blue-500">
+              <Search className="h-3.5 w-3.5 text-gray-400" />
+              <input
+                value={filterQuery}
+                onChange={e => setFilterQuery(e.target.value)}
+                placeholder="Filter devices"
+                aria-label="Filter devices"
+                className="w-32 text-xs bg-transparent outline-none text-gray-700 placeholder:text-gray-400 py-1"
+              />
+              {filterQuery && (
+                <button onClick={() => setFilterQuery('')} type="button" aria-label="Clear filter" className="p-1 -mr-1 rounded text-gray-400 hover:text-gray-700 hover:bg-gray-200">
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              )}
+            </div>
+
+            <ViewModeSelector
+              currentMode={viewMode}
+              onModeChange={(mode) => setViewMode({ mode })}
+              inline
+            />
+
+            {onOpenAdvisor && (
+              <button
+                onClick={onOpenAdvisor}
+                className="relative flex-shrink-0 p-2 rounded-lg text-fw-link hover:bg-fw-accent transition-colors"
+                title="Network Advisor"
+                type="button"
+              >
+                <Sparkles className="h-4 w-4" />
+                {openIssueCount > 0 && (
+                  <span className="absolute -top-0.5 -right-0.5 min-w-[14px] h-3.5 px-0.5 rounded-full bg-fw-error text-white text-[9px] font-bold flex items-center justify-center leading-none">
+                    {openIssueCount}
+                  </span>
+                )}
+              </button>
+            )}
+          </>
+        )}
       </div>
 
-      {/* Content row: main + drawer */}
-      <div className="flex flex-1 min-h-0 relative">
+      {/* Health strip - whole-inventory summary, visible across every sub-view */}
+      {nodes.length > 0 && (
+        <div
+          className="flex-shrink-0 bg-white border-b border-gray-200 px-6 py-3 grid grid-cols-4 gap-3 transition-[padding] duration-300"
+          style={{ paddingRight: reserveRight }}
+        >
+          {[
+            { label: 'Devices', value: health.devices, sub: `${health.activeDevices} active`, color: 'text-gray-900' },
+            { label: 'Total Ports', value: health.ports, sub: `${health.activePorts} active`, color: 'text-blue-600' },
+            { label: 'Circuits', value: health.circuits, sub: `${health.activeCircuits} active`, color: 'text-emerald-600' },
+            { label: 'Errors', value: health.errorPorts, sub: health.errorPorts > 0 ? 'Needs attention' : 'All clear', color: health.errorPorts > 0 ? 'text-red-600' : 'text-green-600' },
+          ].map(stat => (
+            <div key={stat.label} className="bg-gray-50 rounded-lg border border-gray-200 px-3 py-2">
+              <p className="text-[11px] text-gray-500">{stat.label}</p>
+              <p className={`text-lg font-semibold leading-tight ${stat.color}`}>{stat.value}</p>
+              <p className="text-[11px] text-gray-400">{stat.sub}</p>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Content row: main + drawer. overflow-hidden so the off-canvas
+          detail drawer (translateX 100%) can't create a phantom page-wide
+          horizontal scrollbar. */}
+      <div className="flex flex-1 min-h-0 relative overflow-hidden">
         {/* Main content */}
-        <div className="flex-1 overflow-auto relative pb-24">
+        <div className="flex-1 overflow-auto relative pb-6">
           {nodes.length === 0 ? (
             <div className="flex items-center justify-center h-full">
               <div className="bg-white rounded-xl shadow-lg p-8 max-w-md text-center">
@@ -322,9 +481,23 @@ export function CircuitView({
                 </button>
               </div>
             </div>
+          ) : filteredNodes.length === 0 ? (
+            <div className="flex items-center justify-center h-full">
+              <div className="text-center">
+                <Search className="h-10 w-10 text-gray-300 mx-auto mb-3" />
+                <p className="text-sm text-gray-500">No devices match "{filterQuery}"</p>
+                <button
+                  onClick={() => setFilterQuery('')}
+                  className="mt-3 text-sm font-medium text-blue-600 hover:text-blue-700"
+                  type="button"
+                >
+                  Clear filter
+                </button>
+              </div>
+            </div>
           ) : viewMode.mode === 'rack' ? (
             <PhysicalRackView
-              nodes={nodes}
+              nodes={filteredNodes}
               selectedDeviceId={selectedDevice}
               onSelectDevice={handleDeviceSelect}
               devicePorts={devicePorts}
@@ -334,22 +507,19 @@ export function CircuitView({
               issueBadges={issueBadges}
             />
           ) : viewMode.mode === 'physical' ? (
-            <CircuitsTable circuits={circuits} nodes={nodes} />
+            <CircuitsTable
+              circuits={filteredCircuits}
+              nodes={nodes}
+              selectedCircuit={selectedCircuit}
+              onSelectCircuit={(id) => { setSelectedCircuit(id); setSelectedDevice(null); setSelectedPort(null); }}
+            />
           ) : (
             <CleanLogicalView
-              nodes={nodes}
-              circuits={circuits}
+              nodes={filteredNodes}
+              circuits={filteredCircuits}
               devicePorts={devicePorts}
               selectedDevice={selectedDevice}
               onSelectDevice={handleDeviceSelect}
-            />
-          )}
-
-          {/* View mode selector - scoped inside main content */}
-          {nodes.length > 0 && (
-            <ViewModeSelector
-              currentMode={viewMode}
-              onModeChange={(mode) => setViewMode({ mode })}
             />
           )}
         </div>

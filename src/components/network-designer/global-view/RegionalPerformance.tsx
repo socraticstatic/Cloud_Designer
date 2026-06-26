@@ -297,6 +297,7 @@ export function RegionalPerformance({ nodes, edges, onClose }: RegionalPerforman
               e.stopPropagation();
               onClose();
             }}
+            aria-label="Close"
             className="p-1 text-gray-400 hover:text-gray-500"
             type="button"
           >

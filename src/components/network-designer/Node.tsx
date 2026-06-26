@@ -249,6 +249,7 @@ export const Node = memo(function Node({
               key={node.id}
               ref={nameInputRef}
               type="text"
+              aria-label="Node name"
               value={nodeName}
               onChange={(e) => setNodeName(e.target.value)}
               onBlur={handleNameSubmit}
@@ -283,8 +284,8 @@ export const Node = memo(function Node({
 
         {/* Status Indicator */}
         {!isReadOnly && (
-          <div className="absolute -top-1 -right-1">
-            <div className={`w-3 h-3 rounded-full ${colors.status}`} />
+          <div className="absolute -top-1 -right-1" title={`Status: ${node.status ?? 'unknown'}`}>
+            <div className={`w-3 h-3 rounded-full ${colors.status}`} role="img" aria-label={`Status: ${node.status ?? 'unknown'}`} />
           </div>
         )}
 

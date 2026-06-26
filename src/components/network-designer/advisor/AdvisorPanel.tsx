@@ -123,7 +123,7 @@ export function AdvisorPanel({
 
   return (
     <div
-      className="h-full w-[400px] bg-fw-base border-l border-fw-border-secondary rounded-r-xl flex flex-col"
+      className="h-full w-[400px] max-w-[92vw] flex-shrink-0 bg-fw-base border-l border-fw-border-secondary rounded-r-xl flex flex-col"
       role="complementary"
       aria-label="Network Advisor"
     >
@@ -295,13 +295,17 @@ export function AdvisorPanel({
                   const isFocused = focusedFindingId === finding.id;
                   const isPreviewing = previewFindingId === finding.id;
                   return (
-                    <button
+                    // role=button (not <button>) so the nested Preview/Apply
+                    // action controls below aren't buttons inside a button
+                    <div
                       key={finding.id}
+                      role="button"
+                      tabIndex={0}
                       onClick={() => onFocusFinding(isFocused ? null : finding)}
-                      className={`w-full text-left rounded-xl border border-fw-border-secondary border-l-4 ${meta.border} px-3 py-2.5 transition-colors ${
+                      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onFocusFinding(isFocused ? null : finding); } }}
+                      className={`w-full text-left cursor-pointer rounded-xl border border-fw-border-secondary border-l-4 ${meta.border} px-3 py-2.5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fw-border-focus ${
                         isFocused || isPreviewing ? 'bg-fw-accent' : 'bg-fw-base hover:bg-fw-wash'
                       }`}
-                      type="button"
                     >
                       <div className="flex items-start gap-2">
                         <Icon className={`h-4 w-4 mt-0.5 flex-shrink-0 ${meta.text}`} />
@@ -369,7 +373,7 @@ export function AdvisorPanel({
                           )}
                         </div>
                       </div>
-                    </button>
+                    </div>
                   );
                 })}
               </div>

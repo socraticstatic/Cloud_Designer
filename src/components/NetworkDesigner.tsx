@@ -235,6 +235,16 @@ export function NetworkDesigner({
   const [canvasHeight, setCanvasHeight] = useState(() =>
     Math.max(600, Math.min(1000, (typeof window !== 'undefined' ? window.innerHeight : 940) - 150))
   );
+  const [viewportWidth, setViewportWidth] = useState(() =>
+    typeof window !== 'undefined' ? window.innerWidth : 1440
+  );
+  // The advisor docks beside the content and the content reflows beside it.
+  // On the canvas views that reflow is essential - it keeps the floating
+  // chrome (toolbar, zoom, status) clear of the panel. The Infra list has no
+  // such right-side chrome, so on narrower viewports it overlays instead of
+  // squeezing the list into a sliver (which read as "scrunched").
+  const advisorOverlay = abstractionLevel === 'circuit' && viewportWidth < 1280;
+  const dockAdvisor = !advisorOverlay;
   const [groupColors, setGroupColors] = useState<Record<string, number>>(
     () => readStorage<Record<string, number>>('cloud-designer:groupColors') ?? {}
   );
@@ -644,6 +654,12 @@ export function NetworkDesigner({
       const target = e.target as HTMLElement;
       const typing = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable;
       if (e.key === 'Escape') {
+        // An in-progress connection is the most modal thing on screen - Esc
+        // must back out of it before anything else
+        if (isCreatingEdge) {
+          cancelEdgeCreation();
+          return;
+        }
         // Advisor preview/sim take priority - first Esc clears them
         if (fixPreviewState || simResult) {
           setFixPreviewState(null);
@@ -683,19 +699,41 @@ export function NetworkDesigner({
           e.preventDefault();
           const remaining = nodes.filter(n => !multiSelected.includes(n.id));
           const remainingEdges = edges.filter(ed => !multiSelected.includes(ed.source) && !multiSelected.includes(ed.target));
+          const removedNodes = nodes.length - remaining.length;
+          const removedEdges = edges.length - remainingEdges.length;
           setNodes(remaining);
           setEdges(remainingEdges);
           saveToHistory(remaining, remainingEdges);
           setMultiSelected([]);
           clearSelection();
+          window.addToast({
+            type: 'info',
+            title: `Deleted ${removedNodes} node${removedNodes === 1 ? '' : 's'}`,
+            message: `${removedEdges} connection${removedEdges === 1 ? '' : 's'} removed. Press ⌘Z to undo.`,
+            duration: 4000
+          });
         } else if (selectedNode) {
           e.preventDefault();
+          const node = nodes.find(n => n.id === selectedNode);
+          const removedEdges = edges.filter(ed => ed.source === selectedNode || ed.target === selectedNode).length;
           deleteNode(selectedNode);
           clearSelection();
+          window.addToast({
+            type: 'info',
+            title: `Deleted ${node?.name ?? 'node'}`,
+            message: `${removedEdges} connection${removedEdges === 1 ? '' : 's'} removed. Press ⌘Z to undo.`,
+            duration: 4000
+          });
         } else if (selectedEdge) {
           e.preventDefault();
           deleteEdge(selectedEdge);
           clearSelection();
+          window.addToast({
+            type: 'info',
+            title: 'Connection deleted',
+            message: 'Press ⌘Z to undo.',
+            duration: 4000
+          });
         }
         return;
       }
@@ -853,7 +891,10 @@ export function NetworkDesigner({
 
   // Canvas fills the viewport (clamped) instead of a fixed 800px strip
   useEffect(() => {
-    const onResize = () => setCanvasHeight(Math.max(600, Math.min(1000, window.innerHeight - 150)));
+    const onResize = () => {
+      setCanvasHeight(Math.max(600, Math.min(1000, window.innerHeight - 150)));
+      setViewportWidth(window.innerWidth);
+    };
     window.addEventListener('resize', onResize);
     return () => window.removeEventListener('resize', onResize);
   }, []);
@@ -1255,6 +1296,12 @@ export function NetworkDesigner({
               onNodeSelect={handleNodeSelection}
               onZoomOut={() => setAbstractionLevel('network')}
               issueBadges={issueBadges}
+              onBack={onCancel}
+              designName={designName}
+              designStatus={designStatus}
+              openIssueCount={openIssueCount}
+              onOpenAdvisor={() => (assessment ? setShowAdvisor(true) : handleRunAdvisor())}
+              advisorOccludesRight={showAdvisor && advisorOverlay}
             />
           </Suspense>
         );
@@ -1281,7 +1328,9 @@ export function NetworkDesigner({
 
         {/* Top chrome row - flex so the three pills can NEVER overlap:
             name pill shrinks, status bar centers in remaining space,
-            mode pill holds the right edge */}
+            mode pill holds the right edge. Hidden in Infra, which owns its
+            whole frame with a dedicated top bar (no canvas-editing chrome). */}
+        {abstractionLevel !== 'circuit' && (
         <div className="absolute top-4 left-4 right-4 flex items-start gap-3" style={{ zIndex: Z_INDEX.FLOATING_PANEL }}>
         {/* Back + design name pill with connection switcher - per Figma top-left chrome */}
         {(
@@ -1333,7 +1382,8 @@ export function NetworkDesigner({
                       value={switcherQuery}
                       onChange={e => setSwitcherQuery(e.target.value)}
                       placeholder="Search"
-                      className="w-full pl-9 pr-3 py-2 text-sm border border-fw-border-secondary rounded-full bg-fw-base text-fw-body placeholder:text-fw-disabled"
+                      aria-label="Search saved designs"
+                      className="w-full pl-9 pr-3 py-2 text-sm border border-fw-border-secondary rounded-full bg-fw-base text-fw-body placeholder:text-fw-disabled focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
                     />
                   </div>
                 </div>
@@ -1465,12 +1515,13 @@ export function NetworkDesigner({
 
 
         </div>
+        )}
 
 
         {/* Filter pill - dims non-matching nodes (Figma: Filter exploration) */}
         {abstractionLevel === 'network' && (
           <div
-            className="absolute top-16 left-4 bg-white rounded-full shadow-sm border border-gray-200 flex items-center px-3 py-1.5 gap-2"
+            className="absolute top-16 left-4 bg-white rounded-full shadow-sm border border-gray-200 flex items-center px-3 py-1.5 gap-2 focus-within:ring-2 focus-within:ring-blue-500"
             style={{ zIndex: Z_INDEX.CHROME }}
           >
             <Search className="h-3.5 w-3.5 text-fw-bodyLight" />
@@ -1478,11 +1529,12 @@ export function NetworkDesigner({
               value={filterQuery}
               onChange={e => setFilterQuery(e.target.value)}
               placeholder="Filter nodes"
+              aria-label="Filter nodes"
               className="w-28 text-xs bg-transparent outline-none text-fw-body placeholder:text-fw-disabled"
             />
             {filterQuery && (
-              <button onClick={() => setFilterQuery('')} className="text-fw-bodyLight hover:text-fw-body" type="button" aria-label="Clear filter">
-                <X className="h-3 w-3" />
+              <button onClick={() => setFilterQuery('')} className="p-1 -mr-1 rounded text-fw-bodyLight hover:text-fw-body hover:bg-fw-wash" type="button" aria-label="Clear filter">
+                <X className="h-3.5 w-3.5" />
               </button>
             )}
           </div>
@@ -1586,13 +1638,18 @@ export function NetworkDesigner({
               onToggleEdgeCreation={toggleEdgeCreation}
               isCreatingEdge={isCreatingEdge}
               onCancel={handleUndo}
+              onRedo={handleRedo}
               hasConnections={edges.length > 0}
               canUndo={canUndo}
+              canRedo={canRedo}
               onRunScenario={handleRunSimulation}
               isRunningScenario={isRunningScenario}
               onCreateConnections={handleCreateConnections}
               onSaveTemplate={handleSaveTemplate}
-              onClearCanvas={clearNetwork}
+              onClearCanvas={() => {
+                clearNetwork();
+                window.addToast({ type: 'info', title: 'Canvas cleared', message: 'Press ⌘Z to undo.', duration: 4000 });
+              }}
               onOpenTemplates={openTemplatesDrawer}
               onImportTopology={() => setShowImportModal(true)}
               onOpenAdvisor={() => (assessment ? setShowAdvisor(true) : handleRunAdvisor())}
@@ -1610,7 +1667,17 @@ export function NetworkDesigner({
               isVisible={showNodeConfig}
               onClose={() => setShowNodeConfig(false)}
               onUpdate={(updates) => updateNode(selectedNodeObject.id, updates)}
-              onDelete={deleteNode}
+              onDelete={(id) => {
+                const node = nodes.find(n => n.id === id);
+                const removedEdges = edges.filter(ed => ed.source === id || ed.target === id).length;
+                deleteNode(id);
+                window.addToast({
+                  type: 'info',
+                  title: `Deleted ${node?.name ?? 'node'}`,
+                  message: `${removedEdges} connection${removedEdges === 1 ? '' : 's'} removed. Press ⌘Z to undo.`,
+                  duration: 4000
+                });
+              }}
               containerRef={canvasRef}
               getView={() => canvasViewRef.current}
             />
@@ -1626,7 +1693,10 @@ export function NetworkDesigner({
             onClose={() => setShowEdgeConfig(false)}
             onOpenLastMile={() => setLastMileEdgeId(selectedEdgeObject.id)}
             onUpdate={(updates) => updateEdge(selectedEdgeObject.id, updates)}
-            onDelete={() => deleteEdge(selectedEdgeObject.id)}
+            onDelete={() => {
+              deleteEdge(selectedEdgeObject.id);
+              window.addToast({ type: 'info', title: 'Connection deleted', message: 'Press ⌘Z to undo.', duration: 4000 });
+            }}
             containerRef={canvasRef}
             getView={() => canvasViewRef.current}
           />
@@ -1685,10 +1755,20 @@ export function NetworkDesigner({
         />
         </div>
 
-        {/* Network Advisor - docked column; the canvas reflows beside it */}
+        {/* Network Advisor - docks beside the canvas on wide screens (the
+            canvas reflows beside it); on narrower viewports it floats as an
+            overlay drawer so it never steals layout width and crams the page */}
         <div
-          className="flex-shrink-0 overflow-hidden transition-[width] duration-300 ease-out"
-          style={{ width: showAdvisor ? 400 : 0 }}
+          className={
+            dockAdvisor
+              ? 'flex-shrink-0 overflow-hidden transition-[width] duration-300 ease-out'
+              : 'absolute top-0 right-0 h-full z-40 overflow-hidden transition-[width] duration-300 ease-out shadow-2xl'
+          }
+          style={
+            dockAdvisor
+              ? { width: showAdvisor ? 400 : 0 }
+              : { width: showAdvisor ? 'min(400px, 92vw)' : 0 }
+          }
         >
           <AdvisorPanel
             assessment={assessment}

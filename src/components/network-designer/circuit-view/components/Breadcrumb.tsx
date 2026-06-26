@@ -5,9 +5,10 @@ interface BreadcrumbProps {
   selectedPort: string | null;
   selectedCircuit: string | null;
   onNavigate: (level: 'rack' | 'device' | 'port') => void;
+  rootLabel?: string;
 }
 
-export function Breadcrumb({ selectedDevice, selectedPort, selectedCircuit, onNavigate }: BreadcrumbProps) {
+export function Breadcrumb({ selectedDevice, selectedPort, selectedCircuit, onNavigate, rootLabel = 'Rack View' }: BreadcrumbProps) {
   return (
     <div className="flex items-center space-x-2 text-sm">
       <button
@@ -16,7 +17,7 @@ export function Breadcrumb({ selectedDevice, selectedPort, selectedCircuit, onNa
         type="button"
       >
         <Network className="h-4 w-4 mr-1" />
-        <span>Rack View</span>
+        <span>{rootLabel}</span>
       </button>
 
       {selectedDevice && (

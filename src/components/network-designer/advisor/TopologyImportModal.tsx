@@ -78,6 +78,7 @@ export function TopologyImportModal({ isOpen, onClose, onImport, initialTab = 'u
         className="bg-fw-base rounded-2xl shadow-xl w-[560px] max-w-[92vw] max-h-[85vh] overflow-y-auto custom-scrollbar"
         onClick={e => e.stopPropagation()}
         role="dialog"
+        aria-modal="true"
         ref={dialogRef}
         aria-label="Import network topology"
       >
@@ -216,6 +217,7 @@ export function TopologyImportModal({ isOpen, onClose, onImport, initialTab = 'u
                 <input
                   ref={fileInputRef}
                   type="file"
+                  aria-label="Upload topology file (JSON or CSV)"
                   accept=".json,.csv,application/json,text/csv"
                   className="hidden"
                   onChange={e => {
@@ -251,6 +253,7 @@ export function TopologyImportModal({ isOpen, onClose, onImport, initialTab = 'u
               <textarea
                 value={pasted}
                 onChange={e => setPasted(e.target.value)}
+                aria-label="Paste topology JSON"
                 placeholder={'{\n  "nodes": [...],\n  "edges": [...]\n}'}
                 className="w-full h-48 px-3 py-2.5 text-sm font-mono border border-fw-border-secondary rounded-lg bg-fw-base text-fw-body placeholder:text-fw-disabled resize-none"
               />

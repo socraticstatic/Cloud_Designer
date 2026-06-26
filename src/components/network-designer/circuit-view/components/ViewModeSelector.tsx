@@ -5,6 +5,9 @@ import { ViewMode } from '../CircuitTypes';
 interface ViewModeSelectorProps {
   currentMode: ViewMode;
   onModeChange: (mode: 'logical' | 'physical' | 'rack') => void;
+  /** Render as an inline segmented control (for a header bar) instead of a
+   *  floating pill that overlaps content. */
+  inline?: boolean;
 }
 
 const MODES = [
@@ -13,9 +16,15 @@ const MODES = [
   { mode: 'rack' as const, label: 'Rack', Icon: Server },
 ];
 
-export function ViewModeSelector({ currentMode, onModeChange }: ViewModeSelectorProps) {
+export function ViewModeSelector({ currentMode, onModeChange, inline = false }: ViewModeSelectorProps) {
   return (
-    <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 z-10 bg-white rounded-lg shadow-lg border border-gray-200 p-1 flex space-x-1">
+    <div
+      className={
+        inline
+          ? 'inline-flex flex-shrink-0 bg-gray-100 rounded-lg p-1 gap-1'
+          : 'absolute bottom-4 left-1/2 transform -translate-x-1/2 z-10 bg-white rounded-lg shadow-lg border border-gray-200 p-1 flex space-x-1'
+      }
+    >
       {MODES.map(({ mode, label, Icon }) => (
         <button
           key={mode}

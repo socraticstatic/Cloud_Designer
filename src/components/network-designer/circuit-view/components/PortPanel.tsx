@@ -60,10 +60,15 @@ export function PortPanel({
               {port.speed.split(' ')[0]}
             </div>
             
-            <div className={`absolute top-0 right-0 w-2 h-2 rounded-full ${
-              port.status === 'active' ? 'bg-green-500' :
-              port.status === 'error' ? 'bg-red-500' : 'bg-gray-400'
-            }`}></div>
+            <div
+              role="img"
+              aria-label={`Port ${port.status}`}
+              title={`Port ${port.status}`}
+              className={`absolute top-0 right-0 w-2 h-2 rounded-full ${
+                port.status === 'active' ? 'bg-green-500' :
+                port.status === 'error' ? 'bg-red-500' : 'bg-gray-400'
+              }`}
+            ></div>
           </button>
         ))}
       </div>

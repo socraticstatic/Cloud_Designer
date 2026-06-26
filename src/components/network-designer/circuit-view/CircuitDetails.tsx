@@ -56,6 +56,7 @@ export function CircuitDetails({ port, circuit, onClose }: CircuitDetailsProps) 
             e.stopPropagation();
             onClose();
           }}
+          aria-label="Close details"
           className="p-1 rounded-full hover:bg-gray-100"
           type="button"
         >

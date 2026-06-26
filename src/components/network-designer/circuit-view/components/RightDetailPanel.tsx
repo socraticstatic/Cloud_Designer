@@ -36,6 +36,7 @@ export function RightDetailPanel({
         <h3 className="text-lg font-semibold text-gray-900">Details</h3>
         <button
           onClick={onClose}
+          aria-label="Close details"
           className="p-1 hover:bg-gray-100 rounded transition-colors"
           type="button"
         >
@@ -152,6 +153,11 @@ function renderDeviceDetails(device: NetworkNode, devicePorts: Record<string, Po
               </button>
             ))}
           </div>
+          {ports.length > 20 && (
+            <p className="mt-2 text-xs text-gray-400 text-center">
+              Showing 20 of {ports.length} ports
+            </p>
+          )}
         </div>
       )}
     </>

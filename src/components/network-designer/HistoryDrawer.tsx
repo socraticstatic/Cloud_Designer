@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { X, History, Clock, Network } from 'lucide-react';
 import { NetworkNode, NetworkEdge } from '../types';
 import { formatTimestamp } from '../../utils/formatters';
@@ -18,6 +19,13 @@ interface HistoryDrawerProps {
 }
 
 export function HistoryDrawer({ isOpen, onClose, history, onRestoreTopology }: HistoryDrawerProps) {
+  useEffect(() => {
+    if (!isOpen) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [isOpen, onClose]);
+
   if (!isOpen) return null;
 
   const handleRestore = (item: HistoryItem) => {
@@ -49,7 +57,7 @@ export function HistoryDrawer({ isOpen, onClose, history, onRestoreTopology }: H
         onClick={onClose}
       />
 
-      <div className="fixed top-0 left-0 h-full w-80 bg-white shadow-xl z-50 flex flex-col">
+      <div className="fixed top-0 left-0 h-full w-80 bg-white shadow-xl z-50 flex flex-col" role="dialog" aria-modal="true" aria-label="Topology history">
         <div className="flex items-center justify-between p-4 border-b border-gray-200">
           <div className="flex items-center">
             <History className="h-5 w-5 text-gray-700 mr-2" />
@@ -57,6 +65,7 @@ export function HistoryDrawer({ isOpen, onClose, history, onRestoreTopology }: H
           </div>
           <button
             onClick={onClose}
+            aria-label="Close history"
             className="p-1 hover:bg-gray-100 rounded transition-colors"
           >
             <X className="h-5 w-5 text-gray-600" />

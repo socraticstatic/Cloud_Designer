@@ -98,6 +98,7 @@ export function EdgeConfigPanel({
             <option value="ExpressRoute">ExpressRoute (Azure)</option>
             <option value="Cloud Interconnect">Cloud Interconnect (GCP)</option>
             <option value="FastConnect">FastConnect (Oracle)</option>
+            <option value="Ethernet">Ethernet</option>
             <option value="MPLS">MPLS</option>
             <option value="SD-WAN">SD-WAN</option>
             <option value="VPN">VPN</option>

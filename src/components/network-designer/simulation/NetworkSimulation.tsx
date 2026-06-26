@@ -167,6 +167,7 @@ export function NetworkSimulation({
                     duration: 2000
                   });
                 }}
+                aria-label="Close simulation"
                 className="p-2 rounded-full text-gray-400 hover:text-gray-600 hover:bg-gray-100"
                 type="button"
               >
@@ -217,6 +218,7 @@ export function NetworkSimulation({
                 <div className="mb-3">
                   <input
                     type="range"
+                    aria-label="Inject latency (ms)"
                     min="0"
                     max="200"
                     value={latencyAmount}
@@ -247,6 +249,7 @@ export function NetworkSimulation({
                 <div className="mb-3">
                   <input
                     type="range"
+                    aria-label="Inject packet loss (%)"
                     min="0"
                     max="20"
                     value={packetLossAmount}
@@ -277,6 +280,7 @@ export function NetworkSimulation({
                 <div className="mb-3">
                   <input
                     type="range"
+                    aria-label="Bandwidth limit (%)"
                     min="10"
                     max="100"
                     value={bandwidthLimit}

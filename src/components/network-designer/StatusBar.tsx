@@ -86,6 +86,8 @@ export function StatusBar({ nodes, edges, onRefresh, canvasRef, onSelectNode, on
         {/* Refresh Button */}
         <button
           onClick={onRefresh}
+          aria-label="Refresh network status"
+          title="Refresh network status"
           className="p-1 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100"
         >
           <RefreshCw className="h-4 w-4" />
@@ -101,7 +103,7 @@ export function StatusBar({ nodes, edges, onRefresh, canvasRef, onSelectNode, on
         >
           <div className="flex items-center justify-between px-3 py-2 border-b border-gray-100">
             <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">Design Validation</span>
-            <button onClick={() => setShowValidation(false)} className="text-gray-400 hover:text-gray-600">
+            <button onClick={() => setShowValidation(false)} aria-label="Close validation panel" className="text-gray-400 hover:text-gray-600">
               <X className="h-3.5 w-3.5" />
             </button>
           </div>

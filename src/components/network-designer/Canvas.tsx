@@ -119,6 +119,9 @@ export const Canvas = forwardRef<HTMLDivElement, CanvasProps>(({
   // Same stale-closure disease that caused the node-drag runaway.
   const nodesGestureRef = useRef(nodes);
   nodesGestureRef.current = nodes;
+  // Last real cursor position - spacebar pan has no mouse event of its own,
+  // so it must read where the pointer actually is (not a synthetic 0,0).
+  const lastMouseRef = useRef({ x: 0, y: 0 });
   
   // Track mouse position for edge creation preview
   useEffect(() => {
@@ -184,6 +187,7 @@ export const Canvas = forwardRef<HTMLDivElement, CanvasProps>(({
     };
     
     const handleMouseMove = (e: MouseEvent) => {
+      lastMouseRef.current = { x: e.clientX, y: e.clientY };
       if (isPanning) {
         const newPanX = e.clientX - startPanPosition.x;
         const newPanY = e.clientY - startPanPosition.y;
@@ -196,13 +200,15 @@ export const Canvas = forwardRef<HTMLDivElement, CanvasProps>(({
     
     // Spacebar panning
     const handleKeyDown = (e: KeyboardEvent) => {
+      // Don't hijack Space while the user is typing in a field
+      const t = e.target as HTMLElement;
+      if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
       if (e.code === 'Space' && !isPanning) {
         e.preventDefault();
         setIsPanning(true);
-        const mouseEvent = new MouseEvent('mousemove');
-        setStartPanPosition({ 
-          x: mouseEvent.clientX - panOffset.x, 
-          y: mouseEvent.clientY - panOffset.y 
+        setStartPanPosition({
+          x: lastMouseRef.current.x - panOffset.x,
+          y: lastMouseRef.current.y - panOffset.y
         });
         document.body.style.cursor = 'grab';
       }
@@ -657,9 +663,29 @@ export const Canvas = forwardRef<HTMLDivElement, CanvasProps>(({
         )}
       </div>
 
+      {/* Empty-canvas hint - guides first-run / post-clear users instead of
+          leaving them facing a blank grid. Non-interactive so canvas stays usable. */}
+      {nodes.length === 0 && (
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none" style={{ zIndex: Z_INDEX.CHROME }}>
+          <div className="text-center px-6">
+            <div className="mx-auto w-12 h-12 rounded-2xl bg-white shadow-sm border border-gray-200 flex items-center justify-center mb-3">
+              <svg viewBox="0 0 24 24" className="h-6 w-6 text-fw-link" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M12 5v14M5 12h14" strokeLinecap="round" />
+              </svg>
+            </div>
+            <h3 className="text-base font-semibold text-fw-heading">Start your network</h3>
+            <p className="mt-1 text-sm text-fw-bodyLight max-w-xs mx-auto">
+              {isReadOnly
+                ? 'This design has no nodes yet.'
+                : 'Add a node from the toolbar below, or import a topology to get started.'}
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Zoom controls + fit (right rail, Figma parity with Pano) */}
       {!isReadOnly && (
-        <div className="absolute right-4 top-1/2 -translate-y-1/2 flex flex-col gap-1 bg-white rounded-xl shadow-sm border border-gray-200 p-1" style={{ zIndex: Z_INDEX.CHROME }}>
+        <div className="absolute right-4 top-1/2 -translate-y-1/2 flex flex-col gap-1 bg-white rounded-xl shadow-sm border border-gray-200 p-1" style={{ zIndex: Z_INDEX.CHROME }} title="Hold ⌘ / Ctrl and scroll to zoom on the canvas">
           <button
             onClick={() => setZoomLevel(z => Math.min(2, +(z + 0.2).toFixed(2)))}
             className="p-1.5 rounded-lg text-gray-500 hover:bg-gray-50 hover:text-gray-800 text-sm font-semibold leading-none"

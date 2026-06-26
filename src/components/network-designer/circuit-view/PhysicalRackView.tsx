@@ -134,30 +134,8 @@ export function PhysicalRackView({
     });
   };
 
-  // Summary stats
-  const allPorts = Object.values(devicePorts).flat();
-  const activePorts = allPorts.filter(p => p.status === 'active').length;
-  const errorPorts = allPorts.filter(p => p.status === 'error').length;
-  const activeDevices = nodes.filter(n => n.status === 'active' || (devicePorts[n.id] || []).some(p => p.status === 'active')).length;
-
   return (
     <div className="p-6 space-y-4">
-      {/* Summary stats */}
-      <div className="grid grid-cols-4 gap-3">
-        {[
-          { label: 'Devices', value: nodes.length, sub: `${activeDevices} active`, color: 'text-gray-900' },
-          { label: 'Total Ports', value: allPorts.length, sub: `${activePorts} active`, color: 'text-blue-600' },
-          { label: 'Circuits', value: circuits.length, sub: `${circuits.filter(c => c.status === 'active').length} active`, color: 'text-emerald-600' },
-          { label: 'Errors', value: errorPorts, sub: errorPorts > 0 ? 'Needs attention' : 'All clear', color: errorPorts > 0 ? 'text-red-600' : 'text-green-600' },
-        ].map(stat => (
-          <div key={stat.label} className="bg-white rounded-lg border border-gray-200 p-3">
-            <p className="text-xs text-gray-500 mb-1">{stat.label}</p>
-            <p className={`text-xl font-semibold ${stat.color}`}>{stat.value}</p>
-            <p className="text-xs text-gray-400">{stat.sub}</p>
-          </div>
-        ))}
-      </div>
-
       {/* Device cards */}
       <div className="space-y-2">
         {nodes.map(node => {
@@ -196,7 +174,7 @@ export function PhysicalRackView({
                 {/* Info */}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center">
-                    <span className="text-sm font-medium text-gray-900 truncate">{node.name}</span>
+                    <span className="text-sm font-medium text-gray-900 truncate" title={node.name}>{node.name}</span>
                     <span className={`ml-2 w-1.5 h-1.5 rounded-full flex-shrink-0 ${
                       node.status === 'active' || nodeActivePorts > 0 ? 'bg-green-500' : 'bg-gray-300'
                     }`} />

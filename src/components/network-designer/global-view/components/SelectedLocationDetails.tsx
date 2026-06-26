@@ -6,12 +6,14 @@ interface SelectedLocationDetailsProps {
   selectedLocation: string | null;
   nodes: NetworkNode[];
   onZoomIn: (datacenterId: string) => void;
+  onClose?: () => void;
 }
 
-export function SelectedLocationDetails({ 
-  selectedLocation, 
-  nodes, 
-  onZoomIn 
+export function SelectedLocationDetails({
+  selectedLocation,
+  nodes,
+  onZoomIn,
+  onClose
 }: SelectedLocationDetailsProps) {
   if (!selectedLocation) return null;
 
@@ -20,9 +22,10 @@ export function SelectedLocationDetails({
 
   return (
     <div className="absolute bottom-20 left-28 right-4 bg-white rounded-lg shadow-lg border border-gray-200 p-4" style={{ zIndex: 50 }}>
-      <GlobalNodeDetails 
-        node={selectedNodeData} 
+      <GlobalNodeDetails
+        node={selectedNodeData}
         onZoomIn={() => onZoomIn(selectedLocation)}
+        onClose={onClose}
       />
     </div>
   );

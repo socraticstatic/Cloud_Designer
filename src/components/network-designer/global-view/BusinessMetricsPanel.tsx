@@ -385,6 +385,7 @@ export function BusinessMetricsPanel({ nodes, edges, isVisible, onClose }: Busin
               e.stopPropagation();
               onClose();
             }}
+            aria-label="Close"
             className="ml-1 p-1 text-gray-400 hover:text-gray-500"
             type="button"
           >

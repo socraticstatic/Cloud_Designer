@@ -195,7 +195,8 @@ export function FloatingPanel({
             e.stopPropagation();
             onClose();
           }}
-          className="text-gray-400 hover:text-gray-500 focus:outline-none hover:bg-gray-100 p-1 rounded-full transition-colors"
+          aria-label="Close"
+          className="text-gray-400 hover:text-gray-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 hover:bg-gray-100 p-1 rounded-full transition-colors"
           type="button"
         >
           <X className="h-5 w-5" />

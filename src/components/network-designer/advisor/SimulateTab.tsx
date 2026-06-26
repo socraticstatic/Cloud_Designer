@@ -25,6 +25,11 @@ export function SimulateTab({ nodes, simResult, onSimulate, onReset }: SimulateT
       </div>
 
       <div className="flex-1 overflow-y-auto custom-scrollbar px-3 py-3 space-y-1.5">
+        {nodes.length === 0 && (
+          <p className="text-sm text-fw-bodyLight text-center mt-8 px-4">
+            Add nodes to the design to simulate a device failure.
+          </p>
+        )}
         {nodes.map(node => {
           const isFailed = simResult?.failedNodeId === node.id;
           return (

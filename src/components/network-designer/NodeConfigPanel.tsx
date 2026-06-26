@@ -557,6 +557,12 @@ export function NodeConfigPanel({
                 />
               </div>
             )}
+
+            {node.type !== 'destination' && node.type !== 'network' && (
+              <p className="text-sm text-gray-500 text-center py-8">
+                No routing options apply to this device type.
+              </p>
+            )}
           </div>
         );
 
@@ -725,6 +731,12 @@ export function NodeConfigPanel({
                   </select>
                 </div>
               </>
+            )}
+
+            {node.type !== 'destination' && node.type !== 'network' && node.type !== 'datacenter' && (
+              <p className="text-sm text-gray-500 text-center py-8">
+                No security options apply to this device type.
+              </p>
             )}
           </div>
         );

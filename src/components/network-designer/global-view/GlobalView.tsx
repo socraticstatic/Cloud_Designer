@@ -74,6 +74,7 @@ export function GlobalView({ nodes, edges, onNodeSelect, onZoomIn, issueBadges =
         selectedLocation={selectedLocation}
         nodes={nodes}
         onZoomIn={onZoomIn}
+        onClose={() => setSelectedLocation(null)}
       />
 
       {/* Instructions Overlay */}

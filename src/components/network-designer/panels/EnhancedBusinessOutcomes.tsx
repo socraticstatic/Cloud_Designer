@@ -35,6 +35,7 @@ export function EnhancedBusinessOutcomes() {
             </div>
             <input
               type="range"
+              aria-label="Maximum latency (ms)"
               min="10"
               max="200"
               step="10"
@@ -61,6 +62,7 @@ export function EnhancedBusinessOutcomes() {
             </div>
             <input
               type="range"
+              aria-label="Bandwidth (Mbps)"
               min="100"
               max="10000"
               step="100"
@@ -87,6 +89,7 @@ export function EnhancedBusinessOutcomes() {
             </div>
             <input
               type="range"
+              aria-label="Availability (% uptime)"
               min="95"
               max="99.99"
               step="0.1"
@@ -175,6 +178,7 @@ export function EnhancedBusinessOutcomes() {
               Cost Priority
             </div>
             <select
+              aria-label="Cost priority"
               value={outcomes.costPriority}
               onChange={(e) => updateOutcomes({ costPriority: e.target.value as 'low' | 'medium' | 'high' })}
               className="w-full p-1.5 border border-gray-300 rounded text-xs bg-white"
@@ -225,6 +229,7 @@ export function EnhancedBusinessOutcomes() {
               Sustainability Priority
             </div>
             <select
+              aria-label="Sustainability priority"
               value={outcomes.sustainabilityPriority}
               onChange={(e) => updateOutcomes({ sustainabilityPriority: e.target.value as 'low' | 'medium' | 'high' })}
               className="w-full p-1.5 border border-gray-300 rounded text-xs bg-white"

@@ -1,4 +1,4 @@
-import { Server, Cloud, Network, Plus, Undo, Play, Check, Save, Trash2, Shield, Activity, PanelRight, Menu, Database, Globe, Lock, Feather as Ethernet, Wifi, LayoutGrid as Layout, UploadCloud, Sparkles } from 'lucide-react';
+import { Server, Cloud, Network, Plus, Undo, Redo, Play, Check, Save, Trash2, Shield, Activity, PanelRight, Menu, Database, Globe, Lock, Feather as Ethernet, Wifi, LayoutGrid as Layout, UploadCloud, Sparkles } from 'lucide-react';
 import { GatewayIcon } from '../icons/GatewayIcon';
 import { NetworkNode } from '../types';
 import { useState, useEffect, useRef } from 'react';
@@ -15,8 +15,10 @@ interface ToolbarProps {
   onToggleEdgeCreation: () => void;
   isCreatingEdge: boolean;
   onCancel: () => void;
+  onRedo?: () => void;
   hasConnections: boolean;
   canUndo: boolean;
+  canRedo?: boolean;
   onRunScenario?: () => void;
   isRunningScenario?: boolean;
   onCreateConnections?: () => void;
@@ -37,8 +39,10 @@ export function Toolbar({
   onToggleEdgeCreation,
   isCreatingEdge,
   onCancel,
+  onRedo,
   hasConnections,
   canUndo,
+  canRedo = false,
   onRunScenario,
   isRunningScenario = false,
   onCreateConnections,
@@ -333,7 +337,7 @@ export function Toolbar({
               <Play className="h-5 w-5" />
             </button>
             <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 text-xs text-white bg-gray-900 rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-              Run scenario
+              {hasConnections ? 'Run scenario' : 'Add a connection first'}
             </div>
           </div>
         </>
@@ -363,7 +367,7 @@ export function Toolbar({
               <Save className="h-5 w-5" />
             </button>
             <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 text-xs text-white bg-gray-900 rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-              Save as template
+              {hasConnections ? 'Save as template' : 'Add a connection first'}
             </div>
           </div>
       )}
@@ -392,6 +396,24 @@ export function Toolbar({
             Undo
           </div>
         </div>
+
+        {onRedo && (
+          <div className="relative group">
+            <button
+              onClick={(e) => { e.stopPropagation(); if (canRedo) onRedo(); }}
+              disabled={!canRedo}
+              className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              title="Redo"
+              aria-label="Redo"
+              type="button"
+            >
+              <Redo className="h-5 w-5" />
+            </button>
+            <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 text-xs text-white bg-gray-900 rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+              Redo
+            </div>
+          </div>
+        )}
       </>
 
       {/* Clear Canvas - destructive, so it confirms before acting */}
@@ -419,7 +441,7 @@ export function Toolbar({
             </button>
             {!confirmClear && (
               <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 text-xs text-white bg-gray-900 rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                Clear canvas
+                {hasConnections ? 'Clear canvas' : 'Nothing to clear'}
               </div>
             )}
             {confirmClear && (
@@ -517,26 +539,32 @@ export function Toolbar({
       {onCreateConnections && (
         <>
           <div className="h-8 w-px bg-gray-200"></div>
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              if (hasConnections && onCreateConnections) {
-                onCreateConnections();
-              }
-            }}
-            disabled={!hasConnections}
-            className={`
-              flex items-center p-2.5 rounded-full transition-colors flex-shrink-0
-              ${!hasConnections
-                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                : 'bg-fw-ctaPrimary text-white hover:bg-fw-ctaPrimaryHover'
-              }
-            `}
-            title="Save updates"
-            type="button"
-          >
-            <Check className="h-5 w-5" />
-          </button>
+          <div className="relative group">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                if (hasConnections && onCreateConnections) {
+                  onCreateConnections();
+                }
+              }}
+              disabled={!hasConnections}
+              className={`
+                flex items-center p-2.5 rounded-full transition-colors flex-shrink-0
+                ${!hasConnections
+                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                  : 'bg-fw-ctaPrimary text-white hover:bg-fw-ctaPrimaryHover'
+                }
+              `}
+              title={hasConnections ? 'Save updates' : 'Add a connection first'}
+              aria-label="Save updates"
+              type="button"
+            >
+              <Check className="h-5 w-5" />
+            </button>
+            <div className="absolute bottom-full right-0 mb-2 px-2 py-1 text-xs text-white bg-gray-900 rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+              {hasConnections ? 'Save updates' : 'Add a connection first'}
+            </div>
+          </div>
         </>
       )}
     </div>

@@ -1,13 +1,14 @@
 import { useState } from 'react';
-import { Globe, Router, Database, Network, ZoomIn, Map, Maximize, ArrowRight, Building } from 'lucide-react';
+import { Globe, Router, Database, Network, ZoomIn, Maximize, Building, X } from 'lucide-react';
 import type { NetworkNode, NetworkEdge } from '../../types';
 
 interface GlobalNodeDetailsProps {
   node: NetworkNode;
   onZoomIn: () => void;
+  onClose?: () => void;
 }
 
-export function GlobalNodeDetails({ node, onZoomIn }: GlobalNodeDetailsProps) {
+export function GlobalNodeDetails({ node, onZoomIn, onClose }: GlobalNodeDetailsProps) {
   const isCloud = node.type === 'destination';
   const isDatacenter = node.type === 'datacenter';
   const isNetwork = node.type === 'network';
@@ -30,13 +31,25 @@ export function GlobalNodeDetails({ node, onZoomIn }: GlobalNodeDetailsProps) {
           )}
           <h3 className="text-lg font-semibold text-gray-900">{node.name}</h3>
         </div>
-        <button
-          onClick={onZoomIn}
-          className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 text-blue-600 rounded-md hover:bg-blue-100 transition-colors"
-        >
-          <ZoomIn className="h-4 w-4" />
-          <span className="text-sm">View Details</span>
-        </button>
+        <div className="flex items-center gap-1">
+          <button
+            onClick={onZoomIn}
+            className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 text-blue-600 rounded-md hover:bg-blue-100 transition-colors"
+          >
+            <ZoomIn className="h-4 w-4" />
+            <span className="text-sm">View Details</span>
+          </button>
+          {onClose && (
+            <button
+              onClick={onClose}
+              aria-label="Close"
+              className="p-1.5 text-gray-400 hover:text-gray-700 rounded-md hover:bg-gray-100 transition-colors"
+              type="button"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          )}
+        </div>
       </div>
       
       <div className="grid grid-cols-3 gap-4 mb-4">
@@ -111,25 +124,10 @@ export function GlobalNodeDetails({ node, onZoomIn }: GlobalNodeDetailsProps) {
         </div>
       )}
       
-      <div className="flex justify-between items-center">
-        <div className="flex gap-2">
-          <button
-            className="px-3 py-1.5 bg-blue-50 text-blue-600 rounded-md hover:bg-blue-100 transition-colors flex items-center gap-1"
-            onClick={onZoomIn}
-          >
-            <Map className="h-4 w-4" />
-            <span className="text-sm">Network Topology</span>
-          </button>
-          
-          <button
-            className="px-3 py-1.5 bg-purple-50 text-purple-600 rounded-md hover:bg-purple-100 transition-colors flex items-center gap-1"
-            onClick={onZoomIn}
-          >
-            <ArrowRight className="h-4 w-4" />
-            <span className="text-sm">View Connections</span>
-          </button>
-        </div>
-        
+      {/* The header "View Details" already drills into the topology - the old
+          "Network Topology" + "View Connections" buttons fired the same action,
+          so the footer is just the selection hint now. */}
+      <div className="flex justify-end items-center">
         <span className="text-xs text-gray-500 italic">
           Click any location on the map to select it
         </span>

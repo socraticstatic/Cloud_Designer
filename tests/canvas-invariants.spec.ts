@@ -847,3 +847,91 @@ test('advisor IP Plan tab: full address inventory with in-place renumber', async
   await page.getByRole('button', { name: 'IP Plan' }).click();
   await expect(page.locator('[data-testid="addressing-tab"]').getByText('Address plan is clean', { exact: false })).toBeVisible();
 });
+
+// Infra owns its whole frame: no canvas-editing chrome, a self-contained top
+// bar (Back + identity + view switch + advisor), a whole-inventory health
+// strip, and its own device filter. These were added when the canvas toolbars
+// were confirmed unnecessary in Infra.
+test('Infra is full-bleed: dedicated top bar, health strip, working device filter, reachable advisor', async ({ page }) => {
+  await openDesigner(page);
+
+  // enter Infra
+  await page.locator('button[title="Circuit View"]').click();
+
+  // dedicated top bar carries the design identity and the Back action...
+  await expect(page.getByText('Test Topology', { exact: false }).first()).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Back' })).toBeVisible();
+  // ...and the canvas-editing chrome is gone (no bottom toolbar / status bar)
+  await expect(page.getByRole('button', { name: 'Save as template' })).toHaveCount(0);
+
+  // whole-inventory health strip (unique labels)
+  await expect(page.getByText('Total Ports')).toBeVisible();
+  await expect(page.getByText('All clear')).toBeVisible();
+
+  // device filter narrows the rack list to a single match
+  const list = page.locator('button', { hasText: 'ports' });
+  const before = await list.count();
+  expect(before).toBeGreaterThan(1);
+  await page.getByLabel('Filter devices').fill('HubRouter');
+  await expect(page.getByText('HubRouter').first()).toBeVisible();
+  await expect(page.getByText('AT&T Core', { exact: false })).toHaveCount(0);
+  // health strip still reports the full inventory (filter is list-only)
+  await expect(page.getByText('Total Ports')).toBeVisible();
+
+  // clearing restores the list
+  await page.getByLabel('Filter devices').fill('');
+  await expect(page.getByText('AT&T Core', { exact: false }).first()).toBeVisible();
+
+  // advisor is reachable straight from the Infra top bar
+  await page.locator('button[title="Network Advisor"]').click();
+  await expect(page.locator('[aria-label="Network Advisor"]')).toBeVisible();
+
+  // no phantom horizontal scrollbar in Infra, advisor open, at narrow width
+  await page.setViewportSize({ width: 1100, height: 800 });
+  await page.waitForTimeout(500);
+  const overflow = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth);
+  expect(overflow).toBe(false);
+});
+
+// Deleting used to be silent - no feedback that it happened or that it
+// cascaded to the node's connections. Now it surfaces an undo toast.
+test('deleting a node surfaces an undo toast and undo restores it', async ({ page }) => {
+  await openDesigner(page);
+  await nodeByName(page, 'Firewall').click();
+  await page.keyboard.press('Delete');
+  await expect(page.getByText(/Deleted Firewall/)).toBeVisible();
+  await expect(page.getByText(/connection.* removed/)).toBeVisible();
+  await expect(page.locator('.node-enter')).toHaveCount(FIXTURE.nodes.length - 1);
+  await page.keyboard.press('Meta+z');
+  await expect(page.locator('.node-enter')).toHaveCount(FIXTURE.nodes.length);
+});
+
+// Escape had no effect on an in-progress connection - the user was stranded
+// in edge-creation mode with only the toolbar toggle to escape.
+test('Escape cancels an in-progress connection', async ({ page }) => {
+  await openDesigner(page);
+  const connect = page.locator('button[title="Add Connection"]');
+  await connect.click();
+  await expect(connect).toHaveClass(/bg-blue-50/);   // mode is active
+  await page.keyboard.press('Escape');
+  await expect(connect).not.toHaveClass(/bg-blue-50/); // mode cancelled
+});
+
+// At <1280px the advisor floats as an overlay; its 400px drawer used to sit
+// on top of the Infra view-mode switcher, making it unclickable.
+test('advisor overlay never occludes the Infra view switcher at narrow width', async ({ page }) => {
+  await openDesigner(page);
+  await page.setViewportSize({ width: 1100, height: 800 });
+  await page.locator('button[title="Circuit View"]').click();
+  await page.locator('button[title="Network Advisor"]').click();
+  await expect(page.locator('[aria-label="Network Advisor"]')).toBeVisible();
+  await page.waitForTimeout(500);
+  const switcherReachable = await page.evaluate(() => {
+    const sw = [...document.querySelectorAll('button')].find(b => b.textContent!.trim() === 'Rack');
+    if (!sw) return false;
+    const r = sw.getBoundingClientRect();
+    const hit = document.elementFromPoint((r.left + r.right) / 2, (r.top + r.bottom) / 2);
+    return !!hit && sw.contains(hit);
+  });
+  expect(switcherReachable).toBe(true);
+});
