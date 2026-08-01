@@ -5,6 +5,16 @@
 
 import { test, expect, Page } from '@playwright/test';
 
+// CI runs the dev server in gate mode (see playwright.config.ts); every test
+// pre-seeds the gate key so the auth screen never interposes. The real OTP
+// flow has its own coverage in cloud-connect's e2e-auth suite.
+test.beforeEach(async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('att_nb_user', JSON.stringify({ email: 'test@att.com' }));
+  });
+});
+
+
 // Resting-envelope rule (mirror of src/utils/nodeLayout.ts)
 const MIN_GAP_X = 150;
 const MIN_GAP_Y = 155;

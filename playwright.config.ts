@@ -11,7 +11,8 @@ export default defineConfig({
     trace: 'retain-on-failure'
   },
   webServer: {
-    command: 'npx vite --port 4173 --strictPort',
+    // Gate mode: invariant tests seed att_nb_user instead of doing email OTP.
+    command: 'VITE_AUTH_MODE=gate npx vite --port 4173 --strictPort',
     url: 'http://localhost:4173',
     reuseExistingServer: !process.env.CI,
     timeout: 60_000
